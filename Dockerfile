@@ -20,6 +20,7 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 COPY composer.json composer.lock ./
 COPY . .
+RUN mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
 RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
 COPY --from=frontend /app/public/build ./public/build

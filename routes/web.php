@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/up', static fn () => response('OK', 200))->name('health');
 
 /*
 |--------------------------------------------------------------------------

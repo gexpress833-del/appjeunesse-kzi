@@ -36,4 +36,4 @@ ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 
 EXPOSE 80
 
-CMD ["sh", "-c", "php artisan migrate --force && php artisan optimize && apache2-foreground"]
+CMD ["sh", "-c", "php artisan migrate --force && php artisan config:cache && php artisan route:cache && php artisan serve --host=0.0.0.0 --port=${PORT:-10000}"]

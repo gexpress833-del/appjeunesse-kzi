@@ -6,7 +6,7 @@
 <div class="rounded-3xl border border-white/10 bg-slate-950/30 p-6 shadow-2xl shadow-slate-950/20 backdrop-blur-sm">
     <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-            <p class="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-300">Accueil</p>
+            <p class="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-300">Tableau de bord personnel</p>
             <h1 class="mt-2 text-3xl font-black text-white">Bonjour {{ auth()->user()->full_name }} 👋</h1>
         </div>
         <a href="{{ route('profile.edit') }}" class="inline-flex items-center justify-center rounded-xl border border-cyan-400/40 bg-cyan-500/10 px-4 py-2 text-sm font-semibold text-cyan-200 transition hover:bg-cyan-500/20">Mon profil</a>
@@ -31,7 +31,7 @@
                     <p class="mt-1 text-2xl font-black text-white">{{ $stats['present'] ?? 0 }}</p>
                 </div>
                 <div class="rounded-xl border border-white/10 bg-slate-950/30 p-4">
-                    <p class="text-xs text-slate-400">Visites</p>
+                    <p class="text-xs text-slate-400">Visites récentes</p>
                     <p class="mt-1 text-2xl font-black text-amber-300">{{ $visits->count() }}</p>
                 </div>
             </div>
@@ -71,12 +71,12 @@
                 <p class="mt-2 text-2xl font-bold text-white">{{ $member->dept ?? '—' }}</p>
             </div>
             <div class="rounded-2xl border border-white/10 bg-slate-900/40 p-5">
-                <p class="text-sm text-slate-400">Taux de participation</p>
-                <p class="mt-2 text-3xl font-black {{ ($stats['rate'] ?? 0) >= 70 ? 'text-emerald-400' : 'text-amber-400' }}">{{ $stats['rate'] ?? 0 }}%</p>
+                <p class="text-sm text-slate-400">Total relevés</p>
+                <p class="mt-2 text-3xl font-black text-white">{{ $stats['total'] ?? 0 }}</p>
             </div>
             <div class="rounded-2xl border border-white/10 bg-slate-900/40 p-5">
-                <p class="text-sm text-slate-400">Présent(e)</p>
-                <p class="mt-2 text-3xl font-black text-emerald-400">{{ $stats['present'] ?? 0 }}</p>
+                <p class="text-sm text-slate-400">Excusé(e)</p>
+                <p class="mt-2 text-3xl font-black text-sky-400">{{ $stats['excused'] ?? 0 }}</p>
             </div>
             <div class="rounded-2xl border border-white/10 bg-slate-900/40 p-5">
                 <p class="text-sm text-slate-400">Retards / absences</p>
@@ -109,7 +109,7 @@
                 <div class="mb-3 flex items-center justify-between gap-3">
                     <h2 class="text-xl font-bold text-white">📌 Dernières participations</h2>
                 </div>
-                <div class="overflow-hidden rounded-2xl border border-white/10 bg-slate-900/40">
+                <div class="overflow-x-auto rounded-2xl border border-white/10 bg-slate-900/40">
                     <table class="w-full text-sm text-slate-200">
                         <thead class="bg-slate-800/70 text-left text-xs uppercase tracking-[0.12em] text-slate-400">
                             <tr>
@@ -145,7 +145,7 @@
         </div>
 
         @if ($visits->isNotEmpty())
-            <div class="overflow-hidden rounded-2xl border border-white/10 bg-slate-900/40">
+            <div class="overflow-x-auto rounded-2xl border border-white/10 bg-slate-900/40">
                 <table class="w-full text-sm text-slate-200">
                     <thead class="bg-slate-800/70 text-left text-xs uppercase tracking-[0.12em] text-slate-400">
                         <tr>

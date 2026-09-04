@@ -172,7 +172,7 @@
     @guest
         <section class="mt-12 rounded-3xl bg-slate-900 px-6 py-12 text-center text-white">
             <h2 class="text-2xl font-bold">Vous faites partie de la jeunesse ?</h2>
-            <p class="mx-auto mt-2 max-w-xl text-slate-300">Créez votre compte pour suivre vos présences, consulter l'annuaire, la galerie et les événements. Votre compte sera validé par l'administrateur.</p>
+            <p class="mx-auto mt-2 max-w-xl text-slate-300">Créez votre compte pour suivre vos présences, consulter l'annuaire, la galerie et les événements. Votre compte sera validé par le Président responsable de la jeunesse de La Parole Éternelle, Centre-Ville de Kolwezi.</p>
             <div class="mt-6 flex flex-wrap justify-center gap-3">
                 <a href="{{ route('register') }}" class="rounded-xl bg-amber-400 px-6 py-3 font-semibold text-amber-950 hover:bg-amber-300">Créer mon compte</a>
                 <a href="{{ route('login') }}" class="rounded-xl border border-slate-600 px-6 py-3 font-semibold hover:bg-slate-800">Se connecter</a>

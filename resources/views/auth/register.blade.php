@@ -9,7 +9,7 @@
             <img src="{{ asset('logoEglise.jpg') }}" class="h-20 w-20 rounded-2xl object-cover ring-2 ring-indigo-400/60" alt="Logo La Parole Éternelle Kolwezi">
         </div>
         <h1 class="text-2xl font-bold text-slate-900">Créer mon compte</h1>
-        <p class="mt-1 text-sm text-slate-500">Votre compte sera <strong>en attente de validation</strong> par l'administrateur avant votre accès à l'espace membre.</p>
+        <p class="mt-1 text-sm text-slate-500">Votre compte sera <strong>en attente de validation</strong> par le Président responsable de la jeunesse de La Parole Éternelle, Centre-Ville de Kolwezi, avant votre accès à l'espace membre.</p>
 
         @if ($errors->any())
             <div class="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">

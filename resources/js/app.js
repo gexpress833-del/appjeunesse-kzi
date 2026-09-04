@@ -57,3 +57,23 @@ document.querySelectorAll('[data-password-toggle]').forEach((toggle) => {
 		toggle.setAttribute('aria-label', isVisible ? 'Afficher le mot de passe' : 'Masquer le mot de passe');
 	});
 });
+
+document.querySelectorAll('form').forEach((form) => {
+	form.addEventListener('submit', (event) => {
+		if (form.dataset.loading === 'true') {
+			event.preventDefault();
+			return;
+		}
+
+		const submitter = event.submitter || form.querySelector('button[type="submit"], button:not([type])');
+
+		if (!submitter || submitter.dataset.noLoading !== undefined) {
+			return;
+		}
+
+		form.dataset.loading = 'true';
+		submitter.disabled = true;
+		submitter.setAttribute('aria-busy', 'true');
+		submitter.innerHTML = '<span class="loading-spinner" aria-hidden="true"></span><span>Chargement...</span>';
+	});
+});

@@ -65,23 +65,23 @@
                         </button>
                     </div>
 
-                    <div class="space-y-2 p-4">
-                        <p class="font-semibold text-slate-900">{{ $photo->title ?? 'Photo de la jeunesse' }}</p>
+                    <div class="space-y-1.5 border-t border-slate-100 p-3.5">
+                        <p class="line-clamp-2 text-sm font-bold leading-5 text-slate-900">{{ $photo->title ?? 'Photo de la jeunesse' }}</p>
                         @if ($photo->event)
-                            <p class="text-xs uppercase tracking-wide text-indigo-600">{{ $photo->event->name }}</p>
+                            <p class="truncate text-[11px] font-semibold uppercase tracking-[0.12em] text-indigo-600">{{ $photo->event->name }}</p>
                         @endif
                         @if ($photo->description)
-                            <p class="text-sm text-slate-600">{{ Str::limit($photo->description, 90) }}</p>
+                            <p class="line-clamp-2 text-xs leading-5 text-slate-600">{{ Str::limit($photo->description, 90) }}</p>
                         @endif
 
-                        <div class="flex items-center justify-between gap-3 pt-2">
-                            <button type="button" class="preview-trigger text-sm font-semibold text-cyan-700 hover:underline" data-image="{{ $photo->image_url }}" data-title="{{ $photo->title ?? 'Photo de la jeunesse' }}" data-event="{{ $photo->event?->name ?? 'Aucun événement' }}">Aperçu</button>
+                        <div class="flex items-center justify-between gap-3 pt-1.5">
+                            <button type="button" class="preview-trigger text-xs font-bold text-cyan-700 hover:text-cyan-900 hover:underline" data-image="{{ $photo->image_url }}" data-title="{{ $photo->title ?? 'Photo de la jeunesse' }}" data-event="{{ $photo->event?->name ?? 'Aucun événement' }}">Aperçu</button>
 
                             @if ($canManage)
                                 <form method="POST" action="{{ route('gallery.destroy', $photo) }}" onsubmit="return confirm('Supprimer cette photo ?')" class="inline-block">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="text-sm font-semibold text-rose-600 hover:underline">Supprimer</button>
+                                    <button type="submit" class="text-xs font-bold text-rose-600 hover:underline">Supprimer</button>
                                 </form>
                             @endif
                         </div>
@@ -98,17 +98,17 @@
     <div class="relative w-full max-w-5xl overflow-hidden rounded-3xl border border-white/10 bg-slate-900 shadow-2xl shadow-slate-950/50">
         <button type="button" id="close-preview-modal" aria-label="Fermer l’aperçu" class="absolute right-4 top-4 z-10 rounded-full bg-slate-800/80 px-3 py-1 text-lg font-semibold text-white hover:bg-slate-700">✕</button>
 
-        <div class="flex flex-col md:flex-row">
-            <div class="flex-1 bg-slate-950 p-3">
+        <div class="flex flex-col lg:flex-row">
+            <div class="flex-1 bg-slate-950 p-3 lg:p-4">
                 <img id="preview-image" src="" alt="Aperçu de photo" class="max-h-[76vh] w-full rounded-2xl object-contain">
             </div>
 
-            <div class="w-full max-w-sm border-t border-white/10 bg-slate-900 p-5 md:border-l md:border-t-0">
-                <p class="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">Aperçu</p>
-                <h3 id="preview-title" class="mt-3 text-xl font-bold text-white">Photo</h3>
-                <p id="preview-event" class="mt-1 text-sm text-slate-300"></p>
+            <div class="w-full max-w-[320px] border-t border-white/10 bg-slate-900 p-4 md:p-5 lg:border-l lg:border-t-0">
+                <p class="text-[10px] font-semibold uppercase tracking-[0.22em] text-cyan-300">Aperçu</p>
+                <h3 id="preview-title" class="mt-3 text-2xl font-black leading-tight text-white">Photo</h3>
+                <p id="preview-event" class="mt-2 text-sm leading-6 text-slate-300"></p>
 
-                <div class="mt-6 flex gap-3">
+                <div class="mt-5 flex gap-3">
                     <a id="preview-download" href="#" target="_blank" rel="noopener" class="flex-1 rounded-xl bg-emerald-500 px-4 py-2.5 text-center text-sm font-semibold text-white shadow-lg shadow-emerald-600/25 hover:bg-emerald-400">⬇️ Télécharger</a>
                     <button type="button" id="preview-close-button" class="rounded-xl border border-slate-600 px-4 py-2.5 text-sm font-semibold text-slate-200 hover:bg-slate-800">Fermer</button>
                 </div>

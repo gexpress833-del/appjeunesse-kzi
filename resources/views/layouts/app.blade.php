@@ -75,6 +75,10 @@
                 <a href="{{ route('attendances.report') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all {{ request()->routeIs('attendances.report') || request()->routeIs('attendances.export') ? 'bg-gradient-to-r from-indigo-600/80 to-cyan-500/70 font-semibold text-white shadow-lg shadow-indigo-500/20' : 'text-slate-300 hover:bg-white/5 hover:text-white' }}"><span>📊</span> Rapports</a>
             @endif
 
+                @if ($u->isResponsable())
+                    <a href="{{ route('attendances.pdf') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-slate-300 transition-all hover:bg-white/5 hover:text-white"><span>📄</span> Exporter mes rapports PDF</a>
+                @endif
+
             @if ($u->isSecretariat() || $u->isAdmin())
                 <p class="px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Comptes</p>
                 <a href="{{ route('users.create') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-slate-300 transition-all hover:bg-white/5 hover:text-white"><span>👤</span> Créer un compte</a>

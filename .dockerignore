@@ -1,0 +1,14 @@
+.git
+.env
+.env.*
+!.env.example
+node_modules
+vendor
+storage/logs
+storage/framework/cache/data
+storage/framework/sessions
+storage/framework/views
+public/hot
+public/build
+tests
+README.md

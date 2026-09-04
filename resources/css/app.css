@@ -1,0 +1,327 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+:root {
+    color-scheme: dark;
+}
+
+html[data-theme='light'] {
+    color-scheme: light;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background:
+        radial-gradient(circle at top left, rgba(79, 70, 229, 0.28), transparent 26%),
+        radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.18), transparent 30%),
+        linear-gradient(135deg, #020817 0%, #0f172a 32%, #111827 100%);
+    color: #e2e8f0;
+}
+
+html[data-theme='light'] body {
+    background:
+        radial-gradient(circle at top left, rgba(14, 165, 233, 0.14), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(245, 158, 11, 0.12), transparent 30%),
+        linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    color: #0f172a;
+}
+
+input:not([type='file']):not([type='checkbox']):not([type='radio']),
+select,
+textarea {
+    min-height: 2.5rem;
+    border-width: 1px !important;
+    border-style: solid !important;
+    border-radius: 0.75rem;
+    padding: 0.55rem 0.75rem;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+textarea {
+    min-height: 7rem;
+}
+
+input:not([type='file']):not([type='checkbox']):not([type='radio']):focus,
+select:focus,
+textarea:focus {
+    border-color: #818cf8 !important;
+    box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2);
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: linear-gradient(rgba(148, 163, 184, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
+    background-size: 46px 46px;
+    mask-image: radial-gradient(circle at center, black 35%, transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+@layer utilities {
+    .glass-panel {
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04), 0 24px 80px rgba(15, 23, 42, 0.5);
+    }
+
+    .futuristic-card {
+        border-radius: 1rem;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.08), 0 18px 45px rgba(15, 23, 42, 0.45);
+    }
+
+    .futuristic-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0 0 1px rgba(129, 140, 248, 0.38), 0 22px 60px rgba(99, 102, 241, 0.2);
+    }
+
+    .glow-ring {
+        box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.22), 0 0 30px rgba(59, 130, 246, 0.2);
+    }
+
+    .text-glow {
+        text-shadow: 0 0 18px rgba(147, 197, 253, 0.5);
+    }
+}
+
+@keyframes floaty {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-8px); }
+}
+
+@keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 0 rgba(59, 130, 246, 0.2), 0 0 18px rgba(59, 130, 246, 0.15); }
+    50% { box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.08), 0 0 36px rgba(96, 165, 250, 0.4); }
+}
+
+@keyframes carouselAtmosphere {
+    0%, 100% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+.carousel-atmosphere {
+    background-image:
+        radial-gradient(circle at 18% 20%, rgba(56, 189, 248, 0.28), transparent 28%),
+        radial-gradient(circle at 82% 30%, rgba(129, 140, 248, 0.28), transparent 30%),
+        linear-gradient(120deg, #172554 0%, #312e81 45%, #164e63 100%);
+    background-size: 160% 160%;
+    animation: carouselAtmosphere 18s ease-in-out infinite alternate;
+}
+
+.carousel-slide {
+    visibility: hidden;
+    opacity: 0;
+    gap: 1.25rem;
+}
+
+.carousel-slide.is-active {
+    visibility: visible;
+    opacity: 1;
+}
+
+@media (max-width: 639px) {
+    #carousel {
+        min-height: 500px;
+    }
+
+    .carousel-slide {
+        padding-left: 3.5rem;
+        padding-right: 3.5rem;
+        padding-top: 4.5rem;
+        padding-bottom: 5rem;
+        gap: 0.75rem;
+    }
+
+    .carousel-quote,
+    .carousel-message {
+        max-width: 15rem;
+        font-size: 1rem;
+        line-height: 1.35;
+    }
+
+    .carousel-label {
+        max-width: 13rem;
+        font-size: 0.68rem;
+        text-align: center;
+    }
+
+    .carousel-reference {
+        max-width: 15rem;
+        font-size: 0.8rem;
+        text-align: center;
+    }
+
+    #carousel-dots {
+        bottom: 1rem;
+    }
+}
+
+.carousel-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: 0.06em;
+}
+
+.carousel-quote,
+.carousel-message {
+    font-size: clamp(1.25rem, 2.4vw, 1.85rem);
+    font-weight: 600;
+    line-height: 1.55;
+    text-wrap: balance;
+}
+
+.carousel-reference {
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.4;
+    color: rgba(224, 231, 255, 0.95);
+}
+
+.floaty {
+    animation: floaty 6s ease-in-out infinite;
+}
+
+.pulse-glow {
+    animation: pulseGlow 2.5s ease-in-out infinite;
+}
+
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.75);
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(99, 102, 241, 0.9), rgba(14, 165, 233, 0.8));
+    border-radius: 9999px;
+}
+
+html[data-theme='dark'] input,
+html[data-theme='dark'] select,
+html[data-theme='dark'] textarea {
+    border-color: rgba(148, 163, 184, 0.32) !important;
+    background-color: rgba(15, 23, 42, 0.92) !important;
+    color: #f8fafc !important;
+}
+
+html[data-theme='dark'] input::placeholder,
+html[data-theme='dark'] textarea::placeholder {
+    color: #94a3b8 !important;
+}
+
+html[data-theme='dark'] .bg-white {
+    background-color: rgba(15, 23, 42, 0.78) !important;
+}
+
+html[data-theme='dark'] .bg-slate-50,
+html[data-theme='dark'] .bg-slate-100 {
+    background-color: rgba(30, 41, 59, 0.72) !important;
+}
+
+html[data-theme='dark'] .text-slate-900,
+html[data-theme='dark'] .text-slate-800,
+html[data-theme='dark'] .text-slate-700 {
+    color: #f1f5f9 !important;
+}
+
+html[data-theme='dark'] .text-slate-600,
+html[data-theme='dark'] .text-slate-500 {
+    color: #cbd5e1 !important;
+}
+
+html[data-theme='dark'] .border-slate-200,
+html[data-theme='dark'] .border-slate-300 {
+    border-color: rgba(148, 163, 184, 0.25) !important;
+}
+
+html[data-theme='dark'] .divide-slate-100 > :not(:last-child) {
+    border-color: rgba(148, 163, 184, 0.18) !important;
+}
+
+html[data-theme='dark'] .hover\:bg-slate-50:hover {
+    background-color: rgba(51, 65, 85, 0.5) !important;
+}
+
+html[data-theme='light'] .bg-slate-950 {
+    background-color: rgba(255, 255, 255, 0.82) !important;
+}
+
+html[data-theme='light'] [class~='bg-slate-950/80'] {
+    background-color: rgba(255, 255, 255, 0.86) !important;
+}
+
+html[data-theme='light'] input,
+html[data-theme='light'] select,
+html[data-theme='light'] textarea {
+    border-color: #cbd5e1 !important;
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+}
+
+html[data-theme='light'] .text-slate-100,
+html[data-theme='light'] .text-slate-200,
+html[data-theme='light'] .text-slate-300 {
+    color: #334155 !important;
+}
+
+.theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    border-radius: 0.75rem;
+    padding: 0.55rem 0.75rem;
+    color: #e2e8f0;
+    background: rgba(255, 255, 255, 0.06);
+    transition: all 0.2s ease;
+}
+
+.theme-toggle:hover {
+    background: rgba(255, 255, 255, 0.14);
+}
+
+.sidebar-closed {
+    transform: translateX(-100%);
+}
+
+.sidebar-open {
+    transform: translateX(0);
+}
+
+@media (min-width: 1024px) {
+    .sidebar-closed {
+        transform: translateX(0);
+    }
+}
+
+html[data-theme='light'] .theme-toggle {
+    color: #334155;
+    background: rgba(255, 255, 255, 0.75);
+}

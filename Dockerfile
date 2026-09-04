@@ -19,9 +19,9 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 COPY composer.json composer.lock ./
+COPY . .
 RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
-COPY . .
 COPY --from=frontend /app/public/build ./public/build
 
 RUN sed -i 's#DocumentRoot /var/www/html#DocumentRoot /var/www/html/public#' /etc/apache2/sites-available/000-default.conf \

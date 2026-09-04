@@ -42,6 +42,11 @@ class ManagementViewsTest extends TestCase
         $this->actingAs($admin)
             ->get('/rapports')
             ->assertOk();
+
+        $this->actingAs($admin)
+            ->get(route('attendances.pdf'))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
     }
 
     public function test_admin_can_assign_a_user_role_and_department(): void

@@ -117,7 +117,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     // Rapports globaux : secrétariat & admin
     Route::middleware('role:admin,secretariat')->group(function () {
         Route::get('/rapports', [AttendanceController::class, 'report'])->name('attendances.report');
-        Route::get('/rapports/export', [AttendanceController::class, 'exportCsv'])->name('attendances.export');
+        Route::get('/rapports/pdf', [AttendanceController::class, 'exportPdf'])->name('attendances.pdf');
     });
 
     /*

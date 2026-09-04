@@ -6,6 +6,7 @@ use App\Models\Attendance;
 use App\Models\Department;
 use App\Models\Event;
 use App\Models\Member;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
 class AttendanceController extends Controller
@@ -145,56 +146,49 @@ class AttendanceController extends Controller
     }
 
     /**
-     * Export CSV du rapport courant.
+     * Génère le rapport PDF avec les mêmes filtres que l'écran de rapport.
      */
-    public function exportCsv(Request $request)
+    public function exportPdf(Request $request)
+    {
+        $query = $this->filteredReportQuery($request);
+        $rows = $query->orderByDesc('events.date')->orderBy('members.name')->get();
+        $summary = $this->reportSummary(clone $query);
+
+        return Pdf::loadView('attendances.pdf', [
+            'rows' => $rows,
+            'summary' => $summary,
+            'filters' => $request->only(['event_id', 'dept', 'status', 'from', 'to']),
+            'generatedAt' => now(),
+        ])->setPaper('a4', 'landscape')->download('rapport-presences-'.now()->format('Y-m-d').'.pdf');
+    }
+
+    protected function filteredReportQuery(Request $request)
     {
         $query = Attendance::query()
             ->join('members', 'members.id', '=', 'attendances.member_id')
             ->join('events', 'events.id', '=', 'attendances.event_id')
-            ->select('events.date', 'events.name as event_name', 'members.dept', 'members.name', 'attendances.status', 'attendances.notes');
+            ->select('attendances.*')
+            ->with(['member', 'event']);
 
-        if ($request->filled('event_id')) {
-            $query->where('attendances.event_id', $request->event_id);
-        }
+        return $query
+            ->when($request->filled('event_id'), fn ($query) => $query->where('attendances.event_id', $request->event_id))
+            ->when($request->filled('dept'), fn ($query) => $query->where('members.dept', $request->dept))
+            ->when($request->filled('status'), fn ($query) => $query->where('attendances.status', $request->status))
+            ->when($request->filled('from'), fn ($query) => $query->where('events.date', '>=', $request->from.' 00:00:00'))
+            ->when($request->filled('to'), fn ($query) => $query->where('events.date', '<=', $request->to.' 23:59:59'));
+    }
 
-        if ($request->filled('dept')) {
-            $query->where('members.dept', $request->dept);
-        }
-
-        if ($request->filled('status')) {
-            $query->where('attendances.status', $request->status);
-        }
-
-        if ($request->filled('from')) {
-            $query->where('events.date', '>=', $request->from.' 00:00:00');
-        }
-
-        if ($request->filled('to')) {
-            $query->where('events.date', '<=', $request->to.' 23:59:59');
-        }
-
-        $filename = 'presences_'.now()->format('Ymd_His').'.csv';
-
-        return response()->streamDownload(function () use ($query) {
-            echo "\xEF\xBB\xBF"; // BOM UTF-8 pour Excel
-            $out = fopen('php://output', 'w');
-            fputcsv($out, ['Date événement', 'Événement', 'Département', 'Membre', 'Statut', 'Notes'], ';');
-
-            $query->orderByDesc('events.date')->chunk(500, function ($rows) use ($out) {
-                foreach ($rows as $row) {
-                    fputcsv($out, [
-                        $row->date?->format('d/m/Y H:i'),
-                        $row->event_name,
-                        $row->dept,
-                        $row->name,
-                        $row->status,
-                        $row->notes,
-                    ], ';');
-                }
-            });
-
-            fclose($out);
-        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+    protected function reportSummary($query)
+    {
+        return $query
+            ->selectRaw('members.dept, COUNT(*) as total,
+                SUM(CASE WHEN attendances.status = \'present\' THEN 1 ELSE 0 END) as present,
+                SUM(CASE WHEN attendances.status = \'late\' THEN 1 ELSE 0 END) as late,
+                SUM(CASE WHEN attendances.status = \'excused\' THEN 1 ELSE 0 END) as excused,
+                SUM(CASE WHEN attendances.status = \'absent\' THEN 1 ELSE 0 END) as absent')
+            ->groupBy('members.dept')
+            ->orderBy('members.dept')
+            ->get()
+            ->each(fn ($row) => $row->rate = $row->total > 0 ? (int) round((($row->present + $row->late) / $row->total) * 100) : 0);
     }
 }

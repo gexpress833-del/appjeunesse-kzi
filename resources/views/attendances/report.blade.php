@@ -43,7 +43,7 @@
     </div>
     <div class="md:col-span-5 flex gap-3">
         <button class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">Filtrer</button>
-        <a href="{{ route('attendances.export', request()->query()) }}" class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500">Exporter CSV</a>
+        <a href="{{ route('attendances.pdf', request()->query()) }}" class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500">Télécharger le rapport PDF</a>
     </div>
 </form>
 

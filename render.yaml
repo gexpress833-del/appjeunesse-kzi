@@ -12,7 +12,7 @@ services:
       - key: APP_DEBUG
         value: "false"
       - key: APP_KEY
-        generateValue: true
+        sync: false
       - key: APP_URL
         value: https://appjeunesse-kzi.onrender.com
       - key: APP_LOCALE
@@ -26,9 +26,9 @@ services:
       - key: DB_SSLMODE
         value: require
       - key: SESSION_DRIVER
-        value: database
+        value: file
       - key: CACHE_STORE
-        value: database
+        value: file
       - key: QUEUE_CONNECTION
         value: database
       - key: FILESYSTEM_DISK

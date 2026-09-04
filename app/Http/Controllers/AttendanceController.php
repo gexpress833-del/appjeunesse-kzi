@@ -11,18 +11,28 @@ use Illuminate\Http\Request;
 
 class AttendanceController extends Controller
 {
+    private const UNASSIGNED_DEPARTMENT = '__none__';
+
     /**
      * Choix de l'événement pour la prise de présence.
-     * Un responsable est automatiquement cantonné à son département.
+     * Un responsable voit les événements globaux et ceux de son département.
      */
     public function pick()
     {
         $user = auth()->user();
 
         return view('attendances.pick', [
-            'upcoming' => Event::upcoming()->take(5)->get(),
-            'past' => Event::past()->take(10)->get(),
-            'dept' => $user->isResponsable() ? $user->dept : null,
+            'upcoming' => Event::query()
+                ->when($user->isResponsable(), fn ($query) => $query->where(fn ($query) => $query
+                    ->whereNull('dept')
+                    ->orWhere('dept', $user->dept)))
+                ->upcoming()->take(5)->get(),
+            'past' => Event::query()
+                ->when($user->isResponsable(), fn ($query) => $query->where(fn ($query) => $query
+                    ->whereNull('dept')
+                    ->orWhere('dept', $user->dept)))
+                ->past()->take(10)->get(),
+            'dept' => $user->isResponsable() ? $user->dept : request('dept'),
             'departments' => $user->isResponsable() ? collect() : Department::orderBy('name')->get(),
         ]);
     }
@@ -33,15 +43,24 @@ class AttendanceController extends Controller
     public function sheet(Request $request, Event $event)
     {
         $user = auth()->user();
-        $dept = $user->isResponsable() ? $user->dept : $request->query('dept', Department::orderBy('name')->value('name'));
 
-        abort_if(blank($dept), 404, 'Aucun département sélectionné.');
+        if ($user->isResponsable() && filled($event->dept) && $event->dept !== $user->dept) {
+            abort(403, 'Vous ne pouvez consulter les présences que de votre département.');
+        }
 
-        if (! $user->isResponsable()) {
+        $dept = $user->isResponsable() ? $user->dept : $this->normalizeDepartment($request->query('dept'));
+
+        abort_if(! $user->isResponsable() && $request->missing('dept'), 422, 'Sélectionnez un groupe de membres.');
+
+        if (! $user->isResponsable() && filled($dept)) {
             abort_unless(Department::where('name', $dept)->exists(), 404, 'Département inconnu.');
         }
 
-        $members = Member::where('dept', $dept)->orderBy('name')->get();
+        $members = Member::query()
+            ->when($dept === null, fn ($query) => $query->whereNull('dept'))
+            ->when(filled($dept), fn ($query) => $query->where('dept', $dept))
+            ->orderBy('name')
+            ->get();
 
         $existing = Attendance::where('event_id', $event->id)
             ->whereIn('member_id', $members->pluck('id'))
@@ -59,19 +78,32 @@ class AttendanceController extends Controller
         $user = auth()->user();
 
         $data = $request->validate([
-            'dept' => ['required', 'string', 'exists:departments,name'],
+            'dept' => ['required', 'string'],
             'statuses' => ['required', 'array'],
             'statuses.*' => ['in:present,absent,late,excused'],
             'notes' => ['nullable', 'array'],
             'notes.*' => ['nullable', 'string', 'max:500'],
         ]);
 
+        $data['dept'] = $this->normalizeDepartment($data['dept']);
+
+        if (filled($data['dept'])) {
+            abort_unless(Department::where('name', $data['dept'])->exists(), 422, 'Département inconnu.');
+        }
+
         // Un responsable ne peut faire l'appel que de son département
         if ($user->isResponsable() && $data['dept'] !== $user->dept) {
             abort(403, 'Vous ne pouvez prendre les présences que pour votre département.');
         }
 
-        $memberIds = Member::where('dept', $data['dept'])->pluck('id');
+        if ($user->isResponsable() && filled($event->dept) && $event->dept !== $user->dept) {
+            abort(403, 'Vous ne pouvez enregistrer des présences que pour les événements de votre département.');
+        }
+
+        $memberIds = Member::query()
+            ->when($data['dept'] === null, fn ($query) => $query->whereNull('dept'))
+            ->when(filled($data['dept']), fn ($query) => $query->where('dept', $data['dept']))
+            ->pluck('id');
 
         foreach ($data['statuses'] as $memberId => $status) {
             $memberId = (int) $memberId;
@@ -86,8 +118,13 @@ class AttendanceController extends Controller
             );
         }
 
-        return redirect()->route('attendances.sheet', ['event' => $event, 'dept' => $data['dept']])
-            ->with('success', 'Présences enregistrées pour le département '.$data['dept'].'.');
+        return redirect()->route('attendances.sheet', ['event' => $event, 'dept' => $data['dept'] ?? self::UNASSIGNED_DEPARTMENT])
+            ->with('success', 'Présences enregistrées pour les membres sans département.');
+    }
+
+    protected function normalizeDepartment(?string $department): ?string
+    {
+        return $department === self::UNASSIGNED_DEPARTMENT ? null : $department;
     }
 
     /**
@@ -95,6 +132,10 @@ class AttendanceController extends Controller
      */
     public function report(Request $request)
     {
+        $user = auth()->user();
+
+        abort_if($user->isResponsable(), 403, 'Le rapport global est réservé à l\'administration et au secrétariat.');
+
         $query = Attendance::query()
             ->join('members', 'members.id', '=', 'attendances.member_id')
             ->join('events', 'events.id', '=', 'attendances.event_id')
@@ -102,7 +143,7 @@ class AttendanceController extends Controller
             ->with(['member', 'event']);
 
         if ($request->filled('event_id')) {
-            $query->where('attendances.event_id', $request->event_id);
+            $query->where('attendances.event_id', (int) $request->event_id);
         }
 
         if ($request->filled('dept')) {
@@ -139,7 +180,11 @@ class AttendanceController extends Controller
         return view('attendances.report', [
             'rows' => $rows,
             'summary' => $summary,
-            'events' => Event::orderByDesc('date')->take(30)->get(),
+            'events' => Event::query()
+                ->when($user->isResponsable(), fn ($query) => $query->where('dept', $user->dept))
+                ->orderByDesc('date')
+                ->take(30)
+                ->get(),
             'departments' => Department::orderBy('name')->get(),
             'filters' => $request->only(['event_id', 'dept', 'status', 'from', 'to']),
         ]);
@@ -150,6 +195,24 @@ class AttendanceController extends Controller
      */
     public function exportPdf(Request $request)
     {
+        $user = auth()->user();
+
+        if ($user->isResponsable()) {
+            $request->merge(['dept' => $user->dept]);
+
+            if ($request->filled('event_id')) {
+                $allowedEventId = Event::query()
+                    ->where(function ($query) use ($user) {
+                        $query->whereNull('dept')
+                            ->orWhere('dept', $user->dept);
+                    })
+                    ->whereKey((int) $request->event_id)
+                    ->exists();
+
+                abort_unless($allowedEventId, 403, 'Vous ne pouvez exporter que les rapports de votre département, y compris sur les événements globaux.');
+            }
+        }
+
         $query = $this->filteredReportQuery($request);
         $rows = $query->orderByDesc('events.date')->orderBy('members.name')->get();
         $summary = $this->reportSummary(clone $query);
@@ -169,6 +232,14 @@ class AttendanceController extends Controller
             ->join('events', 'events.id', '=', 'attendances.event_id')
             ->select('attendances.*')
             ->with(['member', 'event']);
+
+        if (auth()->user()->isResponsable()) {
+            $query->where('members.dept', auth()->user()->dept)
+                ->where(function ($query) {
+                    $query->whereNull('events.dept')
+                        ->orWhere('events.dept', auth()->user()->dept);
+                });
+        }
 
         return $query
             ->when($request->filled('event_id'), fn ($query) => $query->where('attendances.event_id', $request->event_id))

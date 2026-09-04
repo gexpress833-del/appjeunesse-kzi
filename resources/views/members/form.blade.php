@@ -19,15 +19,16 @@
                    class="mt-1 w-full rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
         </div>
         <div>
-            <label class="block text-sm font-medium text-slate-700">Département *</label>
+            <label class="block text-sm font-medium text-slate-700">Département</label>
             @if (auth()->user()->isResponsable())
                 <input value="{{ old('dept', $member->dept ?? auth()->user()->dept) }}" disabled
                        class="mt-1 w-full rounded-xl border-slate-200 bg-slate-50 text-slate-500">
                 <input type="hidden" name="dept" value="{{ auth()->user()->dept }}">
                 <p class="mt-1 text-xs text-slate-400">En tant que responsable, vous gérez uniquement votre département.</p>
             @else
-                <select name="dept" required class="mt-1 w-full rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
+                <select name="dept" class="mt-1 w-full rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
                     <option value="">— Choisir —</option>
+                    <option value="__none__" @selected(old('dept', $member->dept) === '__none__' || old('dept', $member->dept) === null)>Fidèle sans département</option>
                     @foreach ($departments as $dept)
                         <option value="{{ $dept->name }}" @selected(old('dept', $member->dept) === $dept->name)>{{ $dept->name }}</option>
                     @endforeach

@@ -28,7 +28,15 @@
                 @endif
             </div>
         </div>
-        <a href="{{ route('profile.edit') }}" class="inline-flex items-center justify-center rounded-xl border border-cyan-400/40 bg-cyan-500/10 px-4 py-2 text-sm font-semibold text-cyan-200 transition hover:bg-cyan-500/20">Mon profil</a>
+        <div class="flex items-center gap-3">
+            @if ($currentUser->isResponsable() && $currentUser->dept)
+                <div class="rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-3 py-2 text-right">
+                    <div class="text-[10px] uppercase tracking-[0.18em] text-emerald-200/80">Membres</div>
+                    <div class="text-lg font-black text-emerald-300">{{ $departmentMembersCount ?? 0 }}</div>
+                </div>
+            @endif
+            <a href="{{ route('profile.edit') }}" class="inline-flex items-center justify-center rounded-xl border border-cyan-400/40 bg-cyan-500/10 px-4 py-2 text-sm font-semibold text-cyan-200 transition hover:bg-cyan-500/20">Mon profil</a>
+        </div>
     </div>
 
     <section class="mt-6 grid gap-5 xl:grid-cols-[1.35fr_0.65fr]">

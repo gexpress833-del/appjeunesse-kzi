@@ -4,11 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\Department;
 use App\Models\Member;
+use App\Models\User;
+use App\Notifications\MemberAddedToDepartment;
 use App\Services\CloudinaryService;
 use Illuminate\Http\Request;
 
 class MemberController extends Controller
 {
+    private const UNASSIGNED_DEPARTMENT = '__none__';
+
     /**
      * Annuaire consultable par tous les comptes actifs,
      * avec recherche et filtre par département.
@@ -69,7 +73,9 @@ class MemberController extends Controller
         $data = $this->scopeDept($data);
         $data = $this->handlePhoto($request, $cloudinary, $data);
 
-        Member::create($data);
+        $member = Member::create($data);
+
+        $this->notifyDepartmentResponsable($member);
 
         return redirect()->route('members.index')->with('success', 'Membre ajouté au répertoire.');
     }
@@ -89,6 +95,7 @@ class MemberController extends Controller
         $this->authorizeManage($member);
 
         $data = $this->validated($request, $member->id);
+        $data = $this->scopeDept($data);
         $data = $this->handlePhoto($request, $cloudinary, $data);
 
         // Un responsable ne peut pas déplacer un membre hors de son département
@@ -121,9 +128,9 @@ class MemberController extends Controller
             ? ['nullable', 'email', 'max:150', "unique:members,email,{$ignoreId}"]
             : ['nullable', 'email', 'max:150', 'unique:members,email'];
 
-        return $request->validate([
+        $data = $request->validate([
             'name' => ['required', 'string', 'max:150'],
-            'dept' => ['required', 'string', 'exists:departments,name'],
+            'dept' => ['required', 'string'],
             'role' => ['nullable', 'string', 'max:60'],
             'phone' => ['nullable', 'string', 'max:30'],
             'email' => $emailRule,
@@ -132,6 +139,10 @@ class MemberController extends Controller
             'notes' => ['nullable', 'string', 'max:2000'],
             'profile_photo' => ['nullable', 'image', 'max:4096'],
         ]);
+
+        $data['role'] = filled($data['role'] ?? null) ? $data['role'] : 'Fidèle';
+
+        return $data;
     }
 
     /**
@@ -143,6 +154,10 @@ class MemberController extends Controller
 
         if ($user->isResponsable()) {
             $data['dept'] = $user->dept;
+        } elseif ($data['dept'] === self::UNASSIGNED_DEPARTMENT) {
+            $data['dept'] = null;
+        } elseif (! Department::where('name', $data['dept'])->exists()) {
+            abort(422, 'Département inconnu.');
         }
 
         return $data;
@@ -168,5 +183,17 @@ class MemberController extends Controller
             || ($user->isResponsable() && $user->dept === $member->dept);
 
         abort_unless($allowed, 403, 'Vous ne pouvez gérer que les membres de votre département.');
+    }
+
+    protected function notifyDepartmentResponsable(Member $member): void
+    {
+        $responsibles = User::query()
+            ->where('role', 'responsable')
+            ->where('dept', $member->dept)
+            ->get();
+
+        foreach ($responsibles as $responsable) {
+            $responsable->notify(new MemberAddedToDepartment($member, $member->dept));
+        }
     }
 }

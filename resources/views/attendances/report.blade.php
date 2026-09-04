@@ -41,9 +41,11 @@
         <label class="block text-xs font-medium text-slate-500">Au</label>
         <input type="date" name="to" value="{{ request('to') }}" class="mt-1 w-full rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
     </div>
-    <div class="md:col-span-5 flex gap-3">
-        <button class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">Filtrer</button>
-        <a href="{{ route('attendances.pdf', request()->query()) }}" class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500">Télécharger le rapport PDF</a>
+    <div class="md:col-span-5 flex flex-wrap gap-3">
+        <button class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500">Filtrer</button>
+        @if (auth()->user()->isAdmin() || auth()->user()->isSecretariat() || auth()->user()->isResponsable())
+            <a href="{{ route('attendances.pdf', request()->query()) }}" class="rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:from-emerald-500 hover:to-teal-400">Télécharger le rapport PDF</a>
+        @endif
     </div>
 </form>
 
@@ -51,7 +53,7 @@
     <div class="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         @foreach ($summary as $item)
             <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <p class="text-sm font-semibold text-slate-900">{{ $item->dept }}</p>
+                <p class="text-sm font-semibold text-slate-900">{{ $item->dept ?? 'Fidèles sans département' }}</p>
                 <p class="mt-2 text-2xl font-bold text-slate-900">{{ $item->rate }}%</p>
                 <p class="text-xs text-slate-500">{{ $item->present + $item->late }} / {{ $item->total }} présents ou en retard</p>
             </div>
@@ -74,7 +76,7 @@
             @forelse ($rows as $row)
                 <tr>
                     <td class="px-4 py-3 text-slate-700">{{ $row->event->name }}</td>
-                    <td class="px-4 py-3 text-slate-700">{{ $row->member->dept }}</td>
+                    <td class="px-4 py-3 text-slate-700">{{ $row->member->dept ?? 'Sans département' }}</td>
                     <td class="px-4 py-3 font-medium text-slate-900">{{ $row->member->name }}</td>
                     <td class="px-4 py-3">
                         <span class="rounded-full px-2.5 py-1 text-xs font-bold

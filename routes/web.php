@@ -8,6 +8,7 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\MemberController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\SocialVisitController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -50,6 +51,11 @@ Route::middleware(['auth', 'active'])->group(function () {
     // Tableau de bord personnel / global
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/bilan', [DashboardController::class, 'bilan'])->name('dashboard.bilan');
+
+    Route::middleware('auth')->group(function () {
+        Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+        Route::post('/notifications/lire-tout', [NotificationController::class, 'markAllAsRead'])->name('notifications.read.all');
+    });
 
     // Profil personnel
     Route::get('/profil', [AuthController::class, 'profile'])->name('profile.edit');
@@ -94,10 +100,11 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     /*
     |----------------------------------------------------------------------
-    | Événements — création/gestion : secrétariat & admin
+    | Événements — création/gestion : responsable de son département,
+    | secrétariat & admin
     |----------------------------------------------------------------------
     */
-    Route::middleware('role:admin,secretariat')->group(function () {
+    Route::middleware('role:admin,secretariat,responsable')->group(function () {
         Route::get('/evenements/creer', [EventController::class, 'create'])->name('events.create');
         Route::post('/evenements', [EventController::class, 'store'])->name('events.store');
         Route::get('/evenements/{event}/modifier', [EventController::class, 'edit'])->name('events.edit');
@@ -114,9 +121,13 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/presences/{event}', [AttendanceController::class, 'sheet'])->name('attendances.sheet');
     Route::post('/presences/{event}', [AttendanceController::class, 'store'])->name('attendances.store');
 
-    // Rapports globaux : secrétariat & admin
+    // Rapport global : réservé à admin & secrétariat.
     Route::middleware('role:admin,secretariat')->group(function () {
         Route::get('/rapports', [AttendanceController::class, 'report'])->name('attendances.report');
+    });
+
+    // Export PDF de rapport : responsable sur son département uniquement, admin & secrétariat sur tout.
+    Route::middleware('role:admin,secretariat,responsable')->group(function () {
         Route::get('/rapports/pdf', [AttendanceController::class, 'exportPdf'])->name('attendances.pdf');
     });
 

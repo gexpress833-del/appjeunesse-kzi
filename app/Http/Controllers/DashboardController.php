@@ -91,15 +91,20 @@ class DashboardController extends Controller
     {
         $member = $user->member();
 
+        $departmentMembersCount = $user->dept ? Member::where('dept', $user->dept)->count() : 0;
+
         if (! $member) {
             return view('dashboard.personal', [
                 'member' => null,
                 'stats' => [],
                 'visits' => collect(),
                 'recent' => collect(),
-                'upcoming' => Event::upcoming()->take(3)->get(),
+                'upcoming' => Event::query()
+                    ->when($user->isResponsable(), fn ($query) => $query->where('dept', $user->dept))
+                    ->upcoming()->take(3)->get(),
                 'announcements' => HomeContent::whereIn('type', ['verset', 'temoignage', 'event_banner'])
                     ->active()->ordered()->take(4)->get(),
+                'departmentMembersCount' => $departmentMembersCount,
             ]);
         }
 
@@ -124,9 +129,12 @@ class DashboardController extends Controller
             'recent' => Attendance::with('event')
                 ->where('member_id', $member->id)
                 ->latest('id')->take(6)->get(),
-            'upcoming' => Event::upcoming()->take(3)->get(),
+            'upcoming' => Event::query()
+                ->when($user->isResponsable(), fn ($query) => $query->where('dept', $user->dept))
+                ->upcoming()->take(3)->get(),
             'announcements' => HomeContent::whereIn('type', ['verset', 'temoignage', 'event_banner'])
                 ->active()->ordered()->take(4)->get(),
+            'departmentMembersCount' => $departmentMembersCount,
         ]);
     }
 

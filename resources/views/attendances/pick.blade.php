@@ -35,6 +35,7 @@
                     <label class="block text-sm font-medium text-slate-700">Département</label>
                     <select name="dept" class="mt-1 w-full rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
                         <option value="">— Choisir —</option>
+                        <option value="__none__" @selected(request('dept') === '__none__')>Fidèles sans département</option>
                         @foreach ($departments as $department)
                             <option value="{{ $department->name }}" @selected(request('dept') === $department->name)>{{ $department->name }}</option>
                         @endforeach

@@ -6,14 +6,14 @@
 <div class="flex flex-wrap items-center justify-between gap-3">
     <div>
         <h1 class="text-2xl font-bold text-slate-900">Présences — {{ $event->name }}</h1>
-        <p class="mt-1 text-sm text-slate-500">Département : <span class="font-semibold text-slate-700">{{ $dept }}</span> · {{ $event->date->translatedFormat('d/m/Y · H\hi') }}</p>
+        <p class="mt-1 text-sm text-slate-500">Groupe : <span class="font-semibold text-slate-700">{{ $dept ?? 'Fidèles sans département' }}</span> · {{ $event->date->translatedFormat('d/m/Y · H\hi') }}</p>
     </div>
     <a href="{{ route('attendances.pick') }}" class="text-sm font-semibold text-indigo-600 hover:underline">← Retour</a>
 </div>
 
 <form method="POST" action="{{ route('attendances.store', $event) }}" class="mt-6 space-y-4">
     @csrf
-    <input type="hidden" name="dept" value="{{ $dept }}">
+    <input type="hidden" name="dept" value="{{ $dept ?? '__none__' }}">
 
     <div class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
         <table class="w-full text-sm">

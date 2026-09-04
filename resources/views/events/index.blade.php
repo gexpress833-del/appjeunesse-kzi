@@ -5,7 +5,7 @@
 @section('content')
 <div class="flex flex-wrap items-center justify-between gap-3">
     <h1 class="text-2xl font-bold text-slate-900">Événements</h1>
-    @if (auth()->user()->isAdmin() || auth()->user()->isSecretariat())
+    @if (auth()->user()->isAdmin() || auth()->user()->isSecretariat() || auth()->user()->isResponsable())
         <a href="{{ route('events.create') }}" class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">➕ Créer un événement</a>
     @endif
 </div>
@@ -22,6 +22,9 @@
                 <div>
                     <p class="font-semibold text-slate-900">{{ $event->name }}</p>
                     <p class="text-sm text-slate-500">{{ $event->date->translatedFormat('l d F Y') }} · {{ $event->date->format('H\hi') }} · {{ $event->members_count }} présence(s)</p>
+                    <p class="mt-1 text-xs font-semibold uppercase tracking-wide {{ $event->dept ? 'text-indigo-600' : 'text-emerald-600' }}">
+                        {{ $event->dept ? 'Département : '.$event->dept : 'Événement global' }}
+                    </p>
                 </div>
             </div>
             @if (auth()->user()->isAdmin() || auth()->user()->isSecretariat() || auth()->user()->isResponsable())

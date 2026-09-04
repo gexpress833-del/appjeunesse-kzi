@@ -217,7 +217,11 @@ class AttendanceController extends Controller
         $rows = $query->orderByDesc('events.date')->orderBy('members.name')->get();
         $summary = $this->reportSummary(clone $query);
 
-        return Pdf::loadView('attendances.pdf', [
+        return Pdf::setOption([
+            'tempDir' => sys_get_temp_dir(),
+            'fontDir' => sys_get_temp_dir(),
+            'fontCache' => sys_get_temp_dir(),
+        ])->loadView('attendances.pdf', [
             'rows' => $rows,
             'summary' => $summary,
             'filters' => $request->only(['event_id', 'dept', 'status', 'from', 'to']),

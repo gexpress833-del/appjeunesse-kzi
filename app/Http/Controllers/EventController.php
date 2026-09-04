@@ -37,6 +37,8 @@ class EventController extends Controller
 
     public function create()
     {
+        abort_if(auth()->user()->isResponsable() && blank(auth()->user()->dept), 403, 'Votre compte responsable doit être rattaché à un département.');
+
         return view('events.form', [
             'event' => new Event([
                 'date' => now()->next('sunday')->setTime(9, 0),
@@ -51,6 +53,7 @@ class EventController extends Controller
         $user = auth()->user();
 
         if ($user->isResponsable()) {
+            abort_if(blank($user->dept), 403, 'Votre compte responsable doit être rattaché à un département.');
             $data['dept'] = $user->dept;
         }
 

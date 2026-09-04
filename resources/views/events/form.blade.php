@@ -5,6 +5,13 @@
 @section('content')
 <h1 class="text-2xl font-bold text-slate-900">{{ $event->exists ? 'Modifier : '.$event->name : 'Créer un événement' }}</h1>
 
+@if (auth()->user()->isResponsable())
+    <div class="mt-4 max-w-2xl rounded-2xl border border-indigo-200 bg-indigo-50 p-4 text-sm text-indigo-900">
+        <p class="font-bold">Événement réservé à votre département</p>
+        <p class="mt-1">Cet événement sera automatiquement rattaché au département <strong>{{ auth()->user()->dept }}</strong> et ne sera visible que par ses membres et responsables.</p>
+    </div>
+@endif
+
 <form method="POST"
       action="{{ $event->exists ? route('events.update', $event) : route('events.store') }}"
       enctype="multipart/form-data"

@@ -62,13 +62,36 @@
                     </td>
                     <td class="px-4 py-3 text-slate-600">{{ $userItem->dept ?? '—' }}</td>
                     <td class="px-4 py-3">
-                        @if ($userItem->status === 'pending')
-                            <form method="POST" action="{{ route('users.validate', $userItem) }}">
-                                @csrf
-                                @method('PATCH')
-                                <button class="text-sm font-semibold text-emerald-600 hover:underline">Valider</button>
-                            </form>
-                        @endif
+                        <div class="flex min-w-64 flex-col gap-2">
+                            @if ($userItem->status === 'pending')
+                                <form method="POST" action="{{ route('users.validate', $userItem) }}">
+                                    @csrf
+                                    @method('PATCH')
+                                    <button class="text-sm font-semibold text-emerald-600 hover:underline">Valider le compte</button>
+                                </form>
+                            @endif
+
+                            @if (! $userItem->isPrimaryAdmin() || auth()->id() === $userItem->id)
+                                <form method="POST" action="{{ route('users.role', $userItem) }}" class="flex flex-col gap-2">
+                                    @csrf
+                                    @method('PATCH')
+                                    <select name="role" class="w-full rounded-lg border-slate-300 py-1.5 text-xs focus:border-indigo-500 focus:ring-indigo-500">
+                                        @foreach (['admin' => 'Admin', 'secretariat' => 'Secrétariat', 'responsable' => 'Responsable', 'user' => 'Membre'] as $roleValue => $roleLabel)
+                                            <option value="{{ $roleValue }}" @selected($userItem->role === $roleValue)>{{ $roleLabel }}</option>
+                                        @endforeach
+                                    </select>
+                                    <select name="dept" class="w-full rounded-lg border-slate-300 py-1.5 text-xs focus:border-indigo-500 focus:ring-indigo-500">
+                                        <option value="">Département inchangé</option>
+                                        @foreach ($departments as $department)
+                                            <option value="{{ $department->name }}" @selected($userItem->dept === $department->name)>{{ $department->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <button class="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500">Enregistrer le rôle</button>
+                                </form>
+                            @else
+                                <span class="text-xs text-slate-400">Administrateur principal protégé</span>
+                            @endif
+                        </div>
                     </td>
                 </tr>
             @empty

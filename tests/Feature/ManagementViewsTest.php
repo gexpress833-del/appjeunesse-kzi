@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Department;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -41,5 +42,33 @@ class ManagementViewsTest extends TestCase
         $this->actingAs($admin)
             ->get('/rapports')
             ->assertOk();
+    }
+
+    public function test_admin_can_assign_a_user_role_and_department(): void
+    {
+        Department::create(['name' => 'Social']);
+
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'status' => 'active',
+        ]);
+        $user = User::factory()->create([
+            'role' => 'user',
+            'status' => 'pending',
+        ]);
+
+        $this->actingAs($admin)
+            ->patch(route('users.role', $user), [
+                'role' => 'responsable',
+                'dept' => 'Social',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'role' => 'responsable',
+            'dept' => 'Social',
+        ]);
     }
 }

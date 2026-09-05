@@ -51,7 +51,9 @@
 
             @if ($u->isAdmin() || $u->isSecretariat() || $u->isResponsable())
                 <p class="px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Gestion</p>
-                <a href="{{ route('members.create') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-slate-300 transition-all hover:bg-white/5 hover:text-white"><span>➕</span> Nouveau membre</a>
+                @if ($u->isAdmin() || $u->isSecretariat())
+                    <a href="{{ route('members.create') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-slate-300 transition-all hover:bg-white/5 hover:text-white"><span>➕</span> Nouveau membre</a>
+                @endif
                 <a href="{{ route('attendances.pick') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all {{ request()->routeIs('attendances.*') ? 'bg-gradient-to-r from-indigo-600/80 to-cyan-500/70 font-semibold text-white shadow-lg shadow-indigo-500/20' : 'text-slate-300 hover:bg-white/5 hover:text-white' }}"><span>✅</span> Présences</a>
                 @if ($unreadNotificationsCount > 0)
                     <a href="{{ route('notifications.index') }}" class="flex items-center justify-between gap-3 rounded-xl border border-amber-400/30 bg-amber-500/10 px-3 py-2.5 text-amber-100 transition-all hover:bg-amber-500/20">

@@ -7,7 +7,7 @@
     <h1 class="text-2xl font-bold text-slate-900">Annuaire des membres</h1>
     @canany(['admin'], auth()->user())
     @endcanany
-    @if (auth()->user()->isAdmin() || auth()->user()->isSecretariat() || auth()->user()->isResponsable())
+    @if (auth()->user()->isAdmin() || auth()->user()->isSecretariat())
         <a href="{{ route('members.create') }}" class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">➕ Ajouter un membre</a>
     @endif
 </div>
@@ -61,7 +61,7 @@
                     <td class="px-4 py-3 text-slate-500">{{ $member->phone ?? '—' }}</td>
                     <td class="px-4 py-3 text-slate-500">{{ $member->email ?? '—' }}</td>
                     <td class="px-4 py-3 text-right">
-                        @if (auth()->user()->isAdmin() || auth()->user()->isSecretariat() || (auth()->user()->isResponsable() && auth()->user()->dept === $member->dept))
+                        @if (auth()->user()->isAdmin() || auth()->user()->isSecretariat())
                             <a href="{{ route('members.edit', $member) }}" class="text-indigo-600 hover:underline">Modifier</a>
                         @endif
                     </td>

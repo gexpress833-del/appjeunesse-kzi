@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Attendance;
 use App\Models\Department;
 use App\Models\Member;
 use App\Models\User;
@@ -20,6 +21,8 @@ class MemberController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
+
+        abort_if($user->isResponsable() && blank($user->dept), 403, 'Votre compte responsable doit être rattaché à un département.');
 
         $members = Member::query()
             ->with('department')
@@ -43,6 +46,10 @@ class MemberController extends Controller
 
     public function show(Member $member)
     {
+        $user = auth()->user();
+
+        abort_if($user->isResponsable() && $member->dept !== $user->dept, 403, 'Vous ne pouvez consulter que les membres de votre département.');
+
         $attendances = Attendance::with('event')
             ->where('member_id', $member->id)
             ->latest('id')->take(10)->get();
@@ -179,14 +186,17 @@ class MemberController extends Controller
     {
         $user = auth()->user();
 
-        $allowed = $user->isAdmin() || $user->isSecretariat()
-            || ($user->isResponsable() && $user->dept === $member->dept);
+        $allowed = $user->isAdmin() || $user->isSecretariat();
 
-        abort_unless($allowed, 403, 'Vous ne pouvez gérer que les membres de votre département.');
+        abort_unless($allowed, 403, 'Secrétariat ou administration uniquement.');
     }
 
     protected function notifyDepartmentResponsable(Member $member): void
     {
+        if (blank($member->dept)) {
+            return;
+        }
+
         $responsibles = User::query()
             ->where('role', 'responsable')
             ->where('dept', $member->dept)

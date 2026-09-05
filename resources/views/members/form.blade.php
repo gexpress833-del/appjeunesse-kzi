@@ -83,7 +83,7 @@
     </div>
 </form>
 
-@if ($member->exists && (auth()->user()->isAdmin() || auth()->user()->isSecretariat() || (auth()->user()->isResponsable() && auth()->user()->dept === $member->dept)))
+@if ($member->exists && (auth()->user()->isAdmin() || auth()->user()->isSecretariat()))
     <form method="POST" action="{{ route('members.destroy', $member) }}" class="mt-4"
           onsubmit="return confirm('Supprimer définitivement {{ $member->name }} du répertoire ?')">
         @csrf @method('DELETE')

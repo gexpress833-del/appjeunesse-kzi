@@ -21,6 +21,8 @@ class AttendanceController extends Controller
     {
         $user = auth()->user();
 
+        abort_if($user->isResponsable() && blank($user->dept), 403, 'Votre compte responsable doit être rattaché à un département.');
+
         return view('attendances.pick', [
             'upcoming' => Event::query()
                 ->when($user->isResponsable(), fn ($query) => $query->where(fn ($query) => $query
@@ -43,6 +45,9 @@ class AttendanceController extends Controller
     public function sheet(Request $request, Event $event)
     {
         $user = auth()->user();
+
+        abort_if($user->isResponsable() && blank($user->dept), 403, 'Votre compte responsable doit être rattaché à un département.');
+        abort_if($user->isResponsable() && $request->query('dept') === self::UNASSIGNED_DEPARTMENT, 403, 'Un responsable ne peut pas enregistrer les présences des membres sans département.');
 
         if ($user->isResponsable() && filled($event->dept) && $event->dept !== $user->dept) {
             abort(403, 'Vous ne pouvez consulter les présences que de votre département.');
@@ -92,7 +97,7 @@ class AttendanceController extends Controller
         }
 
         // Un responsable ne peut faire l'appel que de son département
-        if ($user->isResponsable() && $data['dept'] !== $user->dept) {
+        if ($user->isResponsable() && (blank($user->dept) || blank($data['dept']) || $data['dept'] !== $user->dept)) {
             abort(403, 'Vous ne pouvez prendre les présences que pour votre département.');
         }
 
@@ -119,7 +124,7 @@ class AttendanceController extends Controller
         }
 
         return redirect()->route('attendances.sheet', ['event' => $event, 'dept' => $data['dept'] ?? self::UNASSIGNED_DEPARTMENT])
-            ->with('success', 'Présences enregistrées pour les membres sans département.');
+            ->with('success', 'Présences enregistrées.');
     }
 
     protected function normalizeDepartment(?string $department): ?string

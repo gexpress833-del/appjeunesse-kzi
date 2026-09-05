@@ -148,10 +148,37 @@ class ManagementViewsTest extends TestCase
             'dept' => 'Social',
             'role' => 'Membre',
         ]);
+        $unassignedMember = Member::create([
+            'name' => 'Membre sans département',
+            'dept' => null,
+            'role' => 'Fidèle',
+        ]);
+
+        $this->actingAs($responsable)
+            ->get(route('members.create'))
+            ->assertForbidden();
+
+        $this->actingAs($responsable)
+            ->post(route('members.store'), [
+                'name' => 'Tentative responsable',
+                'dept' => 'Social',
+            ])
+            ->assertForbidden();
 
         $this->actingAs($responsable)
             ->get(route('attendances.sheet', $event))
             ->assertOk();
+
+        $this->actingAs($responsable)
+            ->get(route('attendances.sheet', ['event' => $event, 'dept' => '__none__']))
+            ->assertForbidden();
+
+        $this->actingAs($responsable)
+            ->post(route('attendances.store', $event), [
+                'dept' => '__none__',
+                'statuses' => [$unassignedMember->id => 'present'],
+            ])
+            ->assertForbidden();
 
         $this->actingAs($responsable)
             ->post(route('attendances.store', $event), [

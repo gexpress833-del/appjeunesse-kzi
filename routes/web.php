@@ -87,10 +87,10 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     /*
     |----------------------------------------------------------------------
-    | Gestion des membres — responsable (son département), secrétariat, admin
+    | Gestion des membres — secrétariat et admin
     |----------------------------------------------------------------------
     */
-    Route::middleware('role:admin,secretariat,responsable')->group(function () {
+    Route::middleware('role:admin,secretariat')->group(function () {
         Route::get('/membres/creer', [MemberController::class, 'create'])->name('members.create');
         Route::post('/membres', [MemberController::class, 'store'])->name('members.store');
         Route::get('/membres/{member}/modifier', [MemberController::class, 'edit'])->name('members.edit');

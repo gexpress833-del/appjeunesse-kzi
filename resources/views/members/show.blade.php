@@ -19,7 +19,7 @@
             </p>
         </div>
     </div>
-    @if (auth()->user()->isAdmin() || auth()->user()->isSecretariat() || (auth()->user()->isResponsable() && auth()->user()->dept === $member->dept))
+    @if (auth()->user()->isAdmin() || auth()->user()->isSecretariat())
         <a href="{{ route('members.edit', $member) }}" class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">Modifier la fiche</a>
     @endif
 </div>

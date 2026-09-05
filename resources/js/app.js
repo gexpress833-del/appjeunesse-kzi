@@ -6,21 +6,42 @@ document.documentElement.dataset.theme = storedTheme || preferredTheme;
 
 let deferredInstallPrompt;
 
+const isInstalledApp = () => window.matchMedia('(display-mode: standalone)').matches
+	|| window.navigator.standalone === true;
+
+const hideInstallButtons = () => {
+	document.querySelectorAll('[data-app-install]').forEach((button) => button.setAttribute('hidden', 'hidden'));
+};
+
+if (isInstalledApp()) {
+	hideInstallButtons();
+}
+
 const showInstallPrompt = () => {
 	const installButtons = document.querySelectorAll('[data-app-install]');
 
-	if (!installButtons.length || !deferredInstallPrompt) {
+	if (!installButtons.length || isInstalledApp()) {
 		return;
 	}
 
 	installButtons.forEach((installButton) => {
 		installButton.hidden = false;
+
+		if (installButton.dataset.installBound === 'true') {
+			return;
+		}
+
+		installButton.dataset.installBound = 'true';
 		installButton.addEventListener('click', async () => {
+			if (!deferredInstallPrompt) {
+				window.alert('Pour installer l’application, ouvrez le menu de votre navigateur puis choisissez « Ajouter à l’écran d’accueil ».');
+				return;
+			}
+
 			deferredInstallPrompt.prompt();
 			await deferredInstallPrompt.userChoice;
 			deferredInstallPrompt = null;
-			installButtons.forEach((button) => { button.hidden = true; });
-		}, { once: true });
+		});
 	});
 };
 
@@ -36,7 +57,7 @@ window.addEventListener('beforeinstallprompt', (event) => {
 
 window.addEventListener('appinstalled', () => {
 	deferredInstallPrompt = null;
-	document.querySelectorAll('[data-app-install]').forEach((button) => button.setAttribute('hidden', 'hidden'));
+	hideInstallButtons();
 });
 
 document.querySelectorAll('[data-theme-toggle]').forEach((toggle) => {

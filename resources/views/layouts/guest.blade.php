@@ -32,6 +32,10 @@
                 <span data-theme-icon aria-hidden="true">☀</span>
                 <span data-theme-label class="hidden sm:inline">Clair</span>
             </button>
+            <button type="button" data-app-install class="app-install-button shrink-0 px-2.5 py-2 sm:px-3" aria-label="Installer l’application">
+                <span aria-hidden="true">＋</span>
+                <span class="hidden sm:inline">Installer l’app</span>
+            </button>
             <nav class="flex shrink-0 items-center gap-1 text-xs sm:gap-2 sm:text-sm">
                 @auth
                     <a href="{{ route('dashboard') }}" class="whitespace-nowrap rounded-xl bg-indigo-500/20 px-3 py-2 font-semibold text-indigo-100 transition hover:bg-indigo-500/35 sm:px-4">Mon espace</a>

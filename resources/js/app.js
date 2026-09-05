@@ -4,6 +4,41 @@ const preferredTheme = window.matchMedia('(prefers-color-scheme: light)').matche
 
 document.documentElement.dataset.theme = storedTheme || preferredTheme;
 
+let deferredInstallPrompt;
+
+const showInstallPrompt = () => {
+	const installButtons = document.querySelectorAll('[data-app-install]');
+
+	if (!installButtons.length || !deferredInstallPrompt) {
+		return;
+	}
+
+	installButtons.forEach((installButton) => {
+		installButton.hidden = false;
+		installButton.addEventListener('click', async () => {
+			deferredInstallPrompt.prompt();
+			await deferredInstallPrompt.userChoice;
+			deferredInstallPrompt = null;
+			installButtons.forEach((button) => { button.hidden = true; });
+		}, { once: true });
+	});
+};
+
+if ('serviceWorker' in navigator) {
+	window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+}
+
+window.addEventListener('beforeinstallprompt', (event) => {
+	event.preventDefault();
+	deferredInstallPrompt = event;
+	showInstallPrompt();
+});
+
+window.addEventListener('appinstalled', () => {
+	deferredInstallPrompt = null;
+	document.querySelectorAll('[data-app-install]').forEach((button) => button.setAttribute('hidden', 'hidden'));
+});
+
 document.querySelectorAll('[data-theme-toggle]').forEach((toggle) => {
 	const updateLabel = () => {
 		const isLight = document.documentElement.dataset.theme === 'light';
@@ -40,6 +75,8 @@ document.querySelectorAll('[data-theme-toggle]').forEach((toggle) => {
 
 	updateLabel();
 });
+
+showInstallPrompt();
 
 document.querySelectorAll('[data-password-toggle]').forEach((toggle) => {
 

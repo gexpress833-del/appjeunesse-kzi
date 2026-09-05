@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'appjeunesse-kzi') — La Parole Éternelle Kolwezi</title>
     <link rel="icon" type="image/jpeg" href="{{ asset('logoEglise.jpg') }}">
+    <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
+    <meta name="theme-color" content="#07111f">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="{{ asset('logoEglise.jpg') }}">
     <script>
         document.documentElement.dataset.theme = localStorage.getItem('appjeunesse-theme') || 'dark';
     </script>

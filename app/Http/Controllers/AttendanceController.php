@@ -168,6 +168,7 @@ class AttendanceController extends Controller
         $summaryQuery = clone $query;
         $summary = (clone $summaryQuery)
             ->reorder()
+            ->select([])
             ->selectRaw('members.dept, COUNT(*) as total,
                 SUM(CASE WHEN attendances.status = \'present\' THEN 1 ELSE 0 END) as present,
                 SUM(CASE WHEN attendances.status = \'late\' THEN 1 ELSE 0 END) as late,
@@ -258,6 +259,7 @@ class AttendanceController extends Controller
     {
         return $query
             ->reorder()
+            ->select([])
             ->selectRaw('members.dept, COUNT(*) as total,
                 SUM(CASE WHEN attendances.status = \'present\' THEN 1 ELSE 0 END) as present,
                 SUM(CASE WHEN attendances.status = \'late\' THEN 1 ELSE 0 END) as late,

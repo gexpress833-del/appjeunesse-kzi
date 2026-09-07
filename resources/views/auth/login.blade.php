@@ -43,6 +43,8 @@
             <button class="w-full rounded-xl bg-indigo-600 py-3 font-semibold text-white hover:bg-indigo-500">Se connecter</button>
         </form>
 
+        <a href="{{ route('password.request') }}" class="mt-4 block text-center text-sm font-semibold text-indigo-600 hover:underline">Mot de passe oublié ?</a>
+
         <p class="mt-6 text-center text-sm text-slate-500">
             Pas encore de compte ?
             <a href="{{ route('register') }}" class="font-semibold text-indigo-600 hover:underline">Inscrivez-vous</a>

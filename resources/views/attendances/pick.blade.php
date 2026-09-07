@@ -23,7 +23,12 @@
                         <p class="font-semibold text-slate-900">{{ $event->name }}</p>
                         <p class="text-sm text-slate-500">{{ $event->date->translatedFormat('d/m/Y · H\hi') }}</p>
                     </div>
-                    <a href="{{ route('attendances.sheet', ['event' => $event, 'dept' => $dept ?? request('dept')]) }}" class="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500">Ouvrir</a>
+                    <div class="flex flex-wrap items-center justify-end gap-2">
+                        <a href="{{ route('attendances.sheet', ['event' => $event, 'dept' => $dept ?? request('dept')]) }}" class="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500">Ouvrir</a>
+                        @if (auth()->user()->isResponsable())
+                            <a href="{{ route('attendances.pdf', ['event_id' => $event->id]) }}" class="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-500">PDF</a>
+                        @endif
+                    </div>
                 </div>
             @empty
                 <p class="text-sm text-slate-500">Aucun événement à venir.</p>

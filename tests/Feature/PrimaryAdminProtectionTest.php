@@ -6,6 +6,7 @@ use App\Models\User;
 use Database\Seeders\AdminUserSeeder;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class PrimaryAdminProtectionTest extends TestCase
@@ -100,5 +101,34 @@ class PrimaryAdminProtectionTest extends TestCase
             'notifiable_type' => User::class,
         ]);
         $this->assertTrue($member->fresh()->unreadNotifications->isNotEmpty());
+    }
+
+    public function test_validating_an_account_sends_a_brevo_email_when_configured(): void
+    {
+        config([
+            'services.brevo.api_key' => 'test-brevo-key',
+            'services.brevo.sender_email' => 'noreply@example.com',
+            'services.brevo.sender_name' => 'appjeunesse-kzi',
+        ]);
+        Http::fake(['https://api.brevo.com/v3/smtp/email' => Http::response(['messageId' => 'test-message'], 201)]);
+
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'status' => 'active',
+        ]);
+        $member = User::factory()->create([
+            'role' => 'user',
+            'status' => 'pending',
+            'email' => 'member@example.com',
+        ]);
+
+        $this->actingAs($admin)->patch(route('users.validate', $member));
+
+        Http::assertSent(function ($request) use ($member): bool {
+            return $request->url() === 'https://api.brevo.com/v3/smtp/email'
+                && $request->header('api-key')[0] === 'test-brevo-key'
+                && data_get($request->data(), 'to.0.email') === $member->email
+                && data_get($request->data(), 'subject') === 'Votre compte appjeunesse-kzi est validé';
+        });
     }
 }

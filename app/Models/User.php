@@ -3,8 +3,11 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Notifications\PasswordResetRequested;
 use Database\Factories\UserFactory;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Auth\Passwords\CanResetPassword;
+use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -30,10 +33,10 @@ use Illuminate\Notifications\Notifiable;
     'is_primary_admin',
 ])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable
+class User extends Authenticatable implements CanResetPasswordContract
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use CanResetPassword, HasFactory, Notifiable;
 
     /**
      * Get the attributes that should be cast.
@@ -100,6 +103,11 @@ class User extends Authenticatable
     public function member(): ?Member
     {
         return Member::where('email', $this->email)->first();
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new PasswordResetRequested($token));
     }
 
     public function isSocialResponsable(): bool

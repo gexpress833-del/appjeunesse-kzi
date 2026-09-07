@@ -122,4 +122,41 @@ class GalleryMediaAccessTest extends TestCase
         $this->assertDatabaseHas('photos', ['cloudinary_public_id' => 'gallery-one', 'event_id' => $event->id]);
         $this->assertDatabaseHas('photos', ['cloudinary_public_id' => 'gallery-two', 'event_id' => $event->id]);
     }
+
+    public function test_media_manager_can_publish_fifty_photos_for_one_event(): void
+    {
+        $manager = User::factory()->create([
+            'role' => 'responsable',
+            'status' => 'active',
+            'dept' => 'Médias/DCC',
+        ]);
+        $event = Event::create([
+            'name' => 'Album des cinquante photos',
+            'date' => now()->addDay(),
+            'created_by' => $manager->username,
+        ]);
+
+        $this->mock(CloudinaryService::class, function ($mock): void {
+            $mock->shouldReceive('isConfigured')->once()->andReturnTrue();
+            $mock->shouldReceive('upload')->times(50)->andReturnUsing(
+                fn (UploadedFile $file): array => [
+                    'url' => 'https://example.com/'.$file->getClientOriginalName(),
+                    'public_id' => 'gallery-'.$file->getClientOriginalName(),
+                ],
+            );
+        });
+
+        $this->actingAs($manager)
+            ->post(route('gallery.store'), [
+                'photos' => array_map(
+                    fn (int $index): UploadedFile => UploadedFile::fake()->image('photo-'.$index.'.jpg'),
+                    range(1, 50),
+                ),
+                'event_id' => $event->id,
+            ])
+            ->assertRedirect(route('gallery.index'))
+            ->assertSessionHas('success', '50 photo(s) publiée(s) pour l\'événement "Album des cinquante photos".');
+
+        $this->assertDatabaseCount('photos', 50);
+    }
 }

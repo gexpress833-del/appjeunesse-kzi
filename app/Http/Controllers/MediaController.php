@@ -69,7 +69,7 @@ class MediaController extends Controller
         $this->authorizeMedia();
 
         $data = $request->validate([
-            'photos' => ['required', 'array', 'min:1', 'max:20'],
+            'photos' => ['required', 'array', 'min:1', 'max:50'],
             'photos.*' => ['image', 'max:8192'],
             'title' => ['nullable', 'string', 'max:150'],
             'description' => ['nullable', 'string', 'max:2000'],

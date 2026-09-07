@@ -43,7 +43,12 @@
             <button class="w-full rounded-xl bg-indigo-600 py-3 font-semibold text-white hover:bg-indigo-500">Se connecter</button>
         </form>
 
-        <a href="{{ route('password.request') }}" class="mt-4 block text-center text-sm font-semibold text-indigo-600 hover:underline">Mot de passe oublié ?</a>
+        <div class="mt-5 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-center">
+            <p class="text-xs text-slate-600">Vous ne vous souvenez plus de votre mot de passe ?</p>
+            <a href="{{ route('password.request') }}" class="mt-1 inline-block text-sm font-bold text-indigo-700 hover:text-indigo-900 hover:underline">
+                Réinitialiser mon mot de passe
+            </a>
+        </div>
 
         <p class="mt-6 text-center text-sm text-slate-500">
             Pas encore de compte ?

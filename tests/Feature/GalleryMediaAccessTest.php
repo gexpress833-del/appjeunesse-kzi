@@ -5,7 +5,9 @@ namespace Tests\Feature;
 use App\Models\Event;
 use App\Models\Photo;
 use App\Models\User;
+use App\Services\CloudinaryService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
 class GalleryMediaAccessTest extends TestCase
@@ -81,5 +83,43 @@ class GalleryMediaAccessTest extends TestCase
                 'description' => 'Test',
             ])
             ->assertSessionHasErrors(['event_id']);
+    }
+
+    public function test_media_manager_can_publish_multiple_photos_for_one_event(): void
+    {
+        $manager = User::factory()->create([
+            'role' => 'responsable',
+            'status' => 'active',
+            'dept' => 'Médias/DCC',
+        ]);
+        $event = Event::create([
+            'name' => 'Culte photo',
+            'date' => now()->addDay(),
+            'created_by' => $manager->username,
+        ]);
+
+        $this->mock(CloudinaryService::class, function ($mock): void {
+            $mock->shouldReceive('isConfigured')->once()->andReturnTrue();
+            $mock->shouldReceive('upload')->twice()->andReturn(
+                ['url' => 'https://example.com/one.jpg', 'public_id' => 'gallery-one'],
+                ['url' => 'https://example.com/two.jpg', 'public_id' => 'gallery-two'],
+            );
+        });
+
+        $this->actingAs($manager)
+            ->post(route('gallery.store'), [
+                'photos' => [
+                    UploadedFile::fake()->image('one.jpg'),
+                    UploadedFile::fake()->image('two.jpg'),
+                ],
+                'title' => 'Culte en images',
+                'event_id' => $event->id,
+            ])
+            ->assertRedirect(route('gallery.index'))
+            ->assertSessionHas('success', '2 photo(s) publiée(s) pour l\'événement "Culte photo".');
+
+        $this->assertDatabaseCount('photos', 2);
+        $this->assertDatabaseHas('photos', ['cloudinary_public_id' => 'gallery-one', 'event_id' => $event->id]);
+        $this->assertDatabaseHas('photos', ['cloudinary_public_id' => 'gallery-two', 'event_id' => $event->id]);
     }
 }

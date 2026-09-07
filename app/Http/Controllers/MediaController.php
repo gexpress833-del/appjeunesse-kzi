@@ -9,6 +9,7 @@ use App\Services\CloudinaryService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Str;
+use Throwable;
 use ZipArchive;
 
 class MediaController extends Controller
@@ -81,29 +82,46 @@ class MediaController extends Controller
 
         $event = Event::findOrFail($data['event_id']);
         $count = 0;
+        $failed = 0;
 
-        foreach ($request->file('photos', []) as $file) {
+        foreach ($data['photos'] as $file) {
             if (! $file->isValid()) {
+                $failed++;
+
                 continue;
             }
 
-            $uploaded = $cloudinary->upload($file, 'appjeune-kzi/gallery');
+            try {
+                $uploaded = $cloudinary->upload($file, 'appjeune-kzi/gallery');
 
-            Photo::create([
-                'title' => $data['title'] ?? $event->name,
-                'description' => $data['description'] ?? null,
-                'image_url' => $uploaded['url'],
-                'cloudinary_public_id' => $uploaded['public_id'],
-                'event_id' => $event->id,
-                'event_name' => $event->name,
-                'uploaded_by' => auth()->user()->username,
-            ]);
+                Photo::create([
+                    'title' => $data['title'] ?? $event->name,
+                    'description' => $data['description'] ?? null,
+                    'image_url' => $uploaded['url'],
+                    'cloudinary_public_id' => $uploaded['public_id'],
+                    'event_id' => $event->id,
+                    'event_name' => $event->name,
+                    'uploaded_by' => auth()->user()->username,
+                ]);
 
-            $count++;
+                $count++;
+            } catch (Throwable) {
+                $failed++;
+            }
+        }
+
+        if ($count === 0) {
+            return back()->withErrors(['photos' => 'Aucune photo n’a pu être publiée. Vérifiez les fichiers et la configuration Cloudinary.']);
+        }
+
+        $message = $count.' photo(s) publiée(s) pour l\'événement "'.$event->name.'".';
+
+        if ($failed > 0) {
+            $message .= ' '.$failed.' photo(s) n\'ont pas pu être publiées.';
         }
 
         return redirect()->route('gallery.index')
-            ->with('success', $count.' photo(s) publiée(s) pour l\'événement \"'.$event->name.'\".');
+            ->with('success', $message);
     }
 
     public function downloadSelected(Request $request)

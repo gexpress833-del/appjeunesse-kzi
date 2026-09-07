@@ -358,6 +358,46 @@ html[data-theme='light'] .theme-toggle:hover {
 }
 
 @media (max-width: 639px) {
+    .guest-header-inner {
+        align-items: center;
+        display: grid;
+        gap: 0.75rem;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .guest-brand {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .guest-header-actions {
+        display: grid;
+        gap: 0.5rem;
+        grid-template-columns: auto minmax(0, 1fr);
+        width: 100%;
+    }
+
+    .guest-header-actions nav {
+        grid-column: 1 / -1;
+        justify-content: stretch;
+        width: 100%;
+    }
+
+    .guest-header-actions nav a {
+        flex: 1 1 0;
+        min-width: 0;
+        text-align: center;
+    }
+
+    .guest-header-actions .theme-toggle {
+        min-width: 3rem;
+    }
+
+    .guest-header-actions .app-install-button {
+        min-width: 0;
+        width: 100%;
+    }
+
     .app-install-button {
         font-size: 0.7rem;
         padding-left: 0.6rem;

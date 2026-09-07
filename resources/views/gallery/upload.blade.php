@@ -11,6 +11,7 @@
 
     <div>
         <label class="block text-sm font-medium text-slate-700">Photos *</label>
+        <p class="mt-1 text-xs text-slate-500">Sélectionnez jusqu’à 20 images. Elles seront toutes publiées pour le même événement.</p>
         <input id="gallery-upload-input" type="file" name="photos[]" multiple accept="image/*"
                class="mt-1 block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-indigo-700 hover:file:bg-indigo-100" required>
         <div id="gallery-upload-preview" class="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4"></div>
@@ -49,7 +50,13 @@
         input.addEventListener('change', function () {
             preview.innerHTML = '';
 
-            Array.from(this.files || []).forEach((file) => {
+            const files = Array.from(this.files || []);
+            const summary = document.createElement('p');
+            summary.className = 'col-span-full text-xs font-semibold text-indigo-600';
+            summary.textContent = files.length + ' image(s) sélectionnée(s)';
+            preview.appendChild(summary);
+
+            files.forEach((file) => {
                 if (!file.type.startsWith('image/')) {
                     return;
                 }

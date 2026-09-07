@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Department;
 use App\Models\User;
+use App\Notifications\AccountValidated;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -62,6 +63,7 @@ class UserController extends Controller
             'role_assigned_by' => auth()->user()->username,
             'role_assigned_at' => now(),
         ]);
+        $user->notify(new AccountValidated);
 
         return back()->with('success', 'Compte de '.$user->full_name.' validé.');
     }
@@ -77,6 +79,10 @@ class UserController extends Controller
             'role' => ['required', 'in:admin,secretariat,responsable,user'],
             'dept' => ['nullable', 'string', 'exists:departments,name'],
         ]);
+
+        if ($user->isPrimaryAdmin() && $user->is(auth()->user()) && $data['role'] !== 'admin') {
+            abort(403, 'L’administrateur principal ne peut pas retirer ses propres droits administrateur.');
+        }
 
         $user->update([
             'role' => $data['role'],
@@ -98,6 +104,10 @@ class UserController extends Controller
         $data = $request->validate([
             'status' => ['required', 'in:pending,active,inactive'],
         ]);
+
+        if ($user->isPrimaryAdmin() && $user->is(auth()->user()) && $data['status'] !== 'active') {
+            abort(403, 'L’administrateur principal ne peut pas désactiver son propre compte.');
+        }
 
         $user->update(['status' => $data['status']]);
 

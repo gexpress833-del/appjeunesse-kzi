@@ -50,7 +50,20 @@
     </div>
 
     @if ($members->isNotEmpty())
-        <button class="rounded-xl bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-500">Enregistrer les présences</button>
+        <div class="flex flex-wrap items-center gap-3">
+            <button type="button" id="mark-all-present" class="rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-sm font-bold text-emerald-700 hover:bg-emerald-100">✓ Tout marquer présent</button>
+            <button class="rounded-xl bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-500">Enregistrer les présences</button>
+        </div>
     @endif
 </form>
+
+@if ($members->isNotEmpty())
+    <script>
+        document.getElementById('mark-all-present')?.addEventListener('click', () => {
+            document.querySelectorAll('select[name^="statuses["]').forEach((select) => {
+                select.value = 'present';
+            });
+        });
+    </script>
+@endif
 @endsection

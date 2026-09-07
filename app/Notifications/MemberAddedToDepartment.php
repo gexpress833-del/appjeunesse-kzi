@@ -4,10 +4,9 @@ namespace App\Notifications;
 
 use App\Models\Member;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
-class MemberAddedToDepartment extends Notification implements ShouldQueue
+class MemberAddedToDepartment extends Notification
 {
     use Queueable;
 

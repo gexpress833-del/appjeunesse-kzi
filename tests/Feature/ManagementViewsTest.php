@@ -167,7 +167,8 @@ class ManagementViewsTest extends TestCase
 
         $this->actingAs($responsable)
             ->get(route('attendances.sheet', $event))
-            ->assertOk();
+            ->assertOk()
+            ->assertSee('Tout marquer présent');
 
         $this->actingAs($responsable)
             ->get(route('attendances.sheet', ['event' => $event, 'dept' => '__none__']))

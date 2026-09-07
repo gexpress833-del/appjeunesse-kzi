@@ -56,4 +56,49 @@ class PrimaryAdminProtectionTest extends TestCase
 
         $primaryAdmin->delete();
     }
+
+    public function test_primary_admin_cannot_remove_own_admin_rights_or_deactivate_self(): void
+    {
+        $primaryAdmin = User::factory()->create([
+            'role' => 'admin',
+            'status' => 'active',
+            'is_primary_admin' => true,
+        ]);
+
+        $this->actingAs($primaryAdmin)
+            ->patch(route('users.role', $primaryAdmin), ['role' => 'user'])
+            ->assertForbidden();
+
+        $this->actingAs($primaryAdmin)
+            ->patch(route('users.status', $primaryAdmin), ['status' => 'inactive'])
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('users', [
+            'id' => $primaryAdmin->id,
+            'role' => 'admin',
+            'status' => 'active',
+        ]);
+    }
+
+    public function test_validating_an_account_notifies_the_member(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'status' => 'active',
+        ]);
+        $member = User::factory()->create([
+            'role' => 'user',
+            'status' => 'pending',
+        ]);
+
+        $this->actingAs($admin)
+            ->patch(route('users.validate', $member))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('notifications', [
+            'notifiable_id' => $member->id,
+            'notifiable_type' => User::class,
+        ]);
+        $this->assertTrue($member->fresh()->unreadNotifications->isNotEmpty());
+    }
 }

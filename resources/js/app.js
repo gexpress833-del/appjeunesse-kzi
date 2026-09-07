@@ -99,6 +99,51 @@ document.querySelectorAll('[data-theme-toggle]').forEach((toggle) => {
 
 showInstallPrompt();
 
+const isNavigableLink = (link, event) => {
+	const href = link.getAttribute('href');
+
+	return href
+		&& href !== '#'
+		&& !href.startsWith('#')
+		&& !href.startsWith('mailto:')
+		&& !href.startsWith('tel:')
+		&& !link.hasAttribute('download')
+		&& !link.hasAttribute('target')
+		&& !event.defaultPrevented
+		&& event.button === 0
+		&& !event.metaKey
+		&& !event.ctrlKey
+		&& !event.shiftKey
+		&& !event.altKey;
+};
+
+document.addEventListener('click', (event) => {
+	const link = event.target.closest('a');
+
+	if (!link || !isNavigableLink(link, event) || link.dataset.loading === 'true') {
+		return;
+	}
+
+	link.dataset.loading = 'true';
+	link.setAttribute('aria-busy', 'true');
+	link.classList.add('action-loading');
+
+	if (typeof window.closeSidebar === 'function' && window.innerWidth < 1024) {
+		window.closeSidebar();
+	}
+});
+
+document.addEventListener('click', (event) => {
+	const button = event.target.closest('button');
+
+	if (!button || button.type === 'button' || button.dataset.noFeedback !== undefined) {
+		return;
+	}
+
+	button.classList.add('action-pressed');
+	window.setTimeout(() => button.classList.remove('action-pressed'), 220);
+});
+
 document.querySelectorAll('[data-password-toggle]').forEach((toggle) => {
 
 	const password = document.getElementById(toggle.dataset.passwordToggle);

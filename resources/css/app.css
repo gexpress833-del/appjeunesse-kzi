@@ -353,6 +353,30 @@ html[data-theme='light'] .text-slate-300 {
     background: rgba(255, 255, 255, 0.14);
 }
 
+.action-loading {
+    cursor: wait;
+    opacity: 0.72;
+    pointer-events: none;
+    position: relative;
+}
+
+.action-loading::after {
+    animation: spin 0.7s linear infinite;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 9999px;
+    content: '';
+    display: inline-block;
+    height: 0.8rem;
+    margin-left: 0.5rem;
+    vertical-align: -0.1rem;
+    width: 0.8rem;
+}
+
+.action-pressed {
+    transform: translateY(1px) scale(0.99);
+}
+
 html[data-theme='light'] .theme-toggle:hover {
     background: rgba(226, 232, 240, 0.9);
 }

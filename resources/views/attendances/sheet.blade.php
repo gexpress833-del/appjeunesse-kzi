@@ -11,6 +11,13 @@
     <a href="{{ route('attendances.pick') }}" class="text-sm font-semibold text-indigo-600 hover:underline">← Retour</a>
 </div>
 
+<div class="mt-4 flex flex-wrap gap-2 text-xs font-bold">
+    <span class="rounded-full bg-emerald-100 px-3 py-1 text-emerald-700">● Présent</span>
+    <span class="rounded-full bg-amber-100 px-3 py-1 text-amber-700">● En retard</span>
+    <span class="rounded-full bg-sky-100 px-3 py-1 text-sky-700">● Excusé</span>
+    <span class="rounded-full bg-rose-100 px-3 py-1 text-rose-700">● Absent</span>
+</div>
+
 <form method="POST" action="{{ route('attendances.store', $event) }}" class="mt-6 space-y-4">
     @csrf
     <input type="hidden" name="dept" value="{{ $dept ?? '__none__' }}">

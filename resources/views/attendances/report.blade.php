@@ -5,6 +5,13 @@
 @section('content')
 <h1 class="text-2xl font-bold text-slate-900">Rapports de présence</h1>
 
+<div class="mt-4 flex flex-wrap gap-2 text-xs font-bold">
+    <span class="rounded-full bg-emerald-100 px-3 py-1 text-emerald-700">● Présent · confirmé</span>
+    <span class="rounded-full bg-amber-100 px-3 py-1 text-amber-700">● En retard · arrivée tardive</span>
+    <span class="rounded-full bg-sky-100 px-3 py-1 text-sky-700">● Excusé · absence justifiée</span>
+    <span class="rounded-full bg-rose-100 px-3 py-1 text-rose-700">● Absent · non présent</span>
+</div>
+
 <form method="GET" action="{{ route('attendances.report') }}" class="mt-6 grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:grid-cols-5">
     <div>
         <label class="block text-xs font-medium text-slate-500">Événement</label>
@@ -60,6 +67,27 @@
         @endforeach
     </div>
 @endif
+
+<section class="mt-8">
+    <div class="mb-3 flex items-center justify-between gap-3">
+        <div>
+            <h2 class="text-lg font-bold text-slate-900">Historique par événement</h2>
+            <p class="text-sm text-slate-500">Chaque événement ayant au moins une présence enregistrée.</p>
+        </div>
+    </div>
+    <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        @forelse ($eventHistory as $historyEvent)
+            <article class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p class="text-xs font-bold uppercase tracking-wide text-indigo-600">{{ $historyEvent->date->translatedFormat('d F Y · H\hi') }}</p>
+                <h3 class="mt-1 font-bold text-slate-900">{{ $historyEvent->name }}</h3>
+                <p class="mt-1 text-xs text-slate-500">{{ $historyEvent->recorded_attendances }} présence(s) dans cette sélection</p>
+                <a href="{{ route('attendances.pdf', array_merge(request()->query(), ['event_id' => $historyEvent->id])) }}" class="mt-3 inline-flex rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-500">PDF de cet événement</a>
+            </article>
+        @empty
+            <p class="text-sm text-slate-500">Aucun événement ne possède encore de présence enregistrée.</p>
+        @endforelse
+    </div>
+</section>
 
 <div class="mt-8 overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
     <table class="w-full text-sm">

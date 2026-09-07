@@ -19,6 +19,7 @@
         <table class="w-full text-sm">
             <thead class="bg-slate-50 text-left text-xs uppercase text-slate-500">
                 <tr>
+                    <th class="px-4 py-3">Photo</th>
                     <th class="px-4 py-3">Membre</th>
                     <th class="px-4 py-3">Statut</th>
                     <th class="px-4 py-3">Notes</th>
@@ -28,6 +29,13 @@
                 @forelse ($members as $member)
                     @php($attendance = $existing[$member->id] ?? null)
                     <tr>
+                        <td class="px-4 py-3">
+                            @if ($member->profile_photo_url)
+                                <img src="{{ $member->profile_photo_url }}" alt="Photo de {{ $member->name }}" class="h-11 w-11 rounded-full object-cover ring-2 ring-indigo-100">
+                            @else
+                                <span class="flex h-11 w-11 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700">{{ strtoupper(substr($member->name, 0, 1)) }}</span>
+                            @endif
+                        </td>
                         <td class="px-4 py-3 font-medium text-slate-900">{{ $member->name }}</td>
                         <td class="px-4 py-3">
                             <select name="statuses[{{ $member->id }}]" class="rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
@@ -42,7 +50,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="3" class="px-4 py-10 text-center text-slate-500">Aucun membre dans ce département.</td>
+                        <td colspan="4" class="px-4 py-10 text-center text-slate-500">Aucun membre dans ce département.</td>
                     </tr>
                 @endforelse
             </tbody>

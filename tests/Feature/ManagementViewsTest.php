@@ -50,6 +50,11 @@ class ManagementViewsTest extends TestCase
             ->get(route('attendances.pdf'))
             ->assertOk()
             ->assertHeader('content-type', 'application/pdf');
+
+        $this->actingAs($admin)
+            ->get(route('attendances.report'))
+            ->assertOk()
+            ->assertSee('Historique par événement');
     }
 
     public function test_admin_can_assign_a_user_role_and_department(): void
@@ -147,6 +152,7 @@ class ManagementViewsTest extends TestCase
             'name' => 'Membre social',
             'dept' => 'Social',
             'role' => 'Membre',
+            'profile_photo_url' => 'https://example.com/member-photo.jpg',
         ]);
         $unassignedMember = Member::create([
             'name' => 'Membre sans département',
@@ -168,7 +174,13 @@ class ManagementViewsTest extends TestCase
         $this->actingAs($responsable)
             ->get(route('attendances.sheet', $event))
             ->assertOk()
-            ->assertSee('Tout marquer présent');
+            ->assertSee('Tout marquer présent')
+            ->assertSee('https://example.com/member-photo.jpg');
+
+        $this->actingAs($responsable)
+            ->get(route('attendances.pick'))
+            ->assertOk()
+            ->assertSee(route('attendances.pdf', ['event_id' => $event->id]));
 
         $this->actingAs($responsable)
             ->get(route('attendances.sheet', ['event' => $event, 'dept' => '__none__']))

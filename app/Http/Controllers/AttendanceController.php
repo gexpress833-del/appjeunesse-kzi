@@ -167,7 +167,27 @@ class AttendanceController extends Controller
             $query->where('events.date', '<=', $request->to.' 23:59:59');
         }
 
-        $rows = $query->orderByDesc('events.date')->orderBy('members.name')->paginate(50)->withQueryString();
+        $rows = $query
+            ->orderByDesc('events.date')
+            ->orderBy('members.dept')
+            ->orderByRaw("CASE WHEN LOWER(COALESCE(members.role, '')) LIKE '%responsable%' THEN 0 ELSE 1 END")
+            ->orderBy('members.name')
+            ->paginate(50)
+            ->withQueryString();
+
+        $eventHistory = Event::query()
+            ->whereHas('attendances')
+            ->when($request->filled('event_id'), fn ($eventQuery) => $eventQuery->whereKey((int) $request->event_id))
+            ->when($request->filled('from'), fn ($eventQuery) => $eventQuery->where('date', '>=', $request->from.' 00:00:00'))
+            ->when($request->filled('to'), fn ($eventQuery) => $eventQuery->where('date', '<=', $request->to.' 23:59:59'))
+            ->withCount(['attendances as recorded_attendances' => function ($attendanceQuery) use ($request) {
+                $attendanceQuery
+                    ->when($request->filled('status'), fn ($query) => $query->where('status', $request->status))
+                    ->when($request->filled('dept'), fn ($query) => $query->whereHas('member', fn ($memberQuery) => $memberQuery->where('dept', $request->dept)));
+            }])
+            ->orderByDesc('date')
+            ->take(30)
+            ->get();
 
         // Résumé par département sur la sélection courante
         $summaryQuery = clone $query;
@@ -194,6 +214,7 @@ class AttendanceController extends Controller
                 ->get(),
             'departments' => Department::orderBy('name')->get(),
             'filters' => $request->only(['event_id', 'dept', 'status', 'from', 'to']),
+            'eventHistory' => $eventHistory,
         ]);
     }
 
@@ -221,13 +242,19 @@ class AttendanceController extends Controller
         }
 
         $query = $this->filteredReportQuery($request);
-        $rows = $query->orderByDesc('events.date')->orderBy('members.name')->get();
+        $rows = $query
+            ->orderByDesc('events.date')
+            ->orderBy('members.dept')
+            ->orderByRaw("CASE WHEN LOWER(COALESCE(members.role, '')) LIKE '%responsable%' THEN 0 ELSE 1 END")
+            ->orderBy('members.name')
+            ->get();
         $summary = $this->reportSummary(clone $query);
 
         return Pdf::setOption([
             'tempDir' => sys_get_temp_dir(),
             'fontDir' => sys_get_temp_dir(),
             'fontCache' => sys_get_temp_dir(),
+            'isRemoteEnabled' => true,
         ])->loadView('attendances.pdf', [
             'rows' => $rows,
             'summary' => $summary,

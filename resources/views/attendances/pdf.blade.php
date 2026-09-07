@@ -28,6 +28,8 @@
         table.data th { background: #115e59; color: #fff; font-size: 8px; font-weight: bold; padding: 9px 7px; text-align: left; text-transform: uppercase; }
         table.data td { border-bottom: 1px solid #e2e8f0; color: #334155; padding: 9px 7px; }
         table.data tr:nth-child(even) td { background: #f8fafc; }
+        .member-photo { border: 1px solid #ccfbf1; height: 30px; width: 30px; }
+        .member-avatar { background: #dbeafe; color: #1d4ed8; font-size: 11px; font-weight: bold; height: 30px; line-height: 30px; text-align: center; width: 30px; }
         .status { font-weight: bold; }
         .present { color: #047857; }
         .late { color: #b45309; }
@@ -78,7 +80,7 @@
 
     <table class="data">
         <thead>
-            <tr><th>Événement</th><th>Date</th><th>Département</th><th>Membre</th><th>Statut</th><th>Notes</th></tr>
+            <tr><th>Événement</th><th>Date</th><th>Département</th><th>Photo</th><th>Membre</th><th>Statut</th><th>Notes</th></tr>
         </thead>
         <tbody>
             @forelse ($rows as $row)
@@ -86,12 +88,19 @@
                     <td>{{ $row->event->name }}</td>
                     <td>{{ $row->event->date->translatedFormat('d/m/Y H\hi') }}</td>
                     <td>{{ $row->member->dept ?: '—' }}</td>
+                    <td>
+                        @if ($row->member->profile_photo_url)
+                            <img class="member-photo" src="{{ $row->member->profile_photo_url }}" alt="Photo de {{ $row->member->name }}">
+                        @else
+                            <div class="member-avatar">{{ strtoupper(substr($row->member->name, 0, 1)) }}</div>
+                        @endif
+                    </td>
                     <td>{{ $row->member->name }}</td>
                     <td class="status {{ $row->status }}">{{ match($row->status) { 'present' => 'Présent', 'late' => 'En retard', 'excused' => 'Excusé', default => 'Absent' } }}</td>
                     <td>{{ $row->notes ?: '—' }}</td>
                 </tr>
             @empty
-                <tr><td colspan="6" style="text-align:center; padding: 24px;">Aucune donnée correspondante.</td></tr>
+                <tr><td colspan="7" style="text-align:center; padding: 24px;">Aucune donnée correspondante.</td></tr>
             @endforelse
         </tbody>
     </table>

@@ -18,30 +18,37 @@ class BrevoChannel
             return;
         }
 
-        $message = $notification->toBrevo($notifiable);
+        try {
+            $message = $notification->toBrevo($notifiable);
 
-        $response = Http::withHeaders([
-            'accept' => 'application/json',
-            'api-key' => $apiKey,
-            'content-type' => 'application/json',
-        ])->timeout(10)->post('https://api.brevo.com/v3/smtp/email', [
-            'sender' => [
-                'email' => config('services.brevo.sender_email'),
-                'name' => config('services.brevo.sender_name'),
-            ],
-            'to' => [[
-                'email' => $email,
-                'name' => $notifiable->full_name ?? $email,
-            ]],
-            'subject' => $message['subject'],
-            'htmlContent' => $message['html'],
-        ]);
+            $response = Http::withHeaders([
+                'accept' => 'application/json',
+                'api-key' => $apiKey,
+                'content-type' => 'application/json',
+            ])->timeout(10)->post('https://api.brevo.com/v3/smtp/email', [
+                'sender' => [
+                    'email' => config('services.brevo.sender_email'),
+                    'name' => config('services.brevo.sender_name'),
+                ],
+                'to' => [[
+                    'email' => $email,
+                    'name' => $notifiable->full_name ?? $email,
+                ]],
+                'subject' => $message['subject'],
+                'htmlContent' => $message['html'],
+            ]);
 
-        if ($response->failed()) {
-            Log::error('Brevo email delivery failed.', [
+            if ($response->failed()) {
+                Log::error('Brevo email delivery failed.', [
+                    'recipient' => $email,
+                    'status' => $response->status(),
+                    'response' => $response->json(),
+                ]);
+            }
+        } catch (\Throwable $exception) {
+            Log::warning('Brevo email delivery unavailable; continuing without blocking the request.', [
                 'recipient' => $email,
-                'status' => $response->status(),
-                'response' => $response->json(),
+                'exception' => $exception->getMessage(),
             ]);
         }
     }

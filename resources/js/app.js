@@ -117,6 +117,27 @@ const isNavigableLink = (link, event) => {
 		&& !event.altKey;
 };
 
+const clickTargetsSelector = 'a, button, input[type="submit"], input[type="button"], [role="button"], summary, label[for], .clickable';
+
+const applyPressedState = (element) => {
+	if (!element || element.dataset.noFeedback !== undefined || element.closest('[data-no-feedback]')) {
+		return;
+	}
+
+	element.classList.add('action-pressed');
+	window.setTimeout(() => element.classList.remove('action-pressed'), 220);
+};
+
+document.addEventListener('pointerdown', (event) => {
+	const target = event.target.closest(clickTargetsSelector);
+
+	if (!target || target.dataset.noFeedback !== undefined || target.closest('[data-no-feedback]')) {
+		return;
+	}
+
+	applyPressedState(target);
+});
+
 document.addEventListener('click', (event) => {
 	const link = event.target.closest('a');
 
@@ -134,14 +155,20 @@ document.addEventListener('click', (event) => {
 });
 
 document.addEventListener('click', (event) => {
-	const button = event.target.closest('button');
+	const actionTarget = event.target.closest(clickTargetsSelector);
 
-	if (!button || button.type === 'button' || button.dataset.noFeedback !== undefined) {
+	if (!actionTarget || actionTarget.dataset.noFeedback !== undefined || actionTarget.closest('[data-no-feedback]')) {
 		return;
 	}
 
-	button.classList.add('action-pressed');
-	window.setTimeout(() => button.classList.remove('action-pressed'), 220);
+	if (actionTarget.matches('button') && actionTarget.type === 'button') {
+		applyPressedState(actionTarget);
+		return;
+	}
+
+	if (actionTarget.matches('a, input[type="submit"], input[type="button"], [role="button"], summary, label[for], .clickable')) {
+		applyPressedState(actionTarget);
+	}
 });
 
 document.querySelectorAll('[data-password-toggle]').forEach((toggle) => {

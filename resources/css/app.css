@@ -385,7 +385,17 @@ a,
 input,
 [role="button"],
 summary,
-.clickable {
+.clickable,
+header a,
+header button,
+nav a,
+nav button,
+aside a,
+aside button,
+.guest-header-actions a,
+.guest-header-actions button,
+.theme-toggle,
+.app-install-button {
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
@@ -398,8 +408,39 @@ a:hover,
 input:hover,
 [role="button"]:hover,
 summary:hover,
-.clickable:hover {
+.clickable:hover,
+header a:hover,
+header button:hover,
+nav a:hover,
+nav button:hover,
+aside a:hover,
+aside button:hover,
+.guest-header-actions a:hover,
+.guest-header-actions button:hover,
+.theme-toggle:hover,
+.app-install-button:hover {
     filter: brightness(1.04);
+    box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.12), 0 8px 18px rgba(99, 102, 241, 0.12);
+}
+
+button:active,
+a:active,
+input:active,
+[role="button"]:active,
+summary:active,
+.clickable:active,
+header a:active,
+header button:active,
+nav a:active,
+nav button:active,
+aside a:active,
+aside button:active,
+.guest-header-actions a:active,
+.guest-header-actions button:active,
+.theme-toggle:active,
+.app-install-button:active {
+    transform: translateY(1px) scale(0.99);
+    filter: brightness(0.96);
 }
 
 @media (pointer: coarse) {
@@ -408,7 +449,17 @@ a,
     input,
     [role="button"],
     summary,
-    .clickable {
+    .clickable,
+    header a,
+    header button,
+    nav a,
+    nav button,
+    aside a,
+    aside button,
+    .guest-header-actions a,
+    .guest-header-actions button,
+    .theme-toggle,
+    .app-install-button {
         min-height: 2.75rem;
     }
 }

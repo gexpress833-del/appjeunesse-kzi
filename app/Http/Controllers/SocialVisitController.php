@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Member;
 use App\Models\SocialVisit;
 use App\Models\User;
+use App\Notifications\SocialVisitAssigned;
 use Illuminate\Http\Request;
 
 class SocialVisitController extends Controller
@@ -38,7 +39,9 @@ class SocialVisitController extends Controller
         $data = $this->validated($request);
         $data['created_by'] = auth()->id();
 
-        SocialVisit::create($data);
+        $visit = SocialVisit::create($data);
+
+        $this->notifyAssignee($visit);
 
         return redirect()->route('social-visits.index')->with('success', 'Visite sociale planifiée.');
     }
@@ -53,7 +56,13 @@ class SocialVisitController extends Controller
     public function update(Request $request, SocialVisit $socialVisit)
     {
         $this->authorizeManage($socialVisit);
-        $socialVisit->update($this->validated($request));
+        $data = $this->validated($request);
+        $assigneeChanged = (int) ($socialVisit->assigned_to ?? 0) !== (int) ($data['assigned_to'] ?? 0);
+        $socialVisit->update($data);
+
+        if ($assigneeChanged) {
+            $this->notifyAssignee($socialVisit);
+        }
 
         return redirect()->route('social-visits.index')->with('success', 'Visite sociale mise à jour.');
     }
@@ -99,5 +108,15 @@ class SocialVisitController extends Controller
         }
 
         abort_unless($allowed, 403, 'Cette fonctionnalité est réservée au Département Social.');
+    }
+
+    protected function notifyAssignee(SocialVisit $visit): void
+    {
+        if (blank($visit->assigned_to)) {
+            return;
+        }
+
+        $visit->load('member');
+        User::find($visit->assigned_to)?->notify(new SocialVisitAssigned($visit));
     }
 }

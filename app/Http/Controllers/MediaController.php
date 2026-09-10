@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Event;
 use App\Models\HomeContent;
 use App\Models\Photo;
+use App\Models\User;
+use App\Notifications\BroadcastPublished;
 use App\Services\CloudinaryService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -228,13 +230,28 @@ class MediaController extends Controller
 
         $live = HomeContent::type('live_stream')->ordered()->first()
             ?? new HomeContent(['type' => 'live_stream', 'display_order' => 1]);
+        $previousUrl = $live->media_url;
+        $previousType = $live->broadcast_type;
+        $previouslyActive = $live->is_active;
 
         $live->title = $data['title'] ?? 'Culte en direct';
-        $live->content = $data['content'] ?? $live->content;
+        $live->content = $data['content'] ?? $live->content ?? '';
         $live->media_url = $data['media_url'] ?? null;
         $live->broadcast_type = $data['broadcast_type'];
         $live->is_active = $request->boolean('is_active');
         $live->save();
+
+        $broadcastChanged = $live->is_active
+            && filled($live->media_url)
+            && (! $previouslyActive || $previousUrl !== $live->media_url || $previousType !== $live->broadcast_type);
+
+        if ($broadcastChanged) {
+            User::query()
+                ->where('role', 'user')
+                ->where('status', 'active')
+                ->get()
+                ->each(fn (User $recipient) => $recipient->notify(new BroadcastPublished($live)));
+        }
 
         return redirect()->route('live.edit')->with('success', 'Paramètres du direct enregistrés.');
     }

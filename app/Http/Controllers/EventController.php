@@ -77,6 +77,12 @@ class EventController extends Controller
             $owner->notify(new EventCreated($event, $user));
         }
 
+        User::query()
+            ->where('role', 'user')
+            ->where('status', 'active')
+            ->get()
+            ->each(fn (User $recipient) => $recipient->notify(new EventCreated($event, $user)));
+
         return redirect()->route('events.index')->with('success', 'Événement créé.');
     }
 

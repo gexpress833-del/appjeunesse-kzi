@@ -7,6 +7,7 @@ use App\Models\Event;
 use App\Models\Member;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class AuthPhoneAndNotificationTest extends TestCase
@@ -62,6 +63,88 @@ class AuthPhoneAndNotificationTest extends TestCase
 
         $this->assertDatabaseHas('notifications', [
             'notifiable_id' => $user->id,
+            'notifiable_type' => User::class,
+        ]);
+    }
+
+    public function test_account_validation_sends_email_to_registration_address(): void
+    {
+        Http::fake();
+        config(['services.brevo.api_key' => 'test-key']);
+
+        $admin = User::factory()->create(['role' => 'admin', 'status' => 'active']);
+        $user = User::factory()->create([
+            'role' => 'user',
+            'status' => 'pending',
+            'email' => 'member@example.com',
+        ]);
+
+        $this->actingAs($admin)->patch(route('users.validate', $user));
+
+        Http::assertSent(fn ($request): bool => $request->url() === 'https://api.brevo.com/v3/smtp/email'
+            && data_get($request->data(), 'to.0.email') === 'member@example.com');
+    }
+
+    public function test_active_regular_users_receive_event_and_broadcast_notifications(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'status' => 'active']);
+        $regularUser = User::factory()->create(['role' => 'user', 'status' => 'active']);
+        $pendingUser = User::factory()->create(['role' => 'user', 'status' => 'pending']);
+
+        $this->actingAs($admin)
+            ->post(route('events.store'), [
+                'name' => 'Événement public',
+                'date' => now()->addDay()->format('Y-m-d H:i:s'),
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('notifications', [
+            'notifiable_id' => $regularUser->id,
+            'notifiable_type' => User::class,
+        ]);
+        $this->assertDatabaseMissing('notifications', [
+            'notifiable_id' => $pendingUser->id,
+            'notifiable_type' => User::class,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('live.save'), [
+                'title' => 'Culte en direct',
+                'media_url' => 'https://www.youtube.com/watch?v=abcdefghijk',
+                'broadcast_type' => 'live',
+                'is_active' => '1',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('notifications', [
+            'notifiable_id' => $regularUser->id,
+            'notifiable_type' => User::class,
+        ]);
+        $this->assertDatabaseHas('home_contents', [
+            'type' => 'live_stream',
+            'broadcast_type' => 'live',
+        ]);
+    }
+
+    public function test_social_follow_up_assignment_notifies_assignee(): void
+    {
+        Department::create(['name' => 'Social']);
+        $admin = User::factory()->create(['role' => 'admin', 'status' => 'active']);
+        $assignee = User::factory()->create(['role' => 'responsable', 'dept' => 'Social', 'status' => 'active']);
+        $member = Member::create(['name' => 'Membre social', 'dept' => 'Social', 'role' => 'Membre']);
+
+        $this->actingAs($admin)
+            ->post(route('social-visits.store'), [
+                'member_id' => $member->id,
+                'assigned_to' => $assignee->id,
+                'visit_date' => now()->addDay()->format('Y-m-d H:i:s'),
+                'reason' => 'Accompagnement',
+                'status' => 'planned',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('notifications', [
+            'notifiable_id' => $assignee->id,
             'notifiable_type' => User::class,
         ]);
     }

@@ -5,7 +5,12 @@
 @section('content')
 
     {{-- ==================== CARROUSEL VITRINE ==================== --}}
-    <section class="carousel-atmosphere relative overflow-hidden rounded-3xl text-white shadow-xl shadow-indigo-950/30">
+    <section class="carousel-atmosphere relative overflow-hidden rounded-[2rem] border border-white/10 text-white shadow-[0_30px_80px_rgba(37,99,235,0.25)] ring-1 ring-white/10">
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.18),transparent_25%),radial-gradient(circle_at_bottom_right,_rgba(56,189,248,0.18),transparent_25%)]"></div>
+        <div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent"></div>
+        <div class="absolute -left-12 top-10 h-40 w-40 rounded-full bg-cyan-400/20 blur-3xl"></div>
+        <div class="absolute -right-12 bottom-8 h-48 w-48 rounded-full bg-violet-400/20 blur-3xl"></div>
+
         <div id="carousel" class="relative min-h-[320px] sm:min-h-[380px]">
             @php
                 $slides = [];
@@ -26,27 +31,27 @@
             @foreach ($slides as $i => $slide)
                 <div class="carousel-slide absolute inset-0 flex flex-col items-center justify-center gap-4 px-8 py-12 text-center sm:px-14 {{ $i === 0 ? 'is-active' : 'pointer-events-none' }}" style="transition: opacity 350ms ease-out, visibility 350ms ease-out;">
                     @if ($slide['kind'] === 'verset')
-                        <span class="carousel-label rounded-full bg-amber-400/90 px-4 py-1.5 uppercase text-amber-950">📖 {{ $slide['title'] }}</span>
-                        <blockquote class="carousel-quote max-w-3xl">« {{ $slide['content'] }} »</blockquote>
+                        <span class="carousel-label">📖 {{ $slide['title'] }}</span>
+                        <blockquote class="carousel-quote max-w-4xl">« {{ $slide['content'] }} »</blockquote>
                         @if ($slide['ref'])<p class="carousel-reference">{{ $slide['ref'] }}</p>@endif
                     @elseif ($slide['kind'] === 'temoignage')
-                        <span class="carousel-label rounded-full bg-emerald-400/90 px-4 py-1.5 uppercase text-emerald-950">💬 {{ $slide['title'] }}</span>
-                        <blockquote class="carousel-quote max-w-3xl">« {{ $slide['content'] }} »</blockquote>
+                        <span class="carousel-label cream">💬 {{ $slide['title'] }}</span>
+                        <blockquote class="carousel-quote max-w-4xl">« {{ $slide['content'] }} »</blockquote>
                         @if ($slide['ref'])<p class="carousel-reference">— {{ $slide['ref'] }}</p>@endif
                     @elseif ($slide['kind'] === 'banner')
-                        <span class="carousel-label rounded-full bg-rose-400/90 px-4 py-1.5 uppercase text-rose-950">📣 {{ $slide['title'] }}</span>
+                        <span class="carousel-label rose">📣 {{ $slide['title'] }}</span>
                         <p class="carousel-message max-w-3xl">{{ $slide['content'] }}</p>
                     @else
-                        <span class="carousel-label rounded-full bg-sky-400/90 px-4 py-1.5 uppercase text-sky-950">📅 {{ $slide['title'] }}</span>
+                        <span class="carousel-label sky">📅 {{ $slide['title'] }}</span>
                         <ul class="mx-auto flex w-full max-w-5xl flex-wrap justify-center gap-4">
                             @foreach ($slide['events'] as $event)
-                                <li class="flex min-h-36 w-full max-w-md flex-1 basis-full flex-col items-center justify-center gap-3 rounded-xl bg-white/10 p-4 text-center backdrop-blur sm:basis-[calc(50%-0.5rem)] sm:flex-none sm:flex-row sm:gap-5">
+                                <li class="carousel-event-card flex min-h-36 w-full max-w-md flex-1 basis-full flex-col items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/8 p-4 text-center shadow-[0_20px_40px_rgba(15,23,42,0.20)] backdrop-blur-xl sm:basis-[calc(50%-0.5rem)] sm:flex-none sm:flex-row sm:gap-5">
                                     <div class="min-w-0 flex-1">
-                                        <p class="font-semibold">{{ $event->name }}</p>
-                                        <p class="text-sm text-indigo-200">{{ $event->date->translatedFormat('l d F Y · H\hi') }}</p>
+                                        <p class="font-semibold text-white">{{ $event->name }}</p>
+                                        <p class="text-sm text-cyan-100/90">{{ $event->date->translatedFormat('l d F Y · H\hi') }}</p>
                                     </div>
                                     @if ($event->photo_url)
-                                        <img src="{{ $event->photo_url }}" alt="Affiche de {{ $event->name }}" class="h-40 w-40 shrink-0 rounded-lg object-cover sm:h-40 sm:w-40">
+                                        <img src="{{ $event->photo_url }}" alt="Affiche de {{ $event->name }}" class="h-40 w-40 shrink-0 rounded-xl object-cover ring-2 ring-white/20 sm:h-40 sm:w-40">
                                     @endif
                                 </li>
                             @endforeach
@@ -57,17 +62,17 @@
 
             @if (empty($slides))
                 <div class="absolute inset-0 flex items-center justify-center">
-                    <p class="text-lg text-indigo-200">Bienvenue sur la plateforme de la jeunesse !</p>
+                    <p class="text-lg text-sky-100/90">Bienvenue sur la plateforme de la jeunesse !</p>
                 </div>
             @endif
         </div>
 
         @if (count($slides) > 1)
-            <button onclick="window.carouselGo(window.carouselIndex - 1)" class="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-white/15 px-3 py-2 text-xl backdrop-blur hover:bg-white/25">‹</button>
-            <button onclick="window.carouselGo(window.carouselIndex + 1)" class="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-white/15 px-3 py-2 text-xl backdrop-blur hover:bg-white/25">›</button>
-            <div id="carousel-dots" class="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2">
+            <button onclick="window.carouselGo(window.carouselIndex - 1)" class="carousel-nav absolute left-3 top-1/2 -translate-y-1/2 rounded-full border border-white/15 bg-slate-950/20 px-3 py-2 text-xl text-white backdrop-blur-xl shadow-lg shadow-sky-950/30 transition hover:scale-105 hover:bg-slate-950/30">‹</button>
+            <button onclick="window.carouselGo(window.carouselIndex + 1)" class="carousel-nav absolute right-3 top-1/2 -translate-y-1/2 rounded-full border border-white/15 bg-slate-950/20 px-3 py-2 text-xl text-white backdrop-blur-xl shadow-lg shadow-sky-950/30 transition hover:scale-105 hover:bg-slate-950/30">›</button>
+            <div id="carousel-dots" class="absolute bottom-5 left-1/2 flex -translate-x-1/2 gap-2">
                 @foreach ($slides as $i => $slide)
-                    <button onclick="window.carouselGo({{ $i }})" data-dot="{{ $i }}" class="h-2.5 w-2.5 rounded-full {{ $i === 0 ? 'bg-white' : 'bg-white/40' }}"></button>
+                    <button onclick="window.carouselGo({{ $i }})" data-dot="{{ $i }}" class="h-2.5 w-2.5 rounded-full border border-white/30 transition {{ $i === 0 ? 'bg-white shadow-[0_0_12px_rgba(255,255,255,0.9)]' : 'bg-white/35' }}"></button>
                 @endforeach
             </div>
         @endif

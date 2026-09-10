@@ -183,14 +183,15 @@ body::before {
     opacity: 0;
     gap: 1.25rem;
     backdrop-filter: blur(2px);
-    transform: scale(0.98);
-    transition: opacity 350ms ease-out, visibility 350ms ease-out, transform 350ms ease-out;
+    transform: translate3d(110%, 0, 0) scale(0.96);
+    transition: transform 620ms cubic-bezier(0.22, 1, 0.36, 1), opacity 500ms ease, visibility 500ms ease;
+    will-change: transform, opacity;
 }
 
 .carousel-slide.is-active {
     visibility: visible;
     opacity: 1;
-    transform: scale(1);
+    transform: translate3d(0, 0, 0) scale(1);
 }
 
 .carousel-label {

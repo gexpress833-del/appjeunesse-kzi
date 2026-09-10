@@ -11,7 +11,7 @@
         <div class="absolute -left-12 top-10 h-40 w-40 rounded-full bg-cyan-400/20 blur-3xl"></div>
         <div class="absolute -right-12 bottom-8 h-48 w-48 rounded-full bg-violet-400/20 blur-3xl"></div>
 
-        <div id="carousel" class="relative min-h-[320px] sm:min-h-[380px]">
+        <div id="carousel" class="relative min-h-[320px] overflow-hidden sm:min-h-[380px]" aria-live="polite">
             @php
                 $slides = [];
                 foreach ($versets as $v) {
@@ -29,7 +29,7 @@
             @endphp
 
             @foreach ($slides as $i => $slide)
-                <div class="carousel-slide absolute inset-0 flex flex-col items-center justify-center gap-4 px-8 py-12 text-center sm:px-14 {{ $i === 0 ? 'is-active' : 'pointer-events-none' }}" style="transition: opacity 350ms ease-out, visibility 350ms ease-out;">
+                <div class="carousel-slide absolute inset-0 flex flex-col items-center justify-center gap-4 px-8 py-12 text-center sm:px-14 {{ $i === 0 ? 'is-active' : 'pointer-events-none' }}" data-slide-index="{{ $i }}">
                     @if ($slide['kind'] === 'verset')
                         <span class="carousel-label">📖 {{ $slide['title'] }}</span>
                         <blockquote class="carousel-quote max-w-4xl">« {{ $slide['content'] }} »</blockquote>
@@ -83,24 +83,55 @@
     </p>
 
     <script>
-        // Carrousel : rotation automatique toutes les 5 secondes avec pause au survol.
         window.carouselIndex = 0;
         const slides = document.querySelectorAll('.carousel-slide');
         const dots = document.querySelectorAll('#carousel-dots [data-dot]');
         const carousel = document.getElementById('carousel');
         let carouselTimer;
+        let dragStartX = 0;
+        let dragDeltaX = 0;
+
+        function updateSlidePositions() {
+            if (!slides.length) return;
+
+            slides.forEach((slide, index) => {
+                const offset = (index - window.carouselIndex + slides.length) % slides.length;
+                let x = '0%';
+                let opacity = 1;
+                let visible = true;
+
+                if (offset === 0) {
+                    x = '0%';
+                    opacity = 1;
+                    visible = true;
+                } else if (offset < slides.length / 2) {
+                    x = '110%';
+                    opacity = 0.18;
+                    visible = false;
+                } else {
+                    x = '-110%';
+                    opacity = 0.18;
+                    visible = false;
+                }
+
+                slide.style.transform = `translate3d(${x}, 0, 0) scale(${offset === 0 ? 1 : 0.96})`;
+                slide.style.opacity = String(opacity);
+                slide.style.visibility = visible ? 'visible' : 'hidden';
+                slide.classList.toggle('is-active', index === window.carouselIndex);
+                slide.classList.toggle('pointer-events-none', index !== window.carouselIndex);
+            });
+
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('bg-white', index === window.carouselIndex);
+                dot.classList.toggle('shadow-[0_0_12px_rgba(255,255,255,0.9)]', index === window.carouselIndex);
+                dot.classList.toggle('bg-white/35', index !== window.carouselIndex);
+            });
+        }
 
         window.carouselGo = function (index, restart = true) {
             if (!slides.length) return;
             window.carouselIndex = (index + slides.length) % slides.length;
-            slides.forEach((s, i) => {
-                s.classList.toggle('is-active', i === window.carouselIndex);
-                s.classList.toggle('pointer-events-none', i !== window.carouselIndex);
-            });
-            dots.forEach((d, i) => {
-                d.classList.toggle('bg-white', i === window.carouselIndex);
-                d.classList.toggle('bg-white/40', i !== window.carouselIndex);
-            });
+            updateSlidePositions();
 
             if (restart) {
                 window.carouselStart();
@@ -113,8 +144,33 @@
         };
 
         if (carousel && slides.length > 1) {
+            carousel.addEventListener('pointerdown', (event) => {
+                dragStartX = event.clientX;
+                dragDeltaX = 0;
+                carousel.setPointerCapture(event.pointerId);
+            });
+
+            carousel.addEventListener('pointermove', (event) => {
+                if (dragStartX === 0) return;
+                dragDeltaX = event.clientX - dragStartX;
+            });
+
+            carousel.addEventListener('pointerup', () => {
+                if (Math.abs(dragDeltaX) > 80) {
+                    window.carouselGo(window.carouselIndex + (dragDeltaX < 0 ? 1 : -1), true);
+                }
+                dragStartX = 0;
+                dragDeltaX = 0;
+            });
+
+            carousel.addEventListener('pointerleave', () => {
+                dragStartX = 0;
+                dragDeltaX = 0;
+            });
+
             carousel.addEventListener('mouseenter', () => window.clearInterval(carouselTimer));
             carousel.addEventListener('mouseleave', window.carouselStart);
+            updateSlidePositions();
             window.carouselStart();
         }
     </script>

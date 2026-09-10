@@ -23,12 +23,12 @@ class ExampleTest extends TestCase
     public function test_live_video_urls_are_converted_to_embed_urls(): void
     {
         $this->assertSame(
-            'https://www.youtube.com/embed/dQw4w9WgXcQ',
+            'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?rel=0&modestbranding=1&playsinline=1',
             VideoEmbed::toEmbed('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
         );
 
         $this->assertSame(
-            'https://www.youtube.com/embed/dQw4w9WgXcQ',
+            'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?rel=0&modestbranding=1&playsinline=1',
             VideoEmbed::toEmbed('https://youtu.be/dQw4w9WgXcQ')
         );
 

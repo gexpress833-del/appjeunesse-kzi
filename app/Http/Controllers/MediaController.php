@@ -6,6 +6,7 @@ use App\Models\Event;
 use App\Models\HomeContent;
 use App\Models\Photo;
 use App\Models\User;
+use App\Models\VideoArchive;
 use App\Notifications\BroadcastPublished;
 use App\Services\CloudinaryService;
 use Illuminate\Http\Request;
@@ -246,6 +247,14 @@ class MediaController extends Controller
             && (! $previouslyActive || $previousUrl !== $live->media_url || $previousType !== $live->broadcast_type);
 
         if ($broadcastChanged) {
+            VideoArchive::create([
+                'title' => $live->title ?: 'Culte de la jeunesse',
+                'description' => $live->content,
+                'media_url' => $live->media_url,
+                'broadcast_type' => 'replay',
+                'published_by' => auth()->id(),
+            ]);
+
             User::query()
                 ->where('role', 'user')
                 ->where('status', 'active')

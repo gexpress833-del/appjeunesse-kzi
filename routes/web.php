@@ -12,6 +12,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\SocialVisitController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\VideoArchiveController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -61,6 +62,9 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::middleware('auth')->group(function () {
         Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
         Route::post('/notifications/lire-tout', [NotificationController::class, 'markAllAsRead'])->name('notifications.read.all');
+
+        Route::post('/videos/{videoArchive}/like', [VideoArchiveController::class, 'like'])->name('videos.like');
+        Route::post('/videos/{videoArchive}/commenter', [VideoArchiveController::class, 'comment'])->name('videos.comment');
     });
 
     // Profil personnel

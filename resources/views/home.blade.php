@@ -207,6 +207,63 @@
         @endif
     </section>
 
+    @if ($videoArchives->isNotEmpty())
+        <section class="mt-10">
+            <div class="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-[0.2em] text-cyan-600">Médiathèque</p>
+                    <h2 class="mt-1 text-2xl font-bold text-slate-900">Archives vidéo</h2>
+                </div>
+                <p class="text-sm text-slate-500">Retrouvez les directs et retransmissions précédents.</p>
+            </div>
+
+            <div class="mt-5 grid gap-5 lg:grid-cols-2">
+                @foreach ($videoArchives as $video)
+                    <article class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                        <div class="aspect-video bg-slate-950">
+                            <iframe src="{{ \App\Support\VideoEmbed::toEmbed($video->media_url) }}" class="h-full w-full" style="border:0" loading="lazy" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen title="{{ $video->title }}"></iframe>
+                        </div>
+                        <div class="p-5">
+                            <div class="flex items-start justify-between gap-3">
+                                <div>
+                                    <span class="text-xs font-bold uppercase tracking-wide text-cyan-700">{{ $video->broadcast_type === 'replay' ? 'Retransmission' : 'En direct' }}</span>
+                                    <h3 class="mt-1 font-bold text-slate-900">{{ $video->title }}</h3>
+                                </div>
+                                <span class="text-xs text-slate-500">{{ $video->created_at->diffForHumans() }}</span>
+                            </div>
+                            @if ($video->description)<p class="mt-2 text-sm text-slate-600">{{ $video->description }}</p>@endif
+                            <div class="mt-4 flex items-center gap-3">
+                                @auth
+                                    <form method="POST" action="{{ route('videos.like', $video) }}">
+                                        @csrf
+                                        <button class="rounded-xl border border-rose-200 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50">♥ {{ $video->likes_count }}</button>
+                                    </form>
+                                @else
+                                    <span class="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-500">♥ {{ $video->likes_count }}</span>
+                                @endauth
+                                <span class="text-sm text-slate-500">💬 {{ $video->comments->count() }} commentaire(s)</span>
+                            </div>
+                            @auth
+                                <form method="POST" action="{{ route('videos.comment', $video) }}" class="mt-4 flex gap-2">
+                                    @csrf
+                                    <input name="body" required maxlength="1000" placeholder="Écrire un commentaire..." class="min-w-0 flex-1 rounded-xl border-slate-300 text-sm">
+                                    <button class="rounded-xl bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500">Publier</button>
+                                </form>
+                            @endauth
+                            @if ($video->comments->isNotEmpty())
+                                <div class="mt-4 space-y-2 border-t border-slate-100 pt-3">
+                                    @foreach ($video->comments->take(3) as $comment)
+                                        <p class="text-sm text-slate-600"><strong class="text-slate-900">{{ $comment->user->full_name }}</strong> {{ $comment->body }}</p>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+                    </article>
+                @endforeach
+            </div>
+        </section>
+    @endif
+
     {{-- ==================== ÉVÉNEMENTS À VENIR ==================== --}}
     @if ($upcomingEvents->isNotEmpty())
         <section class="mt-10">

@@ -15,7 +15,7 @@ class VideoEmbed
 
         // YouTube : watch, live, shorts, embed, youtu.be, youtube-nocookie.
         if (preg_match('~(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|live\/|embed\/|shorts\/)|youtu\.be\/|youtube-nocookie\.com\/embed\/)([A-Za-z0-9_-]{11})~i', $url, $m)) {
-            return 'https://www.youtube.com/embed/'.$m[1];
+            return 'https://www.youtube-nocookie.com/embed/'.$m[1].'?rel=0&modestbranding=1&playsinline=1';
         }
 
         // Facebook : plugin vidéo officiel

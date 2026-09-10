@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Event;
 use App\Models\HomeContent;
+use App\Models\VideoArchive;
 
 class HomeController extends Controller
 {
@@ -19,6 +20,12 @@ class HomeController extends Controller
         $live = HomeContent::type('live_stream')->active()->ordered()->first();
         $upcomingEvents = Event::upcoming()->take(4)->get();
 
-        return view('home', compact('versets', 'temoignages', 'banners', 'live', 'upcomingEvents'));
+        $videoArchives = VideoArchive::withCount('likes')
+            ->with(['comments.user', 'likes'])
+            ->latest()
+            ->take(12)
+            ->get();
+
+        return view('home', compact('versets', 'temoignages', 'banners', 'live', 'upcomingEvents', 'videoArchives'));
     }
 }

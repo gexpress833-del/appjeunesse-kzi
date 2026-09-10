@@ -178,9 +178,11 @@
     {{-- ==================== LIVE VIDÉO ==================== --}}
     <section class="mt-10">
         <h2 class="mb-4 flex items-center gap-2 text-2xl font-bold text-slate-900">
-            🔴 Culte en direct
+            {{ $live?->broadcast_type === 'replay' ? '📺 Retransmission' : '🔴 Culte en direct' }}
             @if ($live && $live->is_active)
-                <span class="animate-pulse rounded-full bg-rose-600 px-2 py-0.5 text-xs font-bold uppercase text-white">Live</span>
+                <span class="rounded-full px-2 py-0.5 text-xs font-bold uppercase text-white {{ $live->broadcast_type === 'replay' ? 'bg-slate-600' : 'animate-pulse bg-rose-600' }}">
+                    {{ $live->broadcast_type === 'replay' ? 'Retransmission' : 'En direct' }}
+                </span>
             @endif
         </h2>
 

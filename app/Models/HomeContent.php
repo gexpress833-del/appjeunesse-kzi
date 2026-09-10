@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
     'content',
     'author_or_reference',
     'media_url',
+    'broadcast_type',
     'is_active',
     'display_order',
 ])]

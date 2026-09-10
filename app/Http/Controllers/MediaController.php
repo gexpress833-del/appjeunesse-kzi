@@ -222,6 +222,7 @@ class MediaController extends Controller
             'title' => ['nullable', 'string', 'max:150'],
             'content' => ['nullable', 'string', 'max:1000'],
             'media_url' => ['nullable', 'url', 'max:1000'],
+            'broadcast_type' => ['required', 'in:live,replay'],
             'is_active' => ['nullable', 'boolean'],
         ]);
 
@@ -231,6 +232,7 @@ class MediaController extends Controller
         $live->title = $data['title'] ?? 'Culte en direct';
         $live->content = $data['content'] ?? $live->content;
         $live->media_url = $data['media_url'] ?? null;
+        $live->broadcast_type = $data['broadcast_type'];
         $live->is_active = $request->boolean('is_active');
         $live->save();
 

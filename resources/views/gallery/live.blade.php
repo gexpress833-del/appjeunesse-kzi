@@ -15,10 +15,24 @@
     </div>
 
     <div>
-        <label class="block text-sm font-medium text-slate-700">Lien vidéo</label>
-        <input name="media_url" type="url" value="{{ old('media_url', $live?->media_url) }}" placeholder="https://youtube.com/watch?..."
-               class="mt-1 w-full rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
+        <label for="broadcast_type" class="block text-sm font-medium text-slate-700">Type de diffusion</label>
+        <select id="broadcast_type" name="broadcast_type" class="mt-1 w-full rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
+            <option value="live" @selected(old('broadcast_type', $live?->broadcast_type ?? 'live') === 'live')>En direct</option>
+            <option value="replay" @selected(old('broadcast_type', $live?->broadcast_type ?? 'live') === 'replay')>Retransmission</option>
+        </select>
     </div>
+
+    <div>
+        <label for="media_url" class="block text-sm font-medium text-slate-700">Lien vidéo</label>
+        <div class="mt-1 flex gap-2">
+            <input id="media_url" name="media_url" type="text" inputmode="url" autocomplete="url" autocapitalize="none" spellcheck="false"
+                   value="{{ old('media_url', $live?->media_url) }}" placeholder="https://youtube.com/watch?..."
+                   class="w-full rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
+            <button type="button" data-paste-url="media_url" class="shrink-0 rounded-xl border border-indigo-200 bg-indigo-50 px-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-100">
+                Coller
+            </button>
+    </div>
+        <p class="mt-2 text-xs text-slate-500">Collez un lien YouTube ou Facebook public.</p>
 
     <div>
         <label class="block text-sm font-medium text-slate-700">Description</label>
@@ -33,4 +47,24 @@
 
     <button class="rounded-xl bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-500">Enregistrer</button>
 </form>
+
+<script>
+    document.querySelectorAll('[data-paste-url]').forEach((button) => {
+        button.addEventListener('click', async () => {
+            const input = document.getElementById(button.dataset.pasteUrl);
+
+            if (!input) return;
+
+            input.focus();
+
+            try {
+                input.value = (await navigator.clipboard.readText()).trim();
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+            } catch {
+                button.textContent = 'Maintenez puis collez';
+                window.setTimeout(() => { button.textContent = 'Coller'; }, 2200);
+            }
+        });
+    });
+</script>
 @endsection

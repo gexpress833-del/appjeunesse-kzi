@@ -3,7 +3,7 @@ services:
     name: appjeunesse-kzi
     runtime: docker
     plan: free
-    healthCheckPath: /up
+    healthCheckPath: /up/
     envVars:
       - key: APP_NAME
         value: appjeunesse-kzi

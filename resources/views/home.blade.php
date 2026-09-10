@@ -114,7 +114,7 @@
                     visible = false;
                 }
 
-                slide.style.transform = `translate3d(${x}, 0, 0) scale(${offset === 0 ? 1 : 0.96})`;
+                slide.style.transform = `translate3d(${x}, 0, 0) scale(${offset === 0 ? 1.015 : 0.96})`;
                 slide.style.opacity = String(opacity);
                 slide.style.visibility = visible ? 'visible' : 'hidden';
                 slide.classList.toggle('is-active', index === window.carouselIndex);

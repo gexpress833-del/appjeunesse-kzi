@@ -2,6 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\Department;
+use App\Models\Event;
+use App\Models\Member;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -76,5 +79,43 @@ class AuthPhoneAndNotificationTest extends TestCase
         $response->assertOk();
         $response->assertDontSee('Sélection du département');
         $response->assertSee('Médias');
+    }
+
+    public function test_attendance_recording_notifies_managers_once_without_notifying_recorder(): void
+    {
+        Department::create(['name' => 'Social']);
+
+        $admin = User::factory()->create(['role' => 'admin', 'status' => 'active']);
+        $responsable = User::factory()->create([
+            'role' => 'responsable',
+            'dept' => 'Social',
+            'status' => 'active',
+        ]);
+        $event = Event::create([
+            'name' => 'Culte de test',
+            'date' => now()->addDay(),
+            'created_by' => $admin->username,
+        ]);
+        $member = Member::create([
+            'name' => 'Membre de test',
+            'dept' => 'Social',
+            'role' => 'Membre',
+        ]);
+
+        $this->actingAs($responsable)
+            ->post(route('attendances.store', $event), [
+                'dept' => 'Social',
+                'statuses' => [$member->id => 'present'],
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('notifications', [
+            'notifiable_id' => $admin->id,
+            'notifiable_type' => User::class,
+        ]);
+        $this->assertDatabaseMissing('notifications', [
+            'notifiable_id' => $responsable->id,
+            'notifiable_type' => User::class,
+        ]);
     }
 }

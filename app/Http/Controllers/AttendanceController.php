@@ -6,7 +6,8 @@ use App\Models\Attendance;
 use App\Models\Department;
 use App\Models\Event;
 use App\Models\Member;
-use App\Notifications\AttendanceRecorded;
+use App\Models\User;
+use App\Notifications\AttendanceBatchRecorded;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
@@ -118,6 +119,8 @@ class AttendanceController extends Controller
             ->when(filled($data['dept']), fn ($query) => $query->where('dept', $data['dept']))
             ->pluck('id');
 
+        $recordedCount = 0;
+
         foreach ($data['statuses'] as $memberId => $status) {
             $memberId = (int) $memberId;
 
@@ -130,8 +133,22 @@ class AttendanceController extends Controller
                 ['status' => $status, 'notes' => $data['notes'][$memberId] ?? null]
             );
 
-            $attendance->load('member');
-            $user->notify(new AttendanceRecorded($attendance, $event, $user));
+            $recordedCount++;
+        }
+
+        if ($recordedCount > 0) {
+            $department = $data['dept'] ?? 'Sans département';
+            $recipients = User::query()
+                ->whereIn('role', ['admin', 'secretariat'])
+                ->orWhere(fn ($query) => $query
+                    ->where('role', 'responsable')
+                    ->where('dept', $data['dept']))
+                ->get()
+                ->reject(fn (User $recipient): bool => $recipient->is($user));
+
+            foreach ($recipients as $recipient) {
+                $recipient->notify(new AttendanceBatchRecorded($event, $user, $department, $recordedCount));
+            }
         }
 
         return redirect()->route('attendances.sheet', ['event' => $event, 'dept' => $data['dept'] ?? self::UNASSIGNED_DEPARTMENT])

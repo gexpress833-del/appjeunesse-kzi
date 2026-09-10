@@ -12,7 +12,7 @@ FROM php:8.3-apache
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libpq-dev libzip-dev unzip git \
     && docker-php-ext-install pdo_pgsql zip \
-    && a2enmod rewrite \
+    && a2enmod rewrite headers \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -29,6 +29,8 @@ COPY --from=frontend /app/public/build ./public/build
 RUN sed -i 's#DocumentRoot /var/www/html#DocumentRoot /var/www/html/public#' /etc/apache2/sites-available/000-default.conf \
     && sed -i 's#<Directory /var/www/>#<Directory /var/www/html/public>#' /etc/apache2/apache2.conf \
     && sed -i 's#AllowOverride None#AllowOverride All#g' /etc/apache2/apache2.conf \
+    && printf '\nServerTokens Prod\nServerSignature Off\nHeader always unset Server\nHeader always unset X-Powered-By\n' >> /etc/apache2/apache2.conf \
+    && printf '\nexpose_php = Off\n' > /usr/local/etc/php/conf.d/security.ini \
     && mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache \
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R ug+rwx storage bootstrap/cache

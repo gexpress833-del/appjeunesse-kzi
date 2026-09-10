@@ -6,7 +6,7 @@
 <div class="mx-auto max-w-lg">
     <div class="rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
         <div class="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-rose-100 text-3xl text-rose-600">⚠️</div>
-        <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Erreur {{ $status }}</p>
+        <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Information</p>
         <h1 class="mt-3 text-3xl font-black text-slate-900">Accès impossible</h1>
         <p class="mt-3 text-base text-slate-600">{{ $message }}</p>
 

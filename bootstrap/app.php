@@ -33,11 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
 
-        $exceptions->render(function (\Throwable $exception, Request $request) {
-            if ($request->expectsJson() || $request->is('api/*')) {
-                return null;
-            }
-
+        $exceptions->render(function (Throwable $exception, Request $request) {
             if ($exception instanceof ValidationException) {
                 return null;
             }
@@ -50,8 +46,11 @@ return Application::configure(basePath: dirname(__DIR__))
                 default => 'Une erreur inattendue est survenue. Merci de réessayer plus tard.',
             };
 
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json(['message' => $message], $status === 0 ? 500 : $status);
+            }
+
             return response()->view('errors.app', [
-                'status' => $status,
                 'message' => $message,
             ], $status === 0 ? 500 : $status);
         });

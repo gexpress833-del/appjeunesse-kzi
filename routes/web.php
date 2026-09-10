@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Route;
 | Routes publiques (vitrine)
 |--------------------------------------------------------------------------
 */
+Route::get('/up', fn () => response('', 200))->name('up');
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
 /*

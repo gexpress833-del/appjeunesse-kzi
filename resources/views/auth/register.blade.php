@@ -37,8 +37,9 @@
                        class="mt-1 w-full rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
             </div>
             <div>
-                <label class="block text-sm font-medium text-slate-700">Téléphone</label>
-                <input name="phone" value="{{ old('phone') }}"
+                <label class="block text-sm font-medium text-slate-700">Téléphone *</label>
+                <input name="phone" type="tel" value="{{ old('phone') }}" required
+                       placeholder="ex. +243 812 345 678"
                        class="mt-1 w-full rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
             </div>
             <div>

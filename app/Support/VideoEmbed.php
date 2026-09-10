@@ -13,8 +13,8 @@ class VideoEmbed
             return null;
         }
 
-        // YouTube : youtube.com/watch?v=ID, youtu.be/ID, youtube.com/live/ID
-        if (preg_match('~(?:youtube\.com/(?:watch\?v=|live/|embed/)|youtu\.be/)([\w-]{6,20})~i', $url, $m)) {
+        // YouTube : watch, live, shorts, embed, youtu.be, youtube-nocookie.
+        if (preg_match('~(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|live\/|embed\/|shorts\/)|youtu\.be\/|youtube-nocookie\.com\/embed\/)([A-Za-z0-9_-]{11})~i', $url, $m)) {
             return 'https://www.youtube.com/embed/'.$m[1];
         }
 

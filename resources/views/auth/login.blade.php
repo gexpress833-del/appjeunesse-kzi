@@ -9,7 +9,7 @@
             <img src="{{ asset('logoEglise.jpg') }}" class="h-20 w-20 rounded-2xl object-cover ring-2 ring-indigo-400/60" alt="Logo La Parole Éternelle Kolwezi">
         </div>
         <h1 class="text-2xl font-bold text-slate-900">Connexion</h1>
-        <p class="mt-1 text-sm text-slate-500">Utilisez votre adresse email ou votre nom d'utilisateur.</p>
+        <p class="mt-1 text-sm text-slate-500">Utilisez votre email, votre nom d'utilisateur ou votre numéro de téléphone.</p>
 
         @if (session('success'))
             <div class="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ session('success') }}</div>
@@ -24,8 +24,9 @@
         <form method="POST" action="{{ route('login.attempt') }}" class="mt-6 space-y-4">
             @csrf
             <div>
-                <label for="login" class="block text-sm font-medium text-slate-700">Email ou nom d'utilisateur</label>
+                <label for="login" class="block text-sm font-medium text-slate-700">Email, nom d'utilisateur ou téléphone</label>
                 <input id="login" name="login" type="text" value="{{ old('login') }}" required autofocus
+                       placeholder="ex. jean@exemple.com, jean.dupont ou 0812345678"
                        class="mt-1 w-full rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
             </div>
             <div>

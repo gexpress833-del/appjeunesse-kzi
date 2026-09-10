@@ -26,12 +26,15 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        $field = filter_var($credentials['login'], FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+        $login = trim($credentials['login']);
+        $password = $credentials['password'];
+        $user = $this->findUserByLogin($login);
 
-        if (! Auth::attempt([$field => $credentials['login'], 'password' => $credentials['password']], $request->boolean('remember'))) {
+        if (! $user || ! Hash::check($password, $user->password)) {
             return back()->withErrors(['login' => 'Identifiants incorrects.'])->onlyInput('login');
         }
 
+        Auth::login($user, $request->boolean('remember'));
         $request->session()->regenerate();
 
         return redirect()->intended(route('dashboard'));
@@ -52,7 +55,7 @@ class AuthController extends Controller
             'username' => ['required', 'string', 'max:50', 'alpha_dash', 'unique:users,username'],
             'full_name' => ['required', 'string', 'max:150'],
             'email' => ['required', 'email', 'max:150', 'unique:users,email'],
-            'phone' => ['nullable', 'string', 'max:30'],
+            'phone' => ['required', 'string', 'max:30', 'unique:users,phone', 'regex:/^\+?[0-9\s\-()]+$/'],
             'dept' => ['nullable', 'string', 'exists:departments,name'],
             'birth_date' => ['nullable', 'date', 'before:today'],
             'password' => ['required', 'confirmed', 'min:8'],
@@ -60,6 +63,7 @@ class AuthController extends Controller
 
         User::create([
             ...$data,
+            'phone' => $this->normalizePhone($data['phone']),
             'role' => 'user',
             'status' => 'pending',
             'created_by' => 'auto-inscription',
@@ -103,7 +107,7 @@ class AuthController extends Controller
 
         $data = $request->validate([
             'full_name' => ['required', 'string', 'max:150'],
-            'phone' => ['nullable', 'string', 'max:30'],
+            'phone' => ['nullable', 'string', 'max:30', 'regex:/^\+?[0-9\s\-()]+$/'],
             'dept' => ['nullable', 'string', 'exists:departments,name'],
             'birth_date' => ['nullable', 'date', 'before:today'],
             'address' => ['nullable', 'string', 'max:500'],
@@ -112,7 +116,7 @@ class AuthController extends Controller
         ]);
 
         $user->full_name = $data['full_name'];
-        $user->phone = $data['phone'] ?? $user->phone;
+        $user->phone = filled($data['phone'] ?? null) ? $this->normalizePhone($data['phone']) : $user->phone;
         $user->dept = $data['dept'] ?? $user->dept;
         $user->birth_date = $data['birth_date'] ?? $user->birth_date;
         $user->address = $data['address'] ?? $user->address;
@@ -133,5 +137,45 @@ class AuthController extends Controller
         $user->save();
 
         return back()->with('success', 'Profil mis à jour.');
+    }
+
+    protected function findUserByLogin(string $login): ?User
+    {
+        $user = User::query()
+            ->where('email', $login)
+            ->orWhere('username', $login)
+            ->first();
+
+        if ($user) {
+            return $user;
+        }
+
+        $normalizedLogin = $this->normalizePhone($login);
+
+        if ($normalizedLogin === '') {
+            return null;
+        }
+
+        return User::query()
+            ->whereNotNull('phone')
+            ->get()
+            ->first(fn (User $candidate) => $this->normalizePhone((string) $candidate->phone) === $normalizedLogin);
+    }
+
+    protected function normalizePhone(string $value): string
+    {
+        $digits = preg_replace('/\D+/', '', $value) ?? '';
+
+        if ($digits === '') {
+            return '';
+        }
+
+        $digits = preg_replace('/^00/', '', $digits);
+
+        if (str_starts_with($digits, '243')) {
+            $digits = '0'.substr($digits, 3);
+        }
+
+        return $digits;
     }
 }

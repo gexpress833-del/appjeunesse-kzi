@@ -29,7 +29,7 @@
             </div>
             @if (auth()->user()->isAdmin() || auth()->user()->isSecretariat() || auth()->user()->isResponsable())
                 <div class="flex items-center gap-3 text-sm">
-                    <a href="{{ route('attendances.sheet', $event) }}" class="rounded-lg bg-emerald-50 px-3 py-2 font-semibold text-emerald-700 hover:bg-emerald-100">✅ Faire l'appel</a>
+                    <a href="{{ auth()->user()->isResponsable() ? route('attendances.sheet', ['event' => $event, 'dept' => auth()->user()->dept]) : route('attendances.sheet', $event) }}" class="rounded-lg bg-emerald-50 px-3 py-2 font-semibold text-emerald-700 hover:bg-emerald-100">✅ Faire l'appel</a>
                     @if (auth()->user()->isAdmin() || auth()->user()->isSecretariat())
                         <a href="{{ route('events.edit', $event) }}" class="text-indigo-600 hover:underline">Modifier</a>
                     @endif
@@ -57,7 +57,7 @@
                 </div>
             </div>
             @if (auth()->user()->isAdmin() || auth()->user()->isSecretariat() || auth()->user()->isResponsable())
-                <a href="{{ route('attendances.sheet', $event) }}" class="text-sm text-slate-500 hover:underline">Voir l'appel</a>
+                <a href="{{ auth()->user()->isResponsable() ? route('attendances.sheet', ['event' => $event, 'dept' => auth()->user()->dept]) : route('attendances.sheet', $event) }}" class="text-sm text-slate-500 hover:underline">Voir l'appel</a>
             @endif
         </div>
     @empty

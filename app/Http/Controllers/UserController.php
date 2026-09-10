@@ -91,6 +91,8 @@ class UserController extends Controller
             'role_assigned_at' => now(),
         ]);
 
+        $user->notify(new \App\Notifications\RoleUpdated($user, $data['role'], $data['dept'] ?? $user->dept));
+
         return back()->with('success', 'Rôle mis à jour pour '.$user->full_name.'.');
     }
 
@@ -131,7 +133,7 @@ class UserController extends Controller
             'username' => ['required', 'string', 'max:50', 'alpha_dash', 'unique:users,username'],
             'full_name' => ['required', 'string', 'max:150'],
             'email' => ['required', 'email', 'max:150', 'unique:users,email'],
-            'phone' => ['nullable', 'string', 'max:30'],
+            'phone' => ['required', 'string', 'max:30', 'unique:users,phone', 'regex:/^\+?[0-9\s\-()]+$/'],
             'password' => ['required', 'min:8'],
             'role' => ['required', Rule::in($roles)],
             'dept' => ['nullable', 'string', 'exists:departments,name'],

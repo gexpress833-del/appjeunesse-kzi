@@ -47,7 +47,6 @@ class AttendanceController extends Controller
         $user = auth()->user();
 
         abort_if($user->isResponsable() && blank($user->dept), 403, 'Votre compte responsable doit être rattaché à un département.');
-        abort_if($user->isResponsable() && $request->query('dept') === self::UNASSIGNED_DEPARTMENT, 403, 'Un responsable ne peut pas enregistrer les présences des membres sans département.');
 
         if ($user->isResponsable() && filled($event->dept) && $event->dept !== $user->dept) {
             abort(403, 'Vous ne pouvez consulter les présences que de votre département.');
@@ -55,10 +54,12 @@ class AttendanceController extends Controller
 
         $dept = $user->isResponsable() ? $user->dept : $this->normalizeDepartment($request->query('dept'));
 
-        abort_if(! $user->isResponsable() && $request->missing('dept'), 422, 'Sélectionnez un groupe de membres.');
+        if (! $user->isResponsable()) {
+            abort_if($request->missing('dept'), 422, 'Sélectionnez un groupe de membres.');
 
-        if (! $user->isResponsable() && filled($dept)) {
-            abort_unless(Department::where('name', $dept)->exists(), 404, 'Département inconnu.');
+            if (filled($dept)) {
+                abort_unless(Department::where('name', $dept)->exists(), 404, 'Département inconnu.');
+            }
         }
 
         $members = Member::query()
@@ -117,10 +118,13 @@ class AttendanceController extends Controller
                 continue; // pas un membre du département concerné
             }
 
-            Attendance::updateOrCreate(
+            $attendance = Attendance::updateOrCreate(
                 ['member_id' => $memberId, 'event_id' => $event->id],
                 ['status' => $status, 'notes' => $data['notes'][$memberId] ?? null]
             );
+
+            $attendance->load('member');
+            $user->notify(new \App\Notifications\AttendanceRecorded($attendance, $event, $user));
         }
 
         return redirect()->route('attendances.sheet', ['event' => $event, 'dept' => $data['dept'] ?? self::UNASSIGNED_DEPARTMENT])

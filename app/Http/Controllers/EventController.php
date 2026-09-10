@@ -60,7 +60,20 @@ class EventController extends Controller
         $data['created_by'] = $user->username;
         $data = $this->handlePhoto($request, $cloudinary, $data);
 
-        Event::create($data);
+        $event = Event::create($data);
+
+        $eventOwners = User::query()
+            ->whereIn('role', ['admin', 'secretariat', 'responsable'])
+            ->when($event->dept, fn ($query) => $query->where(function ($departmentQuery) use ($event) {
+                $departmentQuery->where('role', 'admin')
+                    ->orWhere('role', 'secretariat')
+                    ->orWhere(fn ($responsableQuery) => $responsableQuery->where('role', 'responsable')->where('dept', $event->dept));
+            }))
+            ->get();
+
+        foreach ($eventOwners as $owner) {
+            $owner->notify(new \App\Notifications\EventCreated($event, $user));
+        }
 
         return redirect()->route('events.index')->with('success', 'Événement créé.');
     }

@@ -28,8 +28,6 @@ COPY --from=frontend /app/public/build ./public/build
 # --- REMPLACEZ LA FIN À PARTIR D'ICI ---
 RUN sed -i 's#DocumentRoot /var/www/html#DocumentRoot /var/www/html/public#' /etc/apache2/sites-available/000-default.conf \
     && sed -i 's#<Directory /var/www/>#<Directory /var/www/html/public>#' /etc/apache2/apache2.conf \
-    && sed -i 's#Listen 80#Listen ${PORT:-10000}#' /etc/apache2/ports.conf \
-    && sed -i 's#<VirtualHost \*:80>#<VirtualHost *:${PORT:-10000}>#' /etc/apache2/sites-available/000-default.conf \
     && mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache \
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R ug+rwx storage bootstrap/cache
@@ -39,4 +37,4 @@ ENV PORT=10000
 
 EXPOSE 10000
 
-CMD ["sh", "-c", "php artisan migrate --force && php artisan config:cache && php artisan route:cache && apache2-foreground"]
+CMD ["/bin/bash", "-lc", "sed -i \"s#Listen 80#Listen ${PORT:-10000}#\" /etc/apache2/ports.conf && sed -i \"s#<VirtualHost \*:80>#<VirtualHost *:${PORT:-10000}>#\" /etc/apache2/sites-available/000-default.conf && php artisan migrate --force && php artisan config:cache && php artisan route:cache && apache2-foreground"]

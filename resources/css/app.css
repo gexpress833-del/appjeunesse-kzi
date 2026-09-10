@@ -191,7 +191,8 @@ body::before {
 .carousel-slide.is-active {
     visibility: visible;
     opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
+    transform: translate3d(0, 0, 0) scale(1.015);
+    filter: drop-shadow(0 0 18px rgba(56, 189, 248, 0.18)) drop-shadow(0 0 30px rgba(168, 85, 247, 0.14));
 }
 
 .carousel-label {
@@ -235,7 +236,15 @@ body::before {
     letter-spacing: -0.04em;
     text-wrap: balance;
     color: rgba(255,255,255,0.98);
-    text-shadow: 0 2px 18px rgba(15,23,42,0.26);
+    text-shadow: 0 2px 18px rgba(15,23,42,0.26), 0 0 18px rgba(125, 211, 252, 0.18);
+    transition: text-shadow 300ms ease;
+}
+
+.carousel-slide.is-active .carousel-quote,
+.carousel-slide.is-active .carousel-message,
+.carousel-slide.is-active .carousel-label,
+.carousel-slide.is-active .carousel-reference {
+    text-shadow: 0 2px 18px rgba(15,23,42,0.38), 0 0 20px rgba(125, 211, 252, 0.22), 0 0 30px rgba(168, 85, 247, 0.18);
 }
 
 .carousel-reference {

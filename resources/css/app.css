@@ -304,6 +304,39 @@ body::before {
     -webkit-backdrop-filter: blur(18px) saturate(145%);
 }
 
+.video-shell {
+    position: relative;
+}
+
+.video-shell iframe {
+    pointer-events: none;
+}
+
+.video-play-button {
+    align-items: center;
+    background: rgba(15, 23, 42, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 9999px;
+    box-shadow: 0 14px 40px rgba(15, 23, 42, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    color: #fff;
+    display: flex;
+    font-size: 1.35rem;
+    height: 4rem;
+    justify-content: center;
+    left: 50%;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    transition: background 180ms ease, transform 180ms ease;
+    width: 4rem;
+    z-index: 2;
+}
+
+.video-play-button:hover {
+    background: rgba(79, 70, 229, 0.9);
+    transform: translate(-50%, -50%) scale(1.06);
+}
+
 @media (max-width: 639px) {
     #carousel {
         min-height: 500px;

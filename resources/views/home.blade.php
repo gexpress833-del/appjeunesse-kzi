@@ -178,7 +178,7 @@
     {{-- ==================== LIVE VIDÉO ==================== --}}
     <section class="mt-10">
         <h2 class="mb-4 flex items-center gap-2 text-2xl font-bold text-slate-900">
-            {{ $live?->broadcast_type === 'replay' ? '📺 Retransmission' : '🔴 Culte en direct' }}
+            Culte vidéo
             @if ($live && $live->is_active)
                 <span class="rounded-full px-2 py-0.5 text-xs font-bold uppercase text-white {{ $live->broadcast_type === 'replay' ? 'bg-slate-600' : 'animate-pulse bg-rose-600' }}">
                     {{ $live->broadcast_type === 'replay' ? 'Retransmission' : 'En direct' }}
@@ -187,13 +187,16 @@
         </h2>
 
         @if ($live && $live->is_active && \App\Support\VideoEmbed::toEmbed($live->media_url))
-            <div class="overflow-hidden rounded-2xl bg-black shadow-lg">
+            <div class="video-shell overflow-hidden rounded-2xl bg-black shadow-lg" data-video-player data-video-id="{{ \App\Support\VideoEmbed::youtubeId($live->media_url) }}">
                 <div class="aspect-video">
                     <iframe src="{{ \App\Support\VideoEmbed::toEmbed($live->media_url) }}"
-                            class="h-full w-full" style="border:0"
-                            allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen
+                            class="h-full w-full" style="border:0" tabindex="-1"
+                            allow="autoplay; encrypted-media; picture-in-picture"
                             title="{{ $live->title }}"></iframe>
                 </div>
+                @if (\App\Support\VideoEmbed::youtubeId($live->media_url))
+                    <button type="button" class="video-play-button" data-video-toggle aria-label="Lire la vidéo">▶</button>
+                @endif
             </div>
             @if ($live->content)
                 <p class="mt-3 text-slate-600">{{ $live->content }}</p>
@@ -220,8 +223,11 @@
             <div class="mt-5 grid gap-5 lg:grid-cols-2">
                 @foreach ($videoArchives as $video)
                     <article class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                        <div class="aspect-video bg-slate-950">
-                            <iframe src="{{ \App\Support\VideoEmbed::toEmbed($video->media_url) }}" class="h-full w-full" style="border:0" loading="lazy" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen title="{{ $video->title }}"></iframe>
+                        <div class="video-shell aspect-video bg-slate-950" data-video-player data-video-id="{{ \App\Support\VideoEmbed::youtubeId($video->media_url) }}">
+                            <iframe src="{{ \App\Support\VideoEmbed::toEmbed($video->media_url) }}" class="h-full w-full" style="border:0" loading="lazy" tabindex="-1" allow="autoplay; encrypted-media; picture-in-picture" title="{{ $video->title }}"></iframe>
+                            @if (\App\Support\VideoEmbed::youtubeId($video->media_url))
+                                <button type="button" class="video-play-button" data-video-toggle aria-label="Lire la vidéo">▶</button>
+                            @endif
                         </div>
                         <div class="p-5">
                             <div class="flex items-start justify-between gap-3">
@@ -263,6 +269,43 @@
             </div>
         </section>
     @endif
+
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script>
+        const videoPlayers = new Map();
+        let youtubeApiReady = false;
+
+        window.onYouTubeIframeAPIReady = function () {
+            youtubeApiReady = true;
+            document.querySelectorAll('[data-video-player][data-video-id]').forEach((shell) => {
+                const iframe = shell.querySelector('iframe');
+                const player = new YT.Player(iframe, {
+                    events: {
+                        onReady: () => videoPlayers.set(shell, player),
+                        onStateChange: (event) => {
+                            const button = shell.querySelector('[data-video-toggle]');
+                            if (button) button.textContent = event.data === YT.PlayerState.PLAYING ? '❚❚' : '▶';
+                        },
+                    },
+                });
+            });
+        };
+
+        document.querySelectorAll('[data-video-toggle]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const shell = button.closest('[data-video-player]');
+                const player = videoPlayers.get(shell);
+
+                if (!youtubeApiReady || !player) return;
+
+                if (player.getPlayerState() === YT.PlayerState.PLAYING) {
+                    player.pauseVideo();
+                } else {
+                    player.playVideo();
+                }
+            });
+        });
+    </script>
 
     {{-- ==================== ÉVÉNEMENTS À VENIR ==================== --}}
     @if ($upcomingEvents->isNotEmpty())

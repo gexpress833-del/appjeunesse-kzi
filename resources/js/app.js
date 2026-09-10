@@ -80,6 +80,11 @@ document.querySelectorAll('[data-theme-toggle]').forEach((toggle) => {
 
 		const sidebar = document.getElementById('sidebar');
 		const backdrop = document.getElementById('sidebar-backdrop');
+
+		if (!sidebar || !backdrop) {
+			return;
+		}
+
 		const isClosed = sidebar.classList.toggle('sidebar-closed');
 
 		sidebar.classList.toggle('sidebar-open', !isClosed);
@@ -88,10 +93,15 @@ document.querySelectorAll('[data-theme-toggle]').forEach((toggle) => {
 
 	window.closeSidebar = () => {
 		const sidebar = document.getElementById('sidebar');
+		const backdrop = document.getElementById('sidebar-backdrop');
+
+		if (!sidebar || !backdrop) {
+			return;
+		}
 
 		sidebar.classList.add('sidebar-closed');
 		sidebar.classList.remove('sidebar-open');
-		document.getElementById('sidebar-backdrop').classList.add('hidden');
+		backdrop.classList.add('hidden');
 	};
 
 	updateLabel();

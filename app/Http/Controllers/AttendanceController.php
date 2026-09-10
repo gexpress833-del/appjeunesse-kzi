@@ -6,6 +6,7 @@ use App\Models\Attendance;
 use App\Models\Department;
 use App\Models\Event;
 use App\Models\Member;
+use App\Notifications\AttendanceRecorded;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
@@ -52,7 +53,13 @@ class AttendanceController extends Controller
             abort(403, 'Vous ne pouvez consulter les présences que de votre département.');
         }
 
-        $dept = $user->isResponsable() ? $user->dept : $this->normalizeDepartment($request->query('dept'));
+        $requestedDept = $this->normalizeDepartment($request->query('dept'));
+
+        if ($user->isResponsable() && filled($request->query('dept')) && $requestedDept !== $user->dept) {
+            abort(403, 'Vous ne pouvez consulter que les membres de votre département.');
+        }
+
+        $dept = $user->isResponsable() ? $user->dept : $requestedDept;
 
         if (! $user->isResponsable()) {
             abort_if($request->missing('dept'), 422, 'Sélectionnez un groupe de membres.');
@@ -124,7 +131,7 @@ class AttendanceController extends Controller
             );
 
             $attendance->load('member');
-            $user->notify(new \App\Notifications\AttendanceRecorded($attendance, $event, $user));
+            $user->notify(new AttendanceRecorded($attendance, $event, $user));
         }
 
         return redirect()->route('attendances.sheet', ['event' => $event, 'dept' => $data['dept'] ?? self::UNASSIGNED_DEPARTMENT])

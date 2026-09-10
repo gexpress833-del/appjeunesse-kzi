@@ -32,9 +32,19 @@
                         <p class="text-sm text-slate-500">{{ $event->date->translatedFormat('d/m/Y · H\hi') }}</p>
                     </div>
                     <div class="flex flex-wrap items-center justify-end gap-2">
-                        <a href="{{ auth()->user()->isResponsable() ? route('attendances.sheet', ['event' => $event, 'dept' => auth()->user()->dept]) : route('attendances.sheet', ['event' => $event, 'dept' => $dept ?? request('dept')]) }}" class="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500">Ouvrir</a>
                         @if (auth()->user()->isResponsable())
-                            <a href="{{ route('attendances.pdf', ['event_id' => $event->id]) }}" class="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-500">PDF</a>
+                            <a href="{{ route('attendances.sheet', ['event' => $event, 'dept' => auth()->user()->dept]) }}" class="action-link rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500">Présences</a>
+                            <a href="{{ route('attendances.pdf', ['event_id' => $event->id]) }}" class="action-link rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-500">PDF</a>
+                        @else
+                            <div class="w-full min-w-64 text-right">
+                                <p class="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">Département</p>
+                                <div class="flex flex-wrap justify-end gap-2">
+                                    @foreach ($departments as $department)
+                                        <a href="{{ route('attendances.sheet', ['event' => $event, 'dept' => $department->name]) }}" class="action-link rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-500">{{ $department->name }}</a>
+                                    @endforeach
+                                    <a href="{{ route('attendances.sheet', ['event' => $event, 'dept' => '__none__']) }}" class="action-link rounded-lg bg-slate-700 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-600">Sans département</a>
+                                </div>
+                            </div>
                         @endif
                     </div>
                 </div>

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Event;
+use App\Models\User;
+use App\Notifications\EventCreated;
 use App\Services\CloudinaryService;
 use Illuminate\Http\Request;
 
@@ -72,7 +74,7 @@ class EventController extends Controller
             ->get();
 
         foreach ($eventOwners as $owner) {
-            $owner->notify(new \App\Notifications\EventCreated($event, $user));
+            $owner->notify(new EventCreated($event, $user));
         }
 
         return redirect()->route('events.index')->with('success', 'Événement créé.');

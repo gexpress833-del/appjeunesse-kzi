@@ -201,6 +201,36 @@
             @if ($live->content)
                 <p class="mt-3 text-slate-600">{{ $live->content }}</p>
             @endif
+            @if ($liveArchive)
+                <div class="video-engagement mt-4 rounded-2xl border border-slate-200 bg-white p-4">
+                    <div class="flex flex-wrap items-center gap-3 text-sm text-slate-600">
+                        @auth
+                            <form method="POST" action="{{ route('videos.like', $liveArchive) }}">
+                                @csrf
+                                <button class="rounded-xl border border-rose-200 px-3 py-2 font-semibold text-rose-700 hover:bg-rose-50">♥ {{ $liveArchive->likes_count }} j’aime</button>
+                            </form>
+                        @else
+                            <span class="rounded-xl border border-slate-200 px-3 py-2">♥ {{ $liveArchive->likes_count }} j’aime</span>
+                        @endauth
+                        <span>💬 {{ $liveArchive->comments->count() }} commentaire(s)</span>
+                        <span>◉ {{ $liveArchive->views_count }} vue(s)</span>
+                    </div>
+                    @auth
+                        <form method="POST" action="{{ route('videos.comment', $liveArchive) }}" class="mt-4 flex gap-2">
+                            @csrf
+                            <input name="body" required maxlength="1000" placeholder="Écrire un commentaire..." class="min-w-0 flex-1 rounded-xl border-slate-300 text-sm">
+                            <button class="rounded-xl bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500">Publier</button>
+                        </form>
+                    @endauth
+                    @if ($liveArchive->comments->isNotEmpty())
+                        <div class="mt-4 space-y-2 border-t border-slate-100 pt-3">
+                            @foreach ($liveArchive->comments->take(3) as $comment)
+                                <p class="text-sm text-slate-600"><strong class="text-slate-900">{{ $comment->user->full_name }}</strong> {{ $comment->body }}</p>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+            @endif
         @else
             <div class="rounded-2xl border-2 border-dashed border-slate-300 bg-white px-6 py-12 text-center text-slate-500">
                 <p class="text-4xl">📺</p>
@@ -248,6 +278,7 @@
                                     <span class="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-500">♥ {{ $video->likes_count }}</span>
                                 @endauth
                                 <span class="text-sm text-slate-500">💬 {{ $video->comments->count() }} commentaire(s)</span>
+                                <span class="text-sm text-slate-500">◉ {{ $video->views_count }} vue(s)</span>
                             </div>
                             @auth
                                 <form method="POST" action="{{ route('videos.comment', $video) }}" class="mt-4 flex gap-2">

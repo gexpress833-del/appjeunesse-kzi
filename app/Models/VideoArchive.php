@@ -7,9 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['title', 'description', 'media_url', 'broadcast_type', 'published_by'])]
+#[Fillable(['title', 'description', 'media_url', 'broadcast_type', 'published_by', 'views_count'])]
 class VideoArchive extends Model
 {
+    protected function casts(): array
+    {
+        return ['views_count' => 'integer'];
+    }
+
     public function publisher(): BelongsTo
     {
         return $this->belongsTo(User::class, 'published_by');

@@ -37,4 +37,15 @@ class ExampleTest extends TestCase
             VideoEmbed::toEmbed('https://facebook.com/watch?v=1234567890')
         );
     }
+
+    public function test_live_video_embed_uses_the_current_request_origin(): void
+    {
+        config()->set('app.url', 'http://localhost:8000');
+        app()->instance('request', \Illuminate\Http\Request::create('http://127.0.0.1:8000/'));
+
+        $this->assertStringContainsString(
+            'origin=http%3A%2F%2F127.0.0.1%3A8000',
+            VideoEmbed::toEmbed('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+        );
+    }
 }

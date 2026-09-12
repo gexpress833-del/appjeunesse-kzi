@@ -306,16 +306,30 @@
         const videoPlayers = new Map();
         let youtubeApiReady = false;
 
+        function setVideoToggleState(button, state) {
+            if (!button) return;
+            button.textContent = state === 'playing' ? '❚❚' : '▶';
+            button.setAttribute('aria-label', state === 'playing' ? 'Pause la vidéo' : 'Lire la vidéo');
+        }
+
         window.onYouTubeIframeAPIReady = function () {
             youtubeApiReady = true;
             document.querySelectorAll('[data-video-player][data-video-id]').forEach((shell) => {
                 const iframe = shell.querySelector('iframe');
+                if (!iframe || !window.YT || !window.YT.Player) return;
+
                 const player = new YT.Player(iframe, {
                     events: {
-                        onReady: () => videoPlayers.set(shell, player),
+                        onReady: () => {
+                            videoPlayers.set(shell, player);
+                            const button = shell.querySelector('[data-video-toggle]');
+                            if (button) setVideoToggleState(button, 'paused');
+                        },
                         onStateChange: (event) => {
                             const button = shell.querySelector('[data-video-toggle]');
-                            if (button) button.textContent = event.data === YT.PlayerState.PLAYING ? '❚❚' : '▶';
+                            if (button) {
+                                setVideoToggleState(button, event.data === YT.PlayerState.PLAYING ? 'playing' : 'paused');
+                            }
                         },
                     },
                 });
@@ -325,9 +339,11 @@
         document.querySelectorAll('[data-video-toggle]').forEach((button) => {
             button.addEventListener('click', () => {
                 const shell = button.closest('[data-video-player]');
-                const player = videoPlayers.get(shell);
+                const player = shell ? videoPlayers.get(shell) : null;
 
-                if (!youtubeApiReady || !player) return;
+                if (!youtubeApiReady || !player || typeof player.playVideo !== 'function' || typeof player.pauseVideo !== 'function') {
+                    return;
+                }
 
                 if (player.getPlayerState() === YT.PlayerState.PLAYING) {
                     player.pauseVideo();

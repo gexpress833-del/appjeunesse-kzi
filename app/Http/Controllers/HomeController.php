@@ -33,11 +33,13 @@ class HomeController extends Controller
                 ],
             );
 
-            $viewKey = 'video-viewed-'.$liveArchive->id;
-            if (! $request->session()->has($viewKey)) {
-                $liveArchive->increment('views_count');
-                $request->session()->put($viewKey, true);
-                $liveArchive->refresh();
+            if (auth()->check()) {
+                $viewKey = 'video-viewed-'.$liveArchive->id.'-user-'.auth()->id();
+                if (! $request->session()->has($viewKey)) {
+                    $liveArchive->increment('views_count');
+                    $request->session()->put($viewKey, true);
+                    $liveArchive->refresh();
+                }
             }
 
             $liveArchive->loadCount('likes')->load('comments.user');

@@ -201,4 +201,72 @@ class AuthPhoneAndNotificationTest extends TestCase
             'notifiable_type' => User::class,
         ]);
     }
+
+    public function test_user_can_manage_own_notifications(): void
+    {
+        $user = User::factory()->create(['role' => 'user', 'status' => 'active']);
+        $notification = $user->notify(new \App\Notifications\AccountValidated);
+
+        $notification = $user->notifications()->latest()->first();
+
+        $this->actingAs($user)
+            ->post(route('notifications.read', $notification))
+            ->assertRedirect();
+
+        $this->assertNotNull($notification->fresh()->read_at);
+
+        $this->actingAs($user)
+            ->delete(route('notifications.destroy', $notification))
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('notifications', [
+            'id' => $notification->id,
+        ]);
+    }
+
+    public function test_user_can_delete_multiple_notifications_at_once(): void
+    {
+        $user = User::factory()->create(['role' => 'user', 'status' => 'active']);
+
+        $first = $user->notify(new \App\Notifications\AccountValidated);
+        $second = $user->notify(new \App\Notifications\RoleUpdated($user, 'user', 'Médias'));
+
+        $notifications = $user->notifications()->latest()->take(2)->get();
+
+        $this->actingAs($user)
+            ->post(route('notifications.bulk.destroy'), [
+                'notifications' => $notifications->pluck('id')->all(),
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('notifications', [
+            'notifiable_id' => $user->id,
+            'notifiable_type' => User::class,
+        ]);
+    }
+
+    public function test_video_views_are_counted_once_per_real_user(): void
+    {
+        $user = User::factory()->create(['role' => 'user', 'status' => 'active']);
+
+        $live = \App\Models\HomeContent::create([
+            'type' => 'live_stream',
+            'title' => 'Culte en direct',
+            'content' => 'Live de démonstration',
+            'media_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            'broadcast_type' => 'live',
+            'is_active' => true,
+        ]);
+
+        $archive = \App\Models\VideoArchive::firstOrCreate(
+            ['media_url' => $live->media_url],
+            ['title' => $live->title, 'broadcast_type' => $live->broadcast_type]
+        );
+
+        $this->actingAs($user)->withSession([])->get('/');
+        $this->assertSame(1, $archive->fresh()->views_count);
+
+        $this->actingAs($user)->withSession([])->get('/');
+        $this->assertSame(1, $archive->fresh()->views_count);
+    }
 }

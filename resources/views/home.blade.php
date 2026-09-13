@@ -177,60 +177,96 @@
 
     {{-- ==================== LIVE VIDÉO ==================== --}}
     <section class="mt-10">
-        <h2 class="mb-4 flex items-center gap-2 text-2xl font-bold text-slate-900">
-            Culte vidéo
+        <div class="mb-4 flex items-center justify-between gap-3">
+            <h2 class="flex items-center gap-2 text-2xl font-bold text-slate-900">
+                Culte vidéo
+                @if ($live && $live->is_active)
+                    <span class="rounded-full px-2 py-0.5 text-xs font-bold uppercase text-white {{ $live->broadcast_type === 'replay' ? 'bg-slate-600' : 'animate-pulse bg-rose-600' }}">
+                        {{ $live->broadcast_type === 'replay' ? 'Retransmission' : 'En direct' }}
+                    </span>
+                @endif
+            </h2>
             @if ($live && $live->is_active)
-                <span class="rounded-full px-2 py-0.5 text-xs font-bold uppercase text-white {{ $live->broadcast_type === 'replay' ? 'bg-slate-600' : 'animate-pulse bg-rose-600' }}">
-                    {{ $live->broadcast_type === 'replay' ? 'Retransmission' : 'En direct' }}
-                </span>
+                <span class="rounded-full border border-cyan-200 bg-cyan-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-700">Live social</span>
             @endif
-        </h2>
+        </div>
 
         @if ($live && $live->is_active && \App\Support\VideoEmbed::toEmbed($live->media_url))
-            <div class="video-shell overflow-hidden rounded-2xl bg-black shadow-lg" data-video-player data-video-id="{{ \App\Support\VideoEmbed::youtubeId($live->media_url) }}">
-                <div class="aspect-video">
-                    <iframe src="{{ \App\Support\VideoEmbed::toEmbed($live->media_url) }}"
-                            class="h-full w-full" style="border:0" tabindex="-1"
-                            allow="autoplay; encrypted-media; picture-in-picture"
-                            title="{{ $live->title }}"></iframe>
+            <div class="live-feed-shell">
+                <div class="live-feed-grid">
+                    <div class="video-feed-surface">
+                        <div class="video-shell" data-video-player data-video-id="{{ \App\Support\VideoEmbed::youtubeId($live->media_url) }}">
+                            <div class="aspect-video overflow-hidden bg-black">
+                                <iframe src="{{ \App\Support\VideoEmbed::toEmbed($live->media_url) }}"
+                                        class="h-full w-full" style="border:0" tabindex="-1"
+                                        allow="autoplay; encrypted-media; picture-in-picture"
+                                        title="{{ $live->title }}"></iframe>
+                            </div>
+                            @if (\App\Support\VideoEmbed::youtubeId($live->media_url))
+                                <button type="button" class="video-play-button" data-video-toggle aria-label="Lire la vidéo">▶</button>
+                            @endif
+                        </div>
+                    </div>
+
+                    <aside class="live-feed-sidebar">
+                        <div class="live-feed-card live-feed-stats">
+                            <div class="live-feed-stat-title">Engagement</div>
+                            <div class="flex flex-wrap items-center gap-2 text-sm text-slate-200">
+                                @auth
+                                    <form method="POST" action="{{ route('videos.like', $liveArchive) }}" data-video-like-form data-video-id="{{ $liveArchive->id }}" class="inline-block">
+                                        @csrf
+                                        <button type="submit" data-like-button data-like-count-target="{{ $liveArchive->id }}" class="live-social-pill live-social-pill-like {{ $liveArchive->likes()->where('user_id', auth()->id())->exists() ? 'is-liked' : '' }}" aria-pressed="{{ $liveArchive->likes()->where('user_id', auth()->id())->exists() ? 'true' : 'false' }}">
+                                            <span aria-hidden="true">♥</span>
+                                            <span data-like-count="{{ $liveArchive->id }}">{{ $liveArchive->likes_count }}</span>
+                                        </button>
+                                    </form>
+                                @else
+                                    <span class="live-social-pill live-social-pill-like"><span aria-hidden="true">♥</span> {{ $liveArchive->likes_count }}</span>
+                                @endauth
+                                <span class="live-social-pill"><span aria-hidden="true">💬</span> <span data-comments-count="{{ $liveArchive->id }}">{{ $liveArchive->comments->count() }}</span></span>
+                                <span class="live-social-pill"><span aria-hidden="true">◉</span> {{ $liveArchive->views_count }}</span>
+                            </div>
+                        </div>
+
+                        <div class="live-feed-card live-feed-comments">
+                            <div class="live-feed-comment-header">
+                                <span>Commentaires</span>
+                                <span class="live-feed-dot"></span>
+                            </div>
+
+                            @if ($liveArchive->comments->isNotEmpty())
+                                <div class="comment-stream" data-comments-list="{{ $liveArchive->id }}">
+                                    @foreach ($liveArchive->comments->take(4) as $comment)
+                                        <div class="comment-bubble">
+                                            <span class="comment-user">{{ $comment->user->full_name }}</span>
+                                            <p>{{ $comment->body }}</p>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="comment-stream empty" data-comments-list="{{ $liveArchive->id }}">
+                                    <div class="comment-bubble muted">
+                                        <span class="comment-user">La communauté</span>
+                                        <p>Soyez le premier à commenter ce live.</p>
+                                    </div>
+                                </div>
+                            @endif
+
+                            @auth
+                                <form method="POST" action="{{ route('videos.comment', $liveArchive) }}" data-video-comment-form data-video-id="{{ $liveArchive->id }}" class="comment-form mt-4">
+                                    @csrf
+                                    <input name="body" required maxlength="1000" placeholder="Écrire un commentaire..." class="comment-input">
+                                    <button type="submit" class="comment-submit">Publier</button>
+                                </form>
+                            @endauth
+                        </div>
+                    </aside>
                 </div>
-                @if (\App\Support\VideoEmbed::youtubeId($live->media_url))
-                    <button type="button" class="video-play-button" data-video-toggle aria-label="Lire la vidéo">▶</button>
+
+                @if ($live->content)
+                    <p class="mt-4 text-sm font-medium text-slate-700">{{ $live->content }}</p>
                 @endif
             </div>
-            @if ($live->content)
-                <p class="mt-3 text-slate-600">{{ $live->content }}</p>
-            @endif
-            @if ($liveArchive)
-                <div class="video-engagement mt-4 rounded-2xl border border-slate-200 bg-white p-4">
-                    <div class="flex flex-wrap items-center gap-3 text-sm text-slate-600">
-                        @auth
-                            <form method="POST" action="{{ route('videos.like', $liveArchive) }}">
-                                @csrf
-                                <button class="rounded-xl border border-rose-200 px-3 py-2 font-semibold text-rose-700 hover:bg-rose-50">♥ {{ $liveArchive->likes_count }} j’aime</button>
-                            </form>
-                        @else
-                            <span class="rounded-xl border border-slate-200 px-3 py-2">♥ {{ $liveArchive->likes_count }} j’aime</span>
-                        @endauth
-                        <span>💬 {{ $liveArchive->comments->count() }} commentaire(s)</span>
-                        <span>◉ {{ $liveArchive->views_count }} vue(s)</span>
-                    </div>
-                    @auth
-                        <form method="POST" action="{{ route('videos.comment', $liveArchive) }}" class="mt-4 flex gap-2">
-                            @csrf
-                            <input name="body" required maxlength="1000" placeholder="Écrire un commentaire..." class="min-w-0 flex-1 rounded-xl border-slate-300 text-sm">
-                            <button class="rounded-xl bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500">Publier</button>
-                        </form>
-                    @endauth
-                    @if ($liveArchive->comments->isNotEmpty())
-                        <div class="mt-4 space-y-2 border-t border-slate-100 pt-3">
-                            @foreach ($liveArchive->comments->take(3) as $comment)
-                                <p class="text-sm text-slate-600"><strong class="text-slate-900">{{ $comment->user->full_name }}</strong> {{ $comment->body }}</p>
-                            @endforeach
-                        </div>
-                    @endif
-                </div>
-            @endif
         @else
             <div class="rounded-2xl border-2 border-dashed border-slate-300 bg-white px-6 py-12 text-center text-slate-500">
                 <p class="text-4xl">📺</p>
@@ -308,9 +344,112 @@
 
         function setVideoToggleState(button, state) {
             if (!button) return;
+            const shell = button.closest('[data-video-player]');
+            if (shell) {
+                shell.classList.toggle('is-playing', state === 'playing');
+            }
             button.textContent = state === 'playing' ? '❚❚' : '▶';
             button.setAttribute('aria-label', state === 'playing' ? 'Pause la vidéo' : 'Lire la vidéo');
         }
+
+        function updateLikeButton(form, liked, count) {
+            const button = form.querySelector('[data-like-button]');
+            const countNode = form.querySelector('[data-like-count]');
+
+            if (!button || !countNode) return;
+
+            countNode.textContent = count;
+            button.classList.toggle('is-liked', liked);
+            button.setAttribute('aria-pressed', liked ? 'true' : 'false');
+        }
+
+        function updateCommentList(videoId, comment, count) {
+            const commentCountNode = document.querySelector('[data-comments-count="' + videoId + '"]');
+            const listNode = document.querySelector('[data-comments-list="' + videoId + '"]');
+
+            if (commentCountNode) commentCountNode.textContent = count;
+            if (!listNode) return;
+
+            listNode.classList.remove('hidden');
+            listNode.insertAdjacentHTML('afterend', '');
+
+            const item = document.createElement('p');
+            item.className = 'text-sm text-slate-200';
+            item.innerHTML = '<strong class="font-semibold text-white">' + comment.user + '</strong> ' + comment.body;
+            listNode.prepend(item);
+        }
+
+        document.querySelectorAll('[data-video-like-form]').forEach((form) => {
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                if (form.dataset.busy === 'true') return;
+
+                form.dataset.busy = 'true';
+                const token = form.querySelector('input[name=_token]')?.value || '';
+                const button = form.querySelector('[data-like-button]');
+                if (button) button.disabled = true;
+
+                try {
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': token,
+                        },
+                        body: new FormData(form),
+                    });
+
+                    if (!response.ok) throw new Error('Like failed');
+
+                    const data = await response.json();
+                    updateLikeButton(form, data.liked, data.count);
+                } catch (error) {
+                    console.error(error);
+                } finally {
+                    form.dataset.busy = 'false';
+                    if (button) button.disabled = false;
+                }
+            });
+        });
+
+        document.querySelectorAll('[data-video-comment-form]').forEach((form) => {
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                if (form.dataset.busy === 'true') return;
+
+                const input = form.querySelector('input[name="body"]');
+                if (!input || !input.value.trim()) return;
+
+                form.dataset.busy = 'true';
+                const token = form.querySelector('input[name=_token]')?.value || '';
+                const button = form.querySelector('button[type="submit"]');
+                if (button) button.disabled = true;
+
+                try {
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': token,
+                        },
+                        body: new FormData(form),
+                    });
+
+                    if (!response.ok) throw new Error('Comment failed');
+
+                    const data = await response.json();
+                    updateCommentList(form.dataset.videoId, data.comment, data.count);
+                    input.value = '';
+                } catch (error) {
+                    console.error(error);
+                } finally {
+                    form.dataset.busy = 'false';
+                    if (button) button.disabled = false;
+                }
+            });
+        });
 
         window.onYouTubeIframeAPIReady = function () {
             youtubeApiReady = true;
@@ -345,10 +484,15 @@
                     return;
                 }
 
-                if (player.getPlayerState() === YT.PlayerState.PLAYING) {
+                const currentState = player.getPlayerState && player.getPlayerState();
+                const isPlaying = currentState === YT.PlayerState.PLAYING;
+
+                if (isPlaying) {
                     player.pauseVideo();
+                    setVideoToggleState(button, 'paused');
                 } else {
                     player.playVideo();
+                    setVideoToggleState(button, 'playing');
                 }
             });
         });

@@ -269,4 +269,36 @@ class AuthPhoneAndNotificationTest extends TestCase
         $this->actingAs($user)->withSession([])->get('/');
         $this->assertSame(1, $archive->fresh()->views_count);
     }
+
+    public function test_public_video_archive_page_lists_all_videos_by_type(): void
+    {
+        $publisher = User::factory()->create(['role' => 'admin', 'status' => 'active']);
+
+        \App\Models\VideoArchive::create([
+            'title' => 'Culte du dimanche',
+            'description' => 'Direct réservé aux fidèles.',
+            'media_url' => 'https://www.youtube.com/watch?v=M7lc1UVf-VE',
+            'broadcast_type' => 'live',
+            'views_count' => 120,
+            'published_by' => $publisher->id,
+        ]);
+
+        \App\Models\VideoArchive::create([
+            'title' => 'Retransmission jeunesse',
+            'description' => 'Retrouvez la retransmission complète.',
+            'media_url' => 'https://www.facebook.com/watch/?v=123456789',
+            'broadcast_type' => 'replay',
+            'views_count' => 84,
+            'published_by' => $publisher->id,
+        ]);
+
+        $response = $this->get(route('videos.archive'));
+
+        $response->assertOk();
+        $response->assertSee('Archives vidéo');
+        $response->assertSee('Culte du dimanche');
+        $response->assertSee('Retransmission jeunesse');
+        $response->assertSee('En direct');
+        $response->assertSee('Retransmission');
+    }
 }

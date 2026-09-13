@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Route;
 */
 Route::get('/up', fn () => response('', 200))->name('up');
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/videos', [VideoArchiveController::class, 'archive'])->name('videos.archive');
 
 /*
 |--------------------------------------------------------------------------
@@ -61,6 +62,9 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     Route::middleware('auth')->group(function () {
         Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+        Route::post('/notifications/{notification}/lire', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+        Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
+        Route::post('/notifications/supprimer-selection', [NotificationController::class, 'bulkDestroy'])->name('notifications.bulk.destroy');
         Route::post('/notifications/lire-tout', [NotificationController::class, 'markAllAsRead'])->name('notifications.read.all');
 
         Route::post('/videos/{videoArchive}/like', [VideoArchiveController::class, 'like'])->name('videos.like');

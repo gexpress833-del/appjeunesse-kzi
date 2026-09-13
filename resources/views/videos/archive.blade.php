@@ -53,8 +53,8 @@
                         <div class="video-shell archive-video-shell" data-video-player data-video-id="{{ \App\Support\VideoEmbed::youtubeId($video->media_url) }}">
                             <div class="aspect-video overflow-hidden bg-black">
                                 <iframe src="{{ \App\Support\VideoEmbed::toEmbed($video->media_url) }}"
-                                        class="h-full w-full" style="border:0" loading="lazy" tabindex="-1"
-                                        allow="autoplay; encrypted-media; picture-in-picture" title="{{ $video->title }}"></iframe>
+                                    class="video-embed-frame h-full w-full" style="border:0" loading="lazy" tabindex="-1" sandbox="allow-scripts allow-same-origin allow-presentation"
+                                        allow="autoplay; encrypted-media" title="{{ $video->title }}"></iframe>
                             </div>
                             @if (\App\Support\VideoEmbed::youtubeId($video->media_url))
                                 <button type="button" class="video-play-button" data-video-toggle aria-label="Lire la vidéo">▶</button>

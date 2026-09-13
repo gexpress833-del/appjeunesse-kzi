@@ -523,6 +523,11 @@ body::before {
     z-index: 1;
 }
 
+.video-shell .video-embed-frame {
+    pointer-events: none;
+    user-select: none;
+}
+
 .video-shell iframe {
     pointer-events: auto;
     position: relative;

@@ -1013,28 +1013,30 @@ body::before {
     }
 
     #carousel {
-        min-height: 500px;
+        min-height: 430px;
+        margin: 0.75rem;
+        border-radius: 1.55rem;
     }
 
     .carousel-slide {
-        padding-left: 3.5rem;
-        padding-right: 3.5rem;
-        padding-top: 4.5rem;
-        padding-bottom: 5rem;
-        gap: 0.75rem;
+        inset: 0 !important;
+        border-radius: 1.55rem;
+        padding: 3.5rem 2.9rem 4rem;
+        gap: 0.85rem;
     }
 
     .carousel-quote,
     .carousel-message {
-        max-width: 15.5rem;
-        font-size: 1.1rem;
-        line-height: 1.4;
+        max-width: 15rem;
+        font-size: clamp(1rem, 4.7vw, 1.2rem);
+        line-height: 1.45;
+        letter-spacing: -0.015em;
     }
 
     .carousel-label {
-        max-width: 13.5rem;
-        font-size: 0.63rem;
-        padding: 0.7rem 1rem;
+        max-width: 14rem;
+        font-size: 0.58rem;
+        padding: 0.62rem 0.85rem;
         text-align: center;
     }
 
@@ -1047,6 +1049,20 @@ body::before {
 
     #carousel-dots {
         bottom: 1rem;
+    }
+
+    .carousel-nav {
+        top: 50%;
+        width: 2.25rem;
+        height: 2.25rem;
+        padding: 0;
+        font-size: 1.2rem;
+        line-height: 1;
+    }
+
+    .carousel-atmosphere > .absolute.-left-12,
+    .carousel-atmosphere > .absolute.-right-12 {
+        display: none;
     }
 }
 
@@ -1367,14 +1383,25 @@ html[data-theme='light'] .theme-toggle:hover {
     }
 
     .guest-header-actions nav {
-        display: grid;
+        display: flex;
+        flex-wrap: nowrap;
         gap: 0.35rem;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        justify-content: flex-start;
+        overflow-x: auto;
+        padding-bottom: 0.1rem;
+        scrollbar-width: none;
     }
+
+    .guest-header-actions nav::-webkit-scrollbar {
+        display: none;
+    }
+
 
     .guest-header-actions nav a {
         overflow: hidden;
         text-overflow: ellipsis;
+        flex: 0 0 auto;
+        max-width: 9rem;
         text-align: center;
     }
 
@@ -1391,6 +1418,24 @@ html[data-theme='light'] .theme-toggle:hover {
         font-size: 0.7rem;
         padding-left: 0.6rem;
         padding-right: 0.6rem;
+    }
+
+    .theme-toggle {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+
+    .theme-toggle [data-theme-label] {
+        display: none;
+    }
+
+    .app-install-button > span:last-child {
+        display: none;
+    }
+
+    .app-install-button {
+        width: auto !important;
+        justify-self: end;
     }
 }
 

@@ -31,7 +31,8 @@ class MediaController extends Controller
      */
     public function gallery(Request $request)
     {
-        $query = Photo::with('event')->orderByDesc('created_at');
+        $query = Photo::with(['event' => fn ($eventQuery) => $eventQuery->withCount('photos')])
+            ->orderByDesc('created_at');
 
         if ($request->filled('event_id')) {
             $query->where('event_id', $request->input('event_id'));
@@ -46,8 +47,11 @@ class MediaController extends Controller
             });
         }
 
+        $photos = $query->paginate(24)->appends($request->only(['event_id', 'search']));
+
         return view('gallery.index', [
-            'photos' => $query->paginate(24)->appends($request->only(['event_id', 'search'])),
+            'photos' => $photos,
+            'photoGroups' => $photos->getCollection()->groupBy(fn (Photo $photo) => $photo->event_id ?: 'unassigned'),
             'events' => Event::orderByDesc('date')->get(),
             'selectedEventId' => $request->input('event_id'),
             'search' => $request->input('search'),

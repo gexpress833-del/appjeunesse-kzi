@@ -147,13 +147,17 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     /*
     |----------------------------------------------------------------------
-    | Galerie & Live — téléversement réservé au responsable DCC/Médias ou admin
+    | Galerie — téléversement réservé à l’admin, au secrétariat ou au DCC
     |----------------------------------------------------------------------
     */
-    Route::middleware('role:admin,responsable')->group(function () {
+    Route::middleware('role:admin,secretariat,responsable')->group(function () {
         Route::get('/galerie/publier', [MediaController::class, 'uploadForm'])->name('gallery.upload');
         Route::post('/galerie', [MediaController::class, 'storePhotos'])->name('gallery.store');
         Route::delete('/galerie/{photo}', [MediaController::class, 'destroyPhoto'])->name('gallery.destroy');
+    });
+
+    // Direct vidéo : administration et responsable du DCC uniquement.
+    Route::middleware('role:admin,responsable')->group(function () {
         Route::get('/direct', [MediaController::class, 'liveForm'])->name('live.edit');
         Route::post('/direct', [MediaController::class, 'liveSave'])->name('live.save');
     });

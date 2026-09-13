@@ -47,9 +47,27 @@
             <button type="submit" class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500">⬇️ Télécharger la sélection</button>
         </div>
 
-        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            @foreach ($photos as $photo)
-                <article class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        @foreach ($photoGroups as $eventPhotos)
+            @php($event = $eventPhotos->first()->event)
+            <section class="mb-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div class="border-b border-slate-200 bg-slate-50 px-4 py-4 sm:px-5">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                            <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-indigo-600">Événement</p>
+                            <h2 class="mt-1 text-xl font-black text-slate-900">{{ $event?->name ?? 'Sans événement' }}</h2>
+                            @if ($event)
+                                <p class="mt-1 text-sm font-medium text-slate-500">{{ $event->date?->format('d/m/Y') }} · {{ $event->description ?: 'Album photo de l’événement' }}</p>
+                            @endif
+                        </div>
+                        <span class="inline-flex w-fit items-center rounded-full bg-indigo-100 px-3 py-1 text-xs font-bold text-indigo-700">
+                            {{ $event?->photos_count ?? $eventPhotos->count() }} photo{{ ($event?->photos_count ?? $eventPhotos->count()) > 1 ? 's' : '' }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="grid gap-4 p-4 sm:grid-cols-2 xl:grid-cols-4 sm:p-5">
+                    @foreach ($eventPhotos as $photo)
+                        <article class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                     <div class="relative">
                         <label class="absolute left-3 top-3 z-10 flex items-center gap-2 rounded-full bg-slate-900/75 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm">
                             <input type="checkbox" name="photos[]" value="{{ $photo->id }}" class="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
@@ -86,9 +104,11 @@
                             @endif
                         </div>
                     </div>
-                </article>
-            @endforeach
-        </div>
+                        </article>
+                    @endforeach
+                </div>
+            </section>
+        @endforeach
     </form>
 
     <div class="mt-6">{{ $photos->links() }}</div>

@@ -82,6 +82,59 @@
         Une jeunesse qui sert Dieu avec Excellence et Dévouement
     </p>
 
+    <section class="youth-path mt-10" aria-labelledby="youth-path-title">
+        <div class="youth-path-heading">
+            <div>
+                <p class="youth-path-kicker"><span></span> Notre fonctionnement</p>
+                <h2 id="youth-path-title">Une jeunesse en mouvement</h2>
+                <p>À La Parole Éternelle Kolwezi, chaque jeune avance dans la foi, trouve sa place et met ses talents au service de Dieu et de la communauté.</p>
+            </div>
+            <div class="youth-path-code" aria-hidden="true">LPK / JEUNESSE / 04</div>
+        </div>
+
+        <div class="youth-path-grid">
+            <article class="youth-path-card">
+                <div class="youth-path-card-top">
+                    <span class="youth-path-index">01</span>
+                    <span class="youth-path-symbol" aria-hidden="true">✦</span>
+                </div>
+                <h3>Grandir dans la foi</h3>
+                <p>La Parole, la prière et les temps de partage nous aident à construire une foi solide et vivante.</p>
+                <span class="youth-path-label">Foi · Prière · Parole</span>
+            </article>
+
+            <article class="youth-path-card">
+                <div class="youth-path-card-top">
+                    <span class="youth-path-index">02</span>
+                    <span class="youth-path-symbol" aria-hidden="true">◌</span>
+                </div>
+                <h3>Vivre la communauté</h3>
+                <p>Nous créons des liens, nous nous soutenons et nous avançons ensemble comme une famille.</p>
+                <span class="youth-path-label">Accueil · Écoute · Unité</span>
+            </article>
+
+            <article class="youth-path-card">
+                <div class="youth-path-card-top">
+                    <span class="youth-path-index">03</span>
+                    <span class="youth-path-symbol" aria-hidden="true">⌁</span>
+                </div>
+                <h3>Servir avec ses dons</h3>
+                <p>Chacun peut servir selon ses dons : communication, musique, technique, accueil, social, lecture biblique, intercession et protocole.</p>
+                <span class="youth-path-label">DCC · Social · DLB · Intercession · Protocole</span>
+            </article>
+
+            <article class="youth-path-card youth-path-card-featured">
+                <div class="youth-path-card-top">
+                    <span class="youth-path-index">04</span>
+                    <span class="youth-path-symbol" aria-hidden="true">↗</span>
+                </div>
+                <h3>Participer à la mission</h3>
+                <p>Retrouve les cultes, événements, directs et archives pour rester connecté à la vie de la jeunesse à Kolwezi.</p>
+                <a href="{{ route('videos.archive') }}" class="youth-path-link">Explorer la médiathèque <span aria-hidden="true">→</span></a>
+            </article>
+        </div>
+    </section>
+
     <script>
         window.carouselIndex = 0;
         const slides = document.querySelectorAll('.carousel-slide');

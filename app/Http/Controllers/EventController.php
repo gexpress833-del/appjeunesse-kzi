@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Notifications\EventCreated;
 use App\Services\CloudinaryService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class EventController extends Controller
 {
@@ -59,6 +60,7 @@ class EventController extends Controller
             $data['dept'] = $user->dept;
         }
 
+        $data['name'] = $this->normalizeEventName($data['name']);
         $data['created_by'] = $user->username;
         $data = $this->handlePhoto($request, $cloudinary, $data);
 
@@ -110,7 +112,9 @@ class EventController extends Controller
             $data['cloudinary_public_id'] = $uploaded['public_id'];
         }
 
+        $data['name'] = $this->normalizeEventName($data['name']);
         $event->update($data);
+        $event->photos()->update(['event_name' => $event->name]);
 
         return redirect()->route('events.index')->with('success', 'Événement mis à jour.');
     }
@@ -134,6 +138,13 @@ class EventController extends Controller
             'dept' => ['nullable', 'string', 'exists:departments,name'],
             'photo' => ['nullable', 'image', 'max:8192'],
         ]);
+    }
+
+    protected function normalizeEventName(string $name): string
+    {
+        $normalizedName = Str::of($name)->squish()->lower()->toString();
+
+        return Str::ucfirst($normalizedName);
     }
 
     protected function handlePhoto(Request $request, CloudinaryService $cloudinary, array $data): array

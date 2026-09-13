@@ -85,6 +85,101 @@ class GalleryMediaAccessTest extends TestCase
             ->assertSessionHasErrors(['event_id']);
     }
 
+    public function test_admin_secretariat_and_dcc_responsable_can_open_photo_upload_form(): void
+    {
+        $profiles = [
+            User::factory()->create(['role' => 'admin', 'status' => 'active']),
+            User::factory()->create(['role' => 'secretariat', 'status' => 'active']),
+            User::factory()->create(['role' => 'responsable', 'dept' => 'Médias/DCC', 'status' => 'active']),
+        ];
+
+        foreach ($profiles as $profile) {
+            $this->actingAs($profile)
+                ->get(route('gallery.upload'))
+                ->assertOk()
+                ->assertSee('Département chrétien de communication (DCC)')
+                ->assertSee('Événement associé');
+        }
+
+        $otherResponsable = User::factory()->create([
+            'role' => 'responsable',
+            'dept' => 'Social',
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($otherResponsable)
+            ->get(route('gallery.upload'))
+            ->assertForbidden();
+    }
+
+    public function test_secretariat_can_publish_photos_for_an_event(): void
+    {
+        $secretariat = User::factory()->create(['role' => 'secretariat', 'status' => 'active']);
+        $event = Event::create([
+            'name' => 'Culte du samedi',
+            'date' => '2026-08-12 09:00:00',
+            'description' => 'Retraite annuelle 2026',
+        ]);
+
+        $this->mock(CloudinaryService::class, function ($mock): void {
+            $mock->shouldReceive('isConfigured')->once()->andReturnTrue();
+            $mock->shouldReceive('upload')->once()->andReturn([
+                'url' => 'https://example.com/secretariat-photo.jpg',
+                'public_id' => 'gallery-secretariat-photo',
+            ]);
+        });
+
+        $this->actingAs($secretariat)
+            ->post(route('gallery.store'), [
+                'photos' => [UploadedFile::fake()->image('culte.jpg')],
+                'title' => 'R26',
+                'description' => 'Retraite annuelle 2026',
+                'event_id' => $event->id,
+            ])
+            ->assertRedirect(route('gallery.index'));
+
+        $this->assertDatabaseHas('photos', [
+            'event_id' => $event->id,
+            'event_name' => 'Culte du samedi',
+            'uploaded_by' => $secretariat->username,
+        ]);
+    }
+
+    public function test_gallery_groups_photos_by_event_with_normalized_metadata(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'status' => 'active']);
+
+        $this->actingAs($admin)
+            ->post(route('events.store'), [
+                'name' => '  CULTE DU   SAMEDI  ',
+                'date' => '2026-08-12 09:00:00',
+                'description' => 'Retraite annuelle 2026',
+            ])
+            ->assertRedirect(route('events.index'));
+
+        $event = Event::query()->firstOrFail();
+        $user = User::factory()->create(['role' => 'user', 'status' => 'active']);
+
+        Photo::create([
+            'title' => 'R26',
+            'image_url' => 'https://example.com/r26.jpg',
+            'cloudinary_public_id' => 'gallery-r26',
+            'event_id' => $event->id,
+            'event_name' => $event->name,
+            'uploaded_by' => 'alice',
+        ]);
+
+        $this->assertSame('Culte du samedi', $event->name);
+
+        $this->actingAs($user)
+            ->get(route('gallery.index'))
+            ->assertOk()
+            ->assertSee('Culte du samedi')
+            ->assertSee('12/08/2026')
+            ->assertSee('Retraite annuelle 2026')
+            ->assertSee('1 photo');
+    }
+
     public function test_media_manager_can_publish_multiple_photos_for_one_event(): void
     {
         $manager = User::factory()->create([

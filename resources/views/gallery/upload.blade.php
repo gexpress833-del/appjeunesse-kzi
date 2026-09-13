@@ -4,6 +4,7 @@
 
 @section('content')
 <h1 class="text-2xl font-bold text-slate-900">Publier des photos</h1>
+<p class="mt-1 text-sm text-slate-600">Département chrétien de communication (DCC) · album photo par événement</p>
 
 <form method="POST" action="{{ route('gallery.store') }}" enctype="multipart/form-data"
       class="mt-6 max-w-3xl space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm" id="gallery-upload-form">
@@ -31,6 +32,7 @@
 
     <div>
         <label class="block text-sm font-medium text-slate-700">Événement associé *</label>
+        <p class="mt-1 text-xs text-slate-500">Toutes les photos sélectionnées seront classées dans cet album.</p>
         <select name="event_id" required class="mt-1 w-full rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
             <option value="">— Sélectionnez un événement —</option>
             @foreach ($events as $event)

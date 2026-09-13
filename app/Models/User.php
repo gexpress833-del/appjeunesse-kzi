@@ -89,11 +89,12 @@ class User extends Authenticatable implements CanResetPasswordContract
     }
 
     /**
-     * Responsable du département Médias/DCC : seul habilité à la galerie et au direct.
+     * Profils habilités à gérer les médias de la galerie et du direct.
      */
     public function managesMedia(): bool
     {
         return $this->isAdmin()
+            || $this->isSecretariat()
             || ($this->isResponsable() && in_array($this->dept, ['Médias/DCC', 'Médias', 'DCC'], true));
     }
 

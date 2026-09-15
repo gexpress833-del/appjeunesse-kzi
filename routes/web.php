@@ -162,8 +162,8 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::post('/direct', [MediaController::class, 'liveSave'])->name('live.save');
     });
 
-    // Archives vidéo : gestion réservée à l’administrateur.
-    Route::middleware('role:admin')->group(function () {
+    // Archives vidéo : gestion réservée à l’administrateur et au responsable DCC/Médias.
+    Route::middleware('role:admin,responsable')->group(function () {
         Route::get('/videos/gestion', [VideoArchiveController::class, 'manage'])->name('videos.manage');
         Route::get('/videos/gestion/creer', [VideoArchiveController::class, 'create'])->name('videos.create');
         Route::post('/videos/gestion', [VideoArchiveController::class, 'store'])->name('videos.store');

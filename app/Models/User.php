@@ -98,6 +98,12 @@ class User extends Authenticatable implements CanResetPasswordContract
             || ($this->isResponsable() && in_array($this->dept, ['Médias/DCC', 'Médias', 'DCC'], true));
     }
 
+    public function canManageVideoArchives(): bool
+    {
+        return $this->isAdmin()
+            || ($this->isResponsable() && in_array($this->dept, ['Médias/DCC', 'Médias', 'DCC'], true));
+    }
+
     /**
      * Membre du répertoire correspondant au compte (rattachement par email).
      */

@@ -54,6 +54,37 @@ class VideoArchiveManagementTest extends TestCase
         $this->assertDatabaseMissing('video_archives', ['id' => $video->id]);
     }
 
+    public function test_dcc_responsable_can_manage_archived_videos(): void
+    {
+        $dccResponsible = User::factory()->create([
+            'role' => 'responsable',
+            'dept' => 'Médias/DCC',
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($dccResponsible)
+            ->get(route('videos.manage'))
+            ->assertOk()
+            ->assertSee('Vidéos archivées');
+
+        $this->actingAs($dccResponsible)
+            ->post(route('videos.store'), [
+                'title' => 'Direct DCC',
+                'description' => 'Vidéo de la communication.',
+                'media_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                'broadcast_type' => 'replay',
+            ])
+            ->assertRedirect(route('videos.manage'));
+
+        $video = VideoArchive::query()->firstOrFail();
+
+        $this->actingAs($dccResponsible)
+            ->delete(route('videos.destroy', $video))
+            ->assertRedirect(route('videos.manage'));
+
+        $this->assertDatabaseMissing('video_archives', ['id' => $video->id]);
+    }
+
     public function test_non_admin_cannot_manage_archived_videos(): void
     {
         $secretariat = User::factory()->create(['role' => 'secretariat', 'status' => 'active']);

@@ -9,6 +9,8 @@ class VideoArchiveController extends Controller
 {
     public function manage()
     {
+        abort_unless(auth()->user()?->canManageVideoArchives(), 403, 'Vous n’êtes pas autorisé à gérer les vidéos archivées.');
+
         return view('videos.manage', [
             'videoArchives' => VideoArchive::query()->with('publisher')->withCount(['likes', 'comments'])->latest()->get(),
         ]);
@@ -16,6 +18,8 @@ class VideoArchiveController extends Controller
 
     public function create()
     {
+        abort_unless(auth()->user()?->canManageVideoArchives(), 403, 'Vous n’êtes pas autorisé à gérer les vidéos archivées.');
+
         return view('videos.form', [
             'videoArchive' => new VideoArchive(['broadcast_type' => 'replay']),
         ]);
@@ -23,6 +27,8 @@ class VideoArchiveController extends Controller
 
     public function store(Request $request)
     {
+        abort_unless(auth()->user()?->canManageVideoArchives(), 403, 'Vous n’êtes pas autorisé à gérer les vidéos archivées.');
+
         $data = $this->validated($request);
         $data['published_by'] = auth()->id();
 
@@ -33,11 +39,15 @@ class VideoArchiveController extends Controller
 
     public function edit(VideoArchive $videoArchive)
     {
+        abort_unless(auth()->user()?->canManageVideoArchives(), 403, 'Vous n’êtes pas autorisé à gérer les vidéos archivées.');
+
         return view('videos.form', compact('videoArchive'));
     }
 
     public function update(Request $request, VideoArchive $videoArchive)
     {
+        abort_unless(auth()->user()?->canManageVideoArchives(), 403, 'Vous n’êtes pas autorisé à gérer les vidéos archivées.');
+
         $videoArchive->update($this->validated($request));
 
         return redirect()->route('videos.manage')->with('success', 'Vidéo archivée mise à jour.');
@@ -45,6 +55,8 @@ class VideoArchiveController extends Controller
 
     public function destroy(VideoArchive $videoArchive)
     {
+        abort_unless(auth()->user()?->canManageVideoArchives(), 403, 'Vous n’êtes pas autorisé à gérer les vidéos archivées.');
+
         $videoArchive->delete();
 
         return redirect()->route('videos.manage')->with('success', 'Vidéo archivée supprimée.');

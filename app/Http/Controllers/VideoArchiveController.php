@@ -7,6 +7,49 @@ use Illuminate\Http\Request;
 
 class VideoArchiveController extends Controller
 {
+    public function manage()
+    {
+        return view('videos.manage', [
+            'videoArchives' => VideoArchive::query()->with('publisher')->withCount(['likes', 'comments'])->latest()->get(),
+        ]);
+    }
+
+    public function create()
+    {
+        return view('videos.form', [
+            'videoArchive' => new VideoArchive(['broadcast_type' => 'replay']),
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $data = $this->validated($request);
+        $data['published_by'] = auth()->id();
+
+        VideoArchive::create($data);
+
+        return redirect()->route('videos.manage')->with('success', 'Vidéo archivée ajoutée.');
+    }
+
+    public function edit(VideoArchive $videoArchive)
+    {
+        return view('videos.form', compact('videoArchive'));
+    }
+
+    public function update(Request $request, VideoArchive $videoArchive)
+    {
+        $videoArchive->update($this->validated($request));
+
+        return redirect()->route('videos.manage')->with('success', 'Vidéo archivée mise à jour.');
+    }
+
+    public function destroy(VideoArchive $videoArchive)
+    {
+        $videoArchive->delete();
+
+        return redirect()->route('videos.manage')->with('success', 'Vidéo archivée supprimée.');
+    }
+
     public function archive(Request $request)
     {
         $type = in_array($request->query('type'), ['live', 'replay'], true) ? $request->query('type') : 'all';
@@ -76,5 +119,15 @@ class VideoArchiveController extends Controller
         }
 
         return back()->with('success', 'Commentaire ajouté.');
+    }
+
+    protected function validated(Request $request): array
+    {
+        return $request->validate([
+            'title' => ['required', 'string', 'max:150'],
+            'description' => ['nullable', 'string', 'max:2000'],
+            'media_url' => ['required', 'url', 'max:1000'],
+            'broadcast_type' => ['required', 'in:live,replay'],
+        ]);
     }
 }

@@ -162,6 +162,16 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::post('/direct', [MediaController::class, 'liveSave'])->name('live.save');
     });
 
+    // Archives vidéo : gestion réservée à l’administrateur.
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/videos/gestion', [VideoArchiveController::class, 'manage'])->name('videos.manage');
+        Route::get('/videos/gestion/creer', [VideoArchiveController::class, 'create'])->name('videos.create');
+        Route::post('/videos/gestion', [VideoArchiveController::class, 'store'])->name('videos.store');
+        Route::get('/videos/gestion/{videoArchive}/modifier', [VideoArchiveController::class, 'edit'])->name('videos.edit');
+        Route::put('/videos/gestion/{videoArchive}', [VideoArchiveController::class, 'update'])->name('videos.update');
+        Route::delete('/videos/gestion/{videoArchive}', [VideoArchiveController::class, 'destroy'])->name('videos.destroy');
+    });
+
     /*
     |----------------------------------------------------------------------
     | Carrousel (versets, témoignages, bannières) — secrétariat & admin

@@ -396,12 +396,38 @@
             if (commentCountNode) commentCountNode.textContent = count;
             if (!listNode) return;
 
-            listNode.classList.remove('hidden');
-            listNode.insertAdjacentHTML('afterend', '');
+            if (listNode.classList.contains('empty')) {
+                listNode.classList.remove('empty');
+                listNode.innerHTML = '';
+            }
 
-            const item = document.createElement('p');
-            item.className = 'text-sm text-slate-200';
-            item.innerHTML = '<strong class="font-semibold text-white">' + comment.user + '</strong> ' + comment.body;
+            const item = document.createElement('div');
+            item.className = 'comment-bubble';
+
+            const avatar = document.createElement('div');
+            avatar.className = 'comment-avatar';
+            avatar.textContent = comment.user.slice(0, 1).toUpperCase();
+
+            const content = document.createElement('div');
+            content.className = 'comment-content';
+
+            const meta = document.createElement('div');
+            meta.className = 'comment-meta';
+
+            const user = document.createElement('span');
+            user.className = 'comment-user';
+            user.textContent = comment.user;
+
+            const time = document.createElement('span');
+            time.className = 'comment-time';
+            time.textContent = comment.created_at;
+
+            const body = document.createElement('p');
+            body.textContent = comment.body;
+
+            meta.append(user, time);
+            content.append(meta, body);
+            item.append(avatar, content);
             listNode.prepend(item);
         }
 

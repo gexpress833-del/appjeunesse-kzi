@@ -200,6 +200,10 @@ document.querySelectorAll('[data-password-toggle]').forEach((toggle) => {
 
 document.querySelectorAll('form').forEach((form) => {
 	form.addEventListener('submit', (event) => {
+		if (form.matches('[data-video-comment-form], [data-video-like-form]')) {
+			return;
+		}
+
 		if (form.dataset.loading === 'true') {
 			event.preventDefault();
 			return;

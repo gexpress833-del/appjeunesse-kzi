@@ -10,6 +10,7 @@ use App\Http\Controllers\MediaController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PasswordResetController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SocialVisitController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VideoArchiveController;
@@ -54,7 +55,7 @@ Route::get('/en-attente', [AuthController::class, 'pending'])->middleware('auth'
 | Application (connecté + compte actif)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'active'])->group(function () {
+Route::middleware(['auth', 'active', 'maintenance'])->group(function () {
 
     // Tableau de bord personnel / global
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -75,6 +76,14 @@ Route::middleware(['auth', 'active'])->group(function () {
     // Profil personnel
     Route::get('/profil', [AuthController::class, 'profile'])->name('profile.edit');
     Route::put('/profil', [AuthController::class, 'updateProfile'])->name('profile.update');
+
+    Route::middleware('role:admin,secretariat')->group(function () {
+        Route::get('/parametres', [SettingsController::class, 'index'])->name('settings.index');
+        Route::put('/parametres', [SettingsController::class, 'update'])->name('settings.update');
+        Route::post('/parametres/departements', [SettingsController::class, 'storeDepartment'])->name('settings.departments.store');
+        Route::put('/parametres/departements/{department}', [SettingsController::class, 'updateDepartment'])->name('settings.departments.update');
+        Route::delete('/parametres/departements/{department}', [SettingsController::class, 'destroyDepartment'])->name('settings.departments.destroy');
+    });
 
     // Annuaire : consultation pour tous les comptes actifs
     Route::get('/membres', [MemberController::class, 'index'])->name('members.index');

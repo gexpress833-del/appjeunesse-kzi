@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AppSetting;
 use App\Models\Attendance;
 use App\Models\Department;
 use App\Models\Event;
@@ -100,12 +101,12 @@ class AttendanceController extends Controller
     {
         $user = auth()->user();
 
-        abort_if($user->isAdmin() || $user->isSecretariat(), 403, 'L’administration et le secrétariat ne peuvent que consulter les présences, pas les enregistrer.');
+        abort_unless($user->isResponsable(), 403, 'Seuls les responsables de département peuvent enregistrer les présences.');
 
         $data = $request->validate([
             'dept' => ['required', 'string'],
             'statuses' => ['required', 'array'],
-            'statuses.*' => ['in:present,absent,late,excused'],
+            'statuses.*' => ['in:'.implode(',', AppSetting::current()->attendance_statuses)],
             'notes' => ['nullable', 'array'],
             'notes.*' => ['nullable', 'string', 'max:500'],
         ]);
@@ -137,6 +138,15 @@ class AttendanceController extends Controller
 
             if (! $memberIds->contains($memberId)) {
                 continue; // pas un membre du département concerné
+            }
+
+            $existingAttendance = Attendance::where('member_id', $memberId)
+                ->where('event_id', $event->id)
+                ->first();
+            $editableHours = AppSetting::current()->attendance_editable_hours;
+
+            if ($existingAttendance && $editableHours > 0 && $existingAttendance->created_at?->lt(now()->subHours($editableHours))) {
+                continue;
             }
 
             $attendance = Attendance::updateOrCreate(

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\CheckMaintenance;
 use App\Http\Middleware\CheckRole;
 use App\Http\Middleware\EnsureActive;
 use Illuminate\Auth\AuthenticationException;
@@ -23,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => CheckRole::class,
             'active' => EnsureActive::class,
+            'maintenance' => CheckMaintenance::class,
         ]);
 
         $middleware->redirectGuestsTo(fn () => route('login'));
@@ -38,7 +40,13 @@ return Application::configure(basePath: dirname(__DIR__))
                 return null;
             }
 
-            $status = method_exists($exception, 'getStatusCode') ? $exception->getStatusCode() : 500;
+            $status = match (true) {
+                $exception instanceof AuthenticationException => 401,
+                $exception instanceof AccessDeniedHttpException => 403,
+                $exception instanceof NotFoundHttpException => 404,
+                method_exists($exception, 'getStatusCode') => $exception->getStatusCode(),
+                default => 500,
+            };
             $message = match (true) {
                 $exception instanceof AuthenticationException => 'Vous devez être connecté pour accéder à cette page.',
                 $exception instanceof AccessDeniedHttpException => 'Vous n’êtes pas autorisé à effectuer cette action.',

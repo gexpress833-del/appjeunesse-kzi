@@ -38,6 +38,8 @@
     </div>
 @else
     @php($readOnly = auth()->user()->isAdmin() || auth()->user()->isSecretariat())
+    @php($statusLabels = ['present' => 'Présent', 'late' => 'En retard', 'excused' => 'Excusé', 'absent' => 'Absent'])
+    @php($availableStatuses = array_intersect_key($statusLabels, array_flip(\App\Models\AppSetting::current()->attendance_statuses ?? array_keys($statusLabels))))
 
     @if ($readOnly)
         <div class="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
@@ -76,11 +78,11 @@
                             <td class="px-4 py-3">
                                 @if ($readOnly)
                                     <span class="rounded-full px-2.5 py-1 text-xs font-bold {{ ($attendance?->status ?? 'absent') === 'present' ? 'bg-emerald-100 text-emerald-700' : (($attendance?->status ?? 'absent') === 'late' ? 'bg-amber-100 text-amber-700' : (($attendance?->status ?? 'absent') === 'excused' ? 'bg-sky-100 text-sky-700' : 'bg-rose-100 text-rose-700')) }}">
-                                        {{ match($attendance?->status ?? 'absent') { 'present' => 'Présent', 'late' => 'En retard', 'excused' => 'Excusé', default => 'Absent' } }}
+                                        {{ $statusLabels[$attendance?->status ?? 'absent'] ?? 'Absent' }}
                                     </span>
                                 @else
                                     <select name="statuses[{{ $member->id }}]" class="rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
-                                        @foreach (['present' => 'Présent', 'late' => 'En retard', 'excused' => 'Excusé', 'absent' => 'Absent'] as $value => $label)
+                                        @foreach ($availableStatuses as $value => $label)
                                             <option value="{{ $value }}" @selected(($attendance?->status ?? 'absent') === $value)>{{ $label }}</option>
                                         @endforeach
                                     </select>

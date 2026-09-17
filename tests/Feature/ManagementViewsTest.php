@@ -126,6 +126,24 @@ class ManagementViewsTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_standard_user_cannot_record_attendance(): void
+    {
+        Department::create(['name' => 'Social']);
+        $user = User::factory()->create(['role' => 'user', 'status' => 'active']);
+        $event = Event::create([
+            'name' => 'Culte général',
+            'date' => now()->addDay(),
+            'created_by' => 'admin',
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('attendances.store', $event), [
+                'dept' => 'Social',
+                'statuses' => [],
+            ])
+            ->assertForbidden();
+    }
+
     public function test_admin_can_view_global_and_selected_department_attendance_statistics(): void
     {
         Department::create(['name' => 'Social']);

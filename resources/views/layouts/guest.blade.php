@@ -17,15 +17,16 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-screen bg-slate-950 font-sans text-slate-100 antialiased">
+    @php($appSettings = \App\Models\AppSetting::current())
     <div class="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.18),transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(168,85,247,0.18),transparent_28%)]"></div>
 
     <header class="relative z-10 border-b border-white/10 bg-slate-950/70 backdrop-blur-xl">
         <div class="guest-header-inner mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:flex-nowrap sm:py-4">
             <a href="{{ route('home') }}" class="guest-brand flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
-                <img src="{{ asset('logoEglise.jpg') }}" class="floaty h-10 w-10 shrink-0 rounded-2xl object-cover object-center ring-2 ring-cyan-400/60 shadow-lg shadow-indigo-500/30 sm:h-11 sm:w-11" alt="Logo La Parole Éternelle Kolwezi">
+                <img src="{{ $appSettings->logo_url ?: asset('logoEglise.jpg') }}" class="floaty h-10 w-10 shrink-0 rounded-2xl object-cover object-center ring-2 ring-cyan-400/60 shadow-lg shadow-indigo-500/30 sm:h-11 sm:w-11" alt="Logo {{ $appSettings->church_name }}">
                 <span>
-                    <span class="block whitespace-nowrap text-xs font-bold leading-tight text-white text-glow sm:text-lg">appjeunesse-kzi</span>
-                    <span class="hidden text-xs text-slate-300 sm:block">La Parole Éternelle — Kolwezi</span>
+                    <span class="block whitespace-nowrap text-xs font-bold leading-tight text-white text-glow sm:text-lg">{{ $appSettings->application_name }}</span>
+                    <span class="hidden text-xs text-slate-300 sm:block">{{ $appSettings->church_name }}</span>
                 </span>
             </a>
             <div class="guest-header-actions flex shrink-0 items-center gap-2">

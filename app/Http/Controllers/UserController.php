@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Department;
 use App\Models\User;
 use App\Notifications\AccountValidated;
+use App\Notifications\RoleUpdated;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -84,6 +85,10 @@ class UserController extends Controller
             abort(403, 'L’administrateur principal ne peut pas retirer ses propres droits administrateur.');
         }
 
+        if ($user->isAdmin() && $data['role'] !== 'admin') {
+            $this->ensureAnotherActiveAdminExists($user);
+        }
+
         $user->update([
             'role' => $data['role'],
             'dept' => $data['dept'] ?? $user->dept,
@@ -91,7 +96,7 @@ class UserController extends Controller
             'role_assigned_at' => now(),
         ]);
 
-        $user->notify(new \App\Notifications\RoleUpdated($user, $data['role'], $data['dept'] ?? $user->dept));
+        $user->notify(new RoleUpdated($user, $data['role'], $data['dept'] ?? $user->dept));
 
         return back()->with('success', 'Rôle mis à jour pour '.$user->full_name.'.');
     }
@@ -111,6 +116,10 @@ class UserController extends Controller
             abort(403, 'L’administrateur principal ne peut pas désactiver son propre compte.');
         }
 
+        if ($user->isAdmin() && $user->status === 'active' && $data['status'] !== 'active') {
+            $this->ensureAnotherActiveAdminExists($user);
+        }
+
         $user->update(['status' => $data['status']]);
 
         return back()->with('success', 'Statut de '.$user->full_name.' : '.$data['status'].'.');
@@ -121,6 +130,17 @@ class UserController extends Controller
         if ($user->isPrimaryAdmin() && auth()->id() !== $user->id) {
             throw new AuthorizationException('Seul l’administrateur principal peut modifier ce compte.');
         }
+    }
+
+    protected function ensureAnotherActiveAdminExists(User $user): void
+    {
+        $hasAnotherAdmin = User::query()
+            ->where('role', 'admin')
+            ->where('status', 'active')
+            ->whereKeyNot($user->id)
+            ->exists();
+
+        abort_if(! $hasAnotherAdmin, 403, 'Le dernier administrateur actif doit rester en fonction.');
     }
 
     protected function validated(Request $request): array

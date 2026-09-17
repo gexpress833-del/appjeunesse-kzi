@@ -56,7 +56,6 @@ class AuthController extends Controller
             'full_name' => ['required', 'string', 'max:150'],
             'email' => ['required', 'email', 'max:150', 'unique:users,email'],
             'phone' => ['required', 'string', 'max:30', 'unique:users,phone', 'regex:/^\+?[0-9\s\-()]+$/'],
-            'dept' => ['nullable', 'string', 'exists:departments,name'],
             'birth_date' => ['nullable', 'date', 'before:today'],
             'password' => ['required', 'confirmed', 'min:8'],
         ]);
@@ -117,7 +116,6 @@ class AuthController extends Controller
 
         $user->full_name = $data['full_name'];
         $user->phone = filled($data['phone'] ?? null) ? $this->normalizePhone($data['phone']) : $user->phone;
-        $user->dept = $data['dept'] ?? $user->dept;
         $user->birth_date = $data['birth_date'] ?? $user->birth_date;
         $user->address = $data['address'] ?? $user->address;
 

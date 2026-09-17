@@ -18,6 +18,7 @@
 </head>
 <body class="min-h-screen bg-slate-950 font-sans text-slate-100 antialiased">
 <div class="relative flex min-h-screen overflow-x-hidden">
+    @php($appSettings = \App\Models\AppSetting::current())
     <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.22),transparent_25%),radial-gradient(circle_at_bottom_right,_rgba(34,211,238,0.18),transparent_35%)]"></div>
     <div id="sidebar-backdrop" class="fixed inset-0 z-30 hidden bg-slate-950/70 backdrop-blur-sm lg:hidden" onclick="window.closeSidebar()"></div>
 
@@ -25,10 +26,10 @@
     <aside id="sidebar" class="sidebar-closed fixed inset-y-0 left-0 z-40 flex min-h-0 w-64 flex-col overflow-y-auto border-r border-white/10 bg-slate-950/80 text-slate-300 shadow-2xl shadow-indigo-950/20 backdrop-blur-xl transition-transform lg:static lg:flex lg:transform-none">
         <div class="flex shrink-0 items-center justify-between gap-3 border-b border-white/10 px-5 py-5">
             <div class="flex min-w-0 items-center gap-3">
-            <img src="{{ asset('logoEglise.jpg') }}" class="h-10 w-10 rounded-2xl object-cover object-center ring-2 ring-cyan-400/60 pulse-glow" alt="Logo La Parole Éternelle Kolwezi">
+            <img src="{{ $appSettings->logo_url ?: asset('logoEglise.jpg') }}" class="h-10 w-10 rounded-2xl object-cover object-center ring-2 ring-cyan-400/60 pulse-glow" alt="Logo {{ $appSettings->church_name }}">
             <div>
-                <p class="text-sm font-bold text-white text-glow">appjeunesse-kzi</p>
-                <p class="text-[11px] text-slate-400">La Parole Éternelle Kolwezi</p>
+                <p class="text-sm font-bold text-white text-glow">{{ $appSettings->application_name }}</p>
+                <p class="text-[11px] text-slate-400">{{ $appSettings->church_name }}</p>
             </div>
             </div>
             <button type="button" class="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-lg leading-none text-slate-200 lg:hidden" aria-label="Fermer le menu" onclick="window.closeSidebar()">×</button>
@@ -95,6 +96,7 @@
                 @if ($u->isAdmin())
                     <a href="{{ route('users.index') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all {{ request()->routeIs('users.index') ? 'bg-gradient-to-r from-indigo-600/80 to-cyan-500/70 font-semibold text-white shadow-lg shadow-indigo-500/20' : 'text-slate-300 hover:bg-white/5 hover:text-white' }}"><span>🔑</span> Utilisateurs</a>
                 @endif
+                <a href="{{ route('settings.index') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all {{ request()->routeIs('settings.*') ? 'bg-gradient-to-r from-indigo-600/80 to-cyan-500/70 font-semibold text-white shadow-lg shadow-indigo-500/20' : 'text-slate-300 hover:bg-white/5 hover:text-white' }}"><span>⚙️</span> Paramètres</a>
             @endif
         </nav>
 

@@ -163,18 +163,29 @@
                                 </div>
                             @else
                                 <div class="comment-stream empty" data-comments-list="{{ $liveArchive->id }}">
-                                    <div class="comment-empty-card">
-                                        <div class="comment-empty-mark" aria-hidden="true">L</div>
-                                        <div class="comment-empty-copy">
-                                            <span class="comment-empty-label">LA COMMUNAUTÉ</span>
-                                            <p class="comment-empty-title">Soyez le premier à commenter {{ $liveArchive->broadcast_type === 'replay' ? 'cette retransmission' : 'ce live' }}.</p>
-                                            <p class="comment-empty-cta">Connectez-vous pour aimer ou commenter {{ $liveArchive->broadcast_type === 'replay' ? 'cette retransmission' : 'ce live' }}.</p>
-                                            <div class="comment-login-links">
-                                                <a href="{{ route('login') }}">Se connecter</a>
-                                                <a href="{{ route('register') }}">Créer un compte</a>
+                                    @guest
+                                        <div class="comment-empty-card">
+                                            <div class="comment-empty-mark" aria-hidden="true">L</div>
+                                            <div class="comment-empty-copy">
+                                                <span class="comment-empty-label">LA COMMUNAUTÉ</span>
+                                                <p class="comment-empty-title">Soyez le premier à commenter {{ $liveArchive->broadcast_type === 'replay' ? 'cette retransmission' : 'ce live' }}.</p>
+                                                <p class="comment-empty-cta">Connectez-vous pour aimer ou commenter {{ $liveArchive->broadcast_type === 'replay' ? 'cette retransmission' : 'ce live' }}.</p>
+                                                <div class="comment-login-links">
+                                                    <a href="{{ route('login') }}">Se connecter</a>
+                                                    <a href="{{ route('register') }}">Créer un compte</a>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    @else
+                                        <div class="comment-empty-card comment-empty-card-authenticated">
+                                            <div class="comment-empty-mark" aria-hidden="true">L</div>
+                                            <div class="comment-empty-copy">
+                                                <span class="comment-empty-label">LA COMMUNAUTÉ</span>
+                                                <p class="comment-empty-title">Aucun commentaire pour le moment.</p>
+                                                <p class="comment-empty-cta">Soyez le premier à partager votre pensée sur {{ $liveArchive->broadcast_type === 'replay' ? 'cette retransmission' : 'ce live' }}.</p>
+                                            </div>
+                                        </div>
+                                    @endguest
                                 </div>
                             @endif
 

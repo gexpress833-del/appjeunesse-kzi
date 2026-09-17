@@ -69,6 +69,7 @@ Route::middleware(['auth', 'active'])->group(function () {
 
         Route::post('/videos/{videoArchive}/like', [VideoArchiveController::class, 'like'])->name('videos.like');
         Route::post('/videos/{videoArchive}/commenter', [VideoArchiveController::class, 'comment'])->name('videos.comment');
+        Route::delete('/commentaires/{videoComment}', [VideoArchiveController::class, 'destroyComment'])->name('videos.comment.destroy');
     });
 
     // Profil personnel

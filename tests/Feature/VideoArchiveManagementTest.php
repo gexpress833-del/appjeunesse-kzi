@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Models\VideoArchive;
+use App\Models\VideoComment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -101,5 +102,34 @@ class VideoArchiveManagementTest extends TestCase
         $this->actingAs($secretariat)
             ->delete(route('videos.destroy', $video))
             ->assertForbidden();
+    }
+
+    public function test_comment_owner_can_delete_own_comment_but_other_users_cannot(): void
+    {
+        $owner = User::factory()->create(['role' => 'user', 'status' => 'active']);
+        $otherUser = User::factory()->create(['role' => 'user', 'status' => 'active']);
+        $video = VideoArchive::create([
+            'title' => 'Retransmission test',
+            'media_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            'broadcast_type' => 'replay',
+        ]);
+        $comment = VideoComment::create([
+            'video_archive_id' => $video->id,
+            'user_id' => $owner->id,
+            'body' => 'Commentaire du propriétaire',
+        ]);
+
+        $this->actingAs($otherUser)
+            ->deleteJson(route('videos.comment.destroy', $comment))
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('video_comments', ['id' => $comment->id]);
+
+        $this->actingAs($owner)
+            ->deleteJson(route('videos.comment.destroy', $comment))
+            ->assertOk()
+            ->assertJson(['comment_id' => $comment->id, 'count' => 0]);
+
+        $this->assertDatabaseMissing('video_comments', ['id' => $comment->id]);
     }
 }

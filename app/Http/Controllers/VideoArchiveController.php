@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\VideoArchive;
+use App\Models\VideoComment;
 use Illuminate\Http\Request;
 
 class VideoArchiveController extends Controller
@@ -119,9 +120,11 @@ class VideoArchiveController extends Controller
         $payload = [
             'count' => $videoArchive->comments()->count(),
             'comment' => [
+                'id' => $comment->id,
                 'user' => auth()->user()->full_name,
                 'body' => $comment->body,
                 'created_at' => $comment->created_at->diffForHumans(),
+                'delete_url' => route('videos.comment.destroy', $comment),
             ],
             'message' => 'Commentaire ajouté.',
         ];
@@ -131,6 +134,24 @@ class VideoArchiveController extends Controller
         }
 
         return back()->with('success', 'Commentaire ajouté.');
+    }
+
+    public function destroyComment(Request $request, VideoComment $videoComment)
+    {
+        abort_unless($videoComment->user_id === auth()->id(), 403, 'Vous ne pouvez supprimer que vos propres commentaires.');
+
+        $videoArchive = $videoComment->video;
+        $videoComment->delete();
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'count' => $videoArchive->comments()->count(),
+                'comment_id' => $videoComment->id,
+                'message' => 'Commentaire supprimé.',
+            ]);
+        }
+
+        return back()->with('success', 'Commentaire supprimé.');
     }
 
     protected function validated(Request $request): array

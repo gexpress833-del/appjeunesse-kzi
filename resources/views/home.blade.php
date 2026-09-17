@@ -142,8 +142,8 @@
 
                             @if ($liveArchive->comments->isNotEmpty())
                                 <div class="comment-stream" data-comments-list="{{ $liveArchive->id }}">
-                                    @foreach ($liveArchive->comments->take(4) as $comment)
-                                        <div class="comment-bubble">
+                                    @foreach ($liveArchive->comments as $comment)
+                                        <div class="comment-bubble" data-comment-id="{{ $comment->id }}">
                                             <div class="comment-avatar">
                                                 @if ($comment->user->profile_photo_url)
                                                     <img src="{{ $comment->user->profile_photo_url }}" alt="Photo de {{ $comment->user->full_name }}">
@@ -154,7 +154,14 @@
                                             <div class="comment-content">
                                                 <div class="comment-meta">
                                                     <span class="comment-user">{{ $comment->user->full_name }}</span>
-                                                    <span class="comment-time">{{ $comment->created_at->diffForHumans() }}</span>
+                                                    <div class="comment-meta-actions">
+                                                        <span class="comment-time">{{ $comment->created_at->diffForHumans() }}</span>
+                                                        @auth
+                                                            @if (auth()->id() === $comment->user_id)
+                                                                <button type="button" class="comment-delete" data-comment-delete data-comment-id="{{ $comment->id }}" data-delete-url="{{ route('videos.comment.destroy', $comment) }}" aria-label="Supprimer ce commentaire" title="Supprimer ce commentaire">×</button>
+                                                            @endif
+                                                        @endauth
+                                                    </div>
                                                 </div>
                                                 <p>{{ $comment->body }}</p>
                                             </div>
@@ -403,6 +410,7 @@
 
             const item = document.createElement('div');
             item.className = 'comment-bubble';
+            item.dataset.commentId = comment.id;
 
             const avatar = document.createElement('div');
             avatar.className = 'comment-avatar';
@@ -422,13 +430,35 @@
             time.className = 'comment-time';
             time.textContent = comment.created_at;
 
+            const actions = document.createElement('div');
+            actions.className = 'comment-meta-actions';
+            actions.append(time);
+
+            const deleteButton = document.createElement('button');
+            deleteButton.type = 'button';
+            deleteButton.className = 'comment-delete';
+            deleteButton.dataset.commentDelete = '';
+            deleteButton.dataset.commentId = comment.id;
+            deleteButton.dataset.deleteUrl = comment.delete_url;
+            deleteButton.setAttribute('aria-label', 'Supprimer ce commentaire');
+            deleteButton.title = 'Supprimer ce commentaire';
+            deleteButton.textContent = '×';
+            actions.append(deleteButton);
+
             const body = document.createElement('p');
             body.textContent = comment.body;
 
-            meta.append(user, time);
+            meta.append(user, actions);
             content.append(meta, body);
             item.append(avatar, content);
             listNode.prepend(item);
+        }
+
+        function showEmptyCommentState(listNode) {
+            if (!listNode) return;
+
+            listNode.classList.add('empty');
+            listNode.innerHTML = '<div class="comment-empty-card comment-empty-card-authenticated"><div class="comment-empty-mark" aria-hidden="true">L</div><div class="comment-empty-copy"><span class="comment-empty-label">LA COMMUNAUTÉ</span><p class="comment-empty-title">Aucun commentaire pour le moment.</p><p class="comment-empty-cta">Soyez le premier à partager votre pensée.</p></div></div>';
         }
 
         document.querySelectorAll('[data-video-like-form]').forEach((form) => {
@@ -501,6 +531,42 @@
                     if (button) button.disabled = false;
                 }
             });
+        });
+
+        document.addEventListener('click', async (event) => {
+            const button = event.target.closest('[data-comment-delete]');
+
+            if (!button || button.dataset.busy === 'true') return;
+            if (!window.confirm('Supprimer ce commentaire ?')) return;
+
+            button.dataset.busy = 'true';
+            button.disabled = true;
+
+            try {
+                const response = await fetch(button.dataset.deleteUrl, {
+                    method: 'DELETE',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector('input[name="_token"]')?.value || '',
+                    },
+                });
+
+                if (!response.ok) throw new Error('Comment deletion failed');
+
+                const data = await response.json();
+                const item = button.closest('[data-comment-id]');
+                const listNode = item?.closest('[data-comments-list]');
+                const commentCountNode = listNode ? document.querySelector('[data-comments-count="' + listNode.dataset.commentsList + '"]') : null;
+
+                item?.remove();
+                if (commentCountNode) commentCountNode.textContent = data.count;
+                if (listNode && !listNode.querySelector('[data-comment-id]')) showEmptyCommentState(listNode);
+            } catch (error) {
+                console.error(error);
+                button.disabled = false;
+                button.dataset.busy = 'false';
+            }
         });
 
         window.onYouTubeIframeAPIReady = function () {

@@ -62,12 +62,10 @@ class AttendanceController extends Controller
 
         $dept = $user->isResponsable() ? $user->dept : $requestedDept;
 
-        if (! $user->isResponsable()) {
-            abort_if($request->missing('dept'), 422, 'Sélectionnez un groupe de membres.');
+        $departmentSelectionRequired = ! $user->isResponsable() && $request->missing('dept');
 
-            if (filled($dept)) {
-                abort_unless(Department::where('name', $dept)->exists(), 404, 'Département inconnu.');
-            }
+        if (! $user->isResponsable() && filled($dept)) {
+            abort_unless(Department::where('name', $dept)->exists(), 404, 'Département inconnu.');
         }
 
         $members = Member::query()
@@ -81,7 +79,18 @@ class AttendanceController extends Controller
             ->get()
             ->keyBy('member_id');
 
-        return view('attendances.sheet', compact('event', 'dept', 'members', 'existing'));
+        $departments = $user->isResponsable()
+            ? collect()
+            : Department::query()->orderBy('name')->get();
+
+        return view('attendances.sheet', compact(
+            'event',
+            'dept',
+            'members',
+            'existing',
+            'departments',
+            'departmentSelectionRequired',
+        ));
     }
 
     /**
@@ -90,6 +99,8 @@ class AttendanceController extends Controller
     public function store(Request $request, Event $event)
     {
         $user = auth()->user();
+
+        abort_if($user->isAdmin() || $user->isSecretariat(), 403, 'L’administration et le secrétariat ne peuvent que consulter les présences, pas les enregistrer.');
 
         $data = $request->validate([
             'dept' => ['required', 'string'],
@@ -232,9 +243,24 @@ class AttendanceController extends Controller
             ->get()
             ->each(fn ($r) => $r->rate = $r->total > 0 ? (int) round((($r->present + $r->late) / $r->total) * 100) : 0);
 
+        $overallTotal = (int) $summary->sum('total');
+        $overallPresent = (int) $summary->sum('present');
+        $overallLate = (int) $summary->sum('late');
+        $overallExcused = (int) $summary->sum('excused');
+        $overallAbsent = (int) $summary->sum('absent');
+        $overall = [
+            'total' => $overallTotal,
+            'present' => $overallPresent,
+            'late' => $overallLate,
+            'excused' => $overallExcused,
+            'absent' => $overallAbsent,
+            'rate' => $overallTotal > 0 ? (int) round((($overallPresent + $overallLate) / $overallTotal) * 100) : 0,
+        ];
+
         return view('attendances.report', [
             'rows' => $rows,
             'summary' => $summary,
+            'overall' => $overall,
             'events' => Event::query()
                 ->when($user->isResponsable(), fn ($query) => $query->where('dept', $user->dept))
                 ->orderByDesc('date')

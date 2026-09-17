@@ -78,16 +78,140 @@
         @endif
     </section>
 
+    {{-- ==================== LIVE VIDÉO ==================== --}}
+    <section class="mt-10">
+        <div class="mb-4 flex items-center justify-between gap-3">
+            <h2 class="flex items-center gap-2 text-2xl font-bold text-slate-900">
+                Culte vidéo
+                @if ($live && $live->is_active)
+                    <span class="rounded-full px-2 py-0.5 text-xs font-bold uppercase text-white {{ $live->broadcast_type === 'replay' ? 'bg-slate-600' : 'animate-pulse bg-rose-600' }}">
+                        {{ $live->broadcast_type === 'replay' ? 'Retransmission' : 'En direct' }}
+                    </span>
+                @endif
+            </h2>
+            @if ($live && $live->is_active)
+                <span class="rounded-full border border-cyan-200 bg-cyan-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-700">Live social</span>
+            @endif
+        </div>
+
+        @if ($live && $live->is_active && \App\Support\VideoEmbed::toEmbed($live->media_url))
+            <div class="live-feed-shell">
+                <div class="live-feed-grid">
+                    <div class="video-feed-surface">
+                        <div class="video-shell" data-video-player data-video-id="{{ \App\Support\VideoEmbed::youtubeId($live->media_url) }}">
+                            <div class="aspect-video overflow-hidden bg-black">
+                                <iframe src="{{ \App\Support\VideoEmbed::toEmbed($live->media_url) }}"
+                                    class="video-embed-frame h-full w-full" style="border:0" tabindex="-1" sandbox="allow-scripts allow-same-origin allow-presentation"
+                                        allow="autoplay; encrypted-media"
+                                        title="{{ $live->title }}"></iframe>
+                            </div>
+                            @if (\App\Support\VideoEmbed::youtubeId($live->media_url))
+                                <button type="button" class="video-play-button" data-video-toggle aria-label="Lire la vidéo">▶</button>
+                            @endif
+                        </div>
+                    </div>
+
+                    <aside class="live-feed-sidebar">
+                        <div class="live-feed-card live-feed-stats">
+                            <div class="live-feed-stat-title">Engagement</div>
+                            <div class="flex flex-wrap items-center gap-2 text-sm text-slate-200">
+                                @auth
+                                    <form method="POST" action="{{ route('videos.like', $liveArchive) }}" data-video-like-form data-video-id="{{ $liveArchive->id }}" class="inline-block">
+                                        @csrf
+                                        <button type="submit" data-like-button data-like-count-target="{{ $liveArchive->id }}" class="live-social-pill live-social-pill-like {{ $liveArchive->likes()->where('user_id', auth()->id())->exists() ? 'is-liked' : '' }}" aria-pressed="{{ $liveArchive->likes()->where('user_id', auth()->id())->exists() ? 'true' : 'false' }}">
+                                            <span aria-hidden="true">♥</span>
+                                            <span data-like-count="{{ $liveArchive->id }}">{{ $liveArchive->likes_count }}</span>
+                                        </button>
+                                    </form>
+                                @else
+                                    <div class="live-social-pill live-social-pill-like cursor-not-allowed opacity-80" aria-label="Connectez-vous pour aimer cette vidéo">
+                                        <span aria-hidden="true">♥</span>
+                                        <span>{{ $liveArchive->likes_count }}</span>
+                                    </div>
+                                @endauth
+                                <span class="live-social-pill"><span aria-hidden="true">💬</span> <span data-comments-count="{{ $liveArchive->id }}">{{ $liveArchive->comments->count() }}</span></span>
+                                <span class="live-social-pill"><span aria-hidden="true">◉</span> {{ $liveArchive->views_count }}</span>
+                            </div>
+                        </div>
+
+                        <div class="live-feed-card live-feed-comments">
+                            <div class="live-feed-comment-header">
+                                <span>Commentaires</span>
+                                <span class="live-feed-dot"></span>
+                            </div>
+
+                            @if ($liveArchive->comments->isNotEmpty())
+                                <div class="comment-stream" data-comments-list="{{ $liveArchive->id }}">
+                                    @foreach ($liveArchive->comments->take(4) as $comment)
+                                        <div class="comment-bubble">
+                                            <div class="comment-avatar">
+                                                @if ($comment->user->profile_photo_url)
+                                                    <img src="{{ $comment->user->profile_photo_url }}" alt="Photo de {{ $comment->user->full_name }}">
+                                                @else
+                                                    <span aria-hidden="true">{{ mb_substr($comment->user->full_name, 0, 1) }}</span>
+                                                @endif
+                                            </div>
+                                            <div class="comment-content">
+                                                <div class="comment-meta">
+                                                    <span class="comment-user">{{ $comment->user->full_name }}</span>
+                                                    <span class="comment-time">{{ $comment->created_at->diffForHumans() }}</span>
+                                                </div>
+                                                <p>{{ $comment->body }}</p>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="comment-stream empty" data-comments-list="{{ $liveArchive->id }}">
+                                    <div class="comment-empty-card">
+                                        <div class="comment-empty-mark" aria-hidden="true">L</div>
+                                        <div class="comment-empty-copy">
+                                            <span class="comment-empty-label">LA COMMUNAUTÉ</span>
+                                            <p class="comment-empty-title">Soyez le premier à commenter {{ $liveArchive->broadcast_type === 'replay' ? 'cette retransmission' : 'ce live' }}.</p>
+                                            <p class="comment-empty-cta">Connectez-vous pour aimer ou commenter {{ $liveArchive->broadcast_type === 'replay' ? 'cette retransmission' : 'ce live' }}.</p>
+                                            <div class="comment-login-links">
+                                                <a href="{{ route('login') }}">Se connecter</a>
+                                                <a href="{{ route('register') }}">Créer un compte</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+
+                            @auth
+                                <form method="POST" action="{{ route('videos.comment', $liveArchive) }}" data-video-comment-form data-video-id="{{ $liveArchive->id }}" class="comment-form mt-4">
+                                    @csrf
+                                    <input name="body" required maxlength="1000" placeholder="Écrire un commentaire..." class="comment-input">
+                                    <button type="submit" class="comment-submit">Publier</button>
+                                </form>
+                            @endauth
+                        </div>
+                    </aside>
+                </div>
+
+                @if ($live->content)
+                    <p class="mt-4 text-sm font-medium text-slate-700">{{ $live->content }}</p>
+                @endif
+            </div>
+        @else
+            <div class="rounded-2xl border-2 border-dashed border-slate-300 bg-white px-6 py-12 text-center text-slate-500">
+                <p class="text-4xl">📺</p>
+                <p class="mt-2 font-medium">Aucun direct pour le moment</p>
+                <p class="text-sm">Le culte de la jeunesse est retransmis en direct chaque samedi à partir de 16h30.</p>
+            </div>
+        @endif
+    </section>
+
     <p class="mx-auto mt-8 max-w-3xl text-center text-2xl font-bold text-slate-900 sm:text-3xl">
-        Une jeunesse qui sert Dieu avec Excellence et Dévouement
+        Une jeunesse qui sert Dieu avec foi, excellence et dévouement
     </p>
 
     <section class="youth-path mt-10" aria-labelledby="youth-path-title">
         <div class="youth-path-heading">
             <div>
                 <p class="youth-path-kicker"><span></span> Notre fonctionnement</p>
-                <h2 id="youth-path-title">Une jeunesse en mouvement</h2>
-                <p>À La Parole Éternelle Kolwezi, chaque jeune avance dans la foi, trouve sa place et met ses talents au service de Dieu et de la communauté.</p>
+                <h2 id="youth-path-title">Une jeunesse unie dans la foi</h2>
+                <p>À La Parole Éternelle Kolwezi, chaque jeune est encouragé à grandir dans la vérité, à vivre en fraternité et à répondre à l’appel de Dieu avec fidélité et passion.</p>
             </div>
             <div class="youth-path-code" aria-hidden="true">LPK / JEUNESSE / 04</div>
         </div>
@@ -98,9 +222,9 @@
                     <span class="youth-path-index">01</span>
                     <span class="youth-path-symbol" aria-hidden="true">✦</span>
                 </div>
-                <h3>Grandir dans la foi</h3>
-                <p>La Parole, la prière et les temps de partage nous aident à construire une foi solide et vivante.</p>
-                <span class="youth-path-label">Foi · Prière · Parole</span>
+                <h3>Grandir dans la vérité</h3>
+                <p>La Parole de Dieu, la prière et la communion avec le Seigneur nous forment dans la vérité, la fidélité et l’adoration.</p>
+                <span class="youth-path-label">Foi · Prière · Écriture</span>
             </article>
 
             <article class="youth-path-card">
@@ -108,9 +232,9 @@
                     <span class="youth-path-index">02</span>
                     <span class="youth-path-symbol" aria-hidden="true">◌</span>
                 </div>
-                <h3>Vivre la communauté</h3>
-                <p>Nous créons des liens, nous nous soutenons et nous avançons ensemble comme une famille.</p>
-                <span class="youth-path-label">Accueil · Écoute · Unité</span>
+                <h3>Vivre en fraternité</h3>
+                <p>Nous grandissons ensemble, nous nous encourageons et nous avançons comme une famille unie dans le Christ.</p>
+                <span class="youth-path-label">Accueil · Écoute · Fraternité</span>
             </article>
 
             <article class="youth-path-card">
@@ -118,9 +242,9 @@
                     <span class="youth-path-index">03</span>
                     <span class="youth-path-symbol" aria-hidden="true">⌁</span>
                 </div>
-                <h3>Servir avec ses dons</h3>
-                <p>Chacun peut servir selon ses dons : communication, musique, technique, accueil, social, lecture biblique, intercession et protocole.</p>
-                <span class="youth-path-label">DCC · Social · DLB · Intercession · Protocole</span>
+                <h3>Servir avec passion</h3>
+                <p>Chaque jeune peut contribuer selon son appel et ses talents : musique, accueil, intercession, enseignement, communication, aide sociale et accompagnement.</p>
+                <span class="youth-path-label">Musique · Service · Intercession · Aide</span>
             </article>
 
             <article class="youth-path-card youth-path-card-featured">
@@ -128,8 +252,8 @@
                     <span class="youth-path-index">04</span>
                     <span class="youth-path-symbol" aria-hidden="true">↗</span>
                 </div>
-                <h3>Participer à la mission</h3>
-                <p>Retrouve les cultes, événements, directs et archives pour rester connecté à la vie de la jeunesse à Kolwezi.</p>
+                <h3>Répondre à la mission</h3>
+                <p>Retrouve les cultes, rassemblements, événements et archives pour rester connecté à la vie spirituelle de la jeunesse à Kolwezi.</p>
                 <a href="{{ route('videos.archive') }}" class="youth-path-link">Explorer la médiathèque <span aria-hidden="true">→</span></a>
             </article>
         </div>
@@ -227,168 +351,6 @@
             window.carouselStart();
         }
     </script>
-
-    {{-- ==================== LIVE VIDÉO ==================== --}}
-    <section class="mt-10">
-        <div class="mb-4 flex items-center justify-between gap-3">
-            <h2 class="flex items-center gap-2 text-2xl font-bold text-slate-900">
-                Culte vidéo
-                @if ($live && $live->is_active)
-                    <span class="rounded-full px-2 py-0.5 text-xs font-bold uppercase text-white {{ $live->broadcast_type === 'replay' ? 'bg-slate-600' : 'animate-pulse bg-rose-600' }}">
-                        {{ $live->broadcast_type === 'replay' ? 'Retransmission' : 'En direct' }}
-                    </span>
-                @endif
-            </h2>
-            @if ($live && $live->is_active)
-                <span class="rounded-full border border-cyan-200 bg-cyan-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-700">Live social</span>
-            @endif
-        </div>
-
-        @if ($live && $live->is_active && \App\Support\VideoEmbed::toEmbed($live->media_url))
-            <div class="live-feed-shell">
-                <div class="live-feed-grid">
-                    <div class="video-feed-surface">
-                        <div class="video-shell" data-video-player data-video-id="{{ \App\Support\VideoEmbed::youtubeId($live->media_url) }}">
-                            <div class="aspect-video overflow-hidden bg-black">
-                                <iframe src="{{ \App\Support\VideoEmbed::toEmbed($live->media_url) }}"
-                                    class="video-embed-frame h-full w-full" style="border:0" tabindex="-1" sandbox="allow-scripts allow-same-origin allow-presentation"
-                                        allow="autoplay; encrypted-media"
-                                        title="{{ $live->title }}"></iframe>
-                            </div>
-                            @if (\App\Support\VideoEmbed::youtubeId($live->media_url))
-                                <button type="button" class="video-play-button" data-video-toggle aria-label="Lire la vidéo">▶</button>
-                            @endif
-                        </div>
-                    </div>
-
-                    <aside class="live-feed-sidebar">
-                        <div class="live-feed-card live-feed-stats">
-                            <div class="live-feed-stat-title">Engagement</div>
-                            <div class="flex flex-wrap items-center gap-2 text-sm text-slate-200">
-                                @auth
-                                    <form method="POST" action="{{ route('videos.like', $liveArchive) }}" data-video-like-form data-video-id="{{ $liveArchive->id }}" class="inline-block">
-                                        @csrf
-                                        <button type="submit" data-like-button data-like-count-target="{{ $liveArchive->id }}" class="live-social-pill live-social-pill-like {{ $liveArchive->likes()->where('user_id', auth()->id())->exists() ? 'is-liked' : '' }}" aria-pressed="{{ $liveArchive->likes()->where('user_id', auth()->id())->exists() ? 'true' : 'false' }}">
-                                            <span aria-hidden="true">♥</span>
-                                            <span data-like-count="{{ $liveArchive->id }}">{{ $liveArchive->likes_count }}</span>
-                                        </button>
-                                    </form>
-                                @else
-                                    <span class="live-social-pill live-social-pill-like"><span aria-hidden="true">♥</span> {{ $liveArchive->likes_count }}</span>
-                                @endauth
-                                <span class="live-social-pill"><span aria-hidden="true">💬</span> <span data-comments-count="{{ $liveArchive->id }}">{{ $liveArchive->comments->count() }}</span></span>
-                                <span class="live-social-pill"><span aria-hidden="true">◉</span> {{ $liveArchive->views_count }}</span>
-                            </div>
-                        </div>
-
-                        <div class="live-feed-card live-feed-comments">
-                            <div class="live-feed-comment-header">
-                                <span>Commentaires</span>
-                                <span class="live-feed-dot"></span>
-                            </div>
-
-                            @if ($liveArchive->comments->isNotEmpty())
-                                <div class="comment-stream" data-comments-list="{{ $liveArchive->id }}">
-                                    @foreach ($liveArchive->comments->take(4) as $comment)
-                                        <div class="comment-bubble">
-                                            <span class="comment-user">{{ $comment->user->full_name }}</span>
-                                            <p>{{ $comment->body }}</p>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            @else
-                                <div class="comment-stream empty" data-comments-list="{{ $liveArchive->id }}">
-                                    <div class="comment-bubble muted">
-                                        <span class="comment-user">La communauté</span>
-                                        <p>Soyez le premier à commenter ce live.</p>
-                                    </div>
-                                </div>
-                            @endif
-
-                            @auth
-                                <form method="POST" action="{{ route('videos.comment', $liveArchive) }}" data-video-comment-form data-video-id="{{ $liveArchive->id }}" class="comment-form mt-4">
-                                    @csrf
-                                    <input name="body" required maxlength="1000" placeholder="Écrire un commentaire..." class="comment-input">
-                                    <button type="submit" class="comment-submit">Publier</button>
-                                </form>
-                            @endauth
-                        </div>
-                    </aside>
-                </div>
-
-                @if ($live->content)
-                    <p class="mt-4 text-sm font-medium text-slate-700">{{ $live->content }}</p>
-                @endif
-            </div>
-        @else
-            <div class="rounded-2xl border-2 border-dashed border-slate-300 bg-white px-6 py-12 text-center text-slate-500">
-                <p class="text-4xl">📺</p>
-                <p class="mt-2 font-medium">Aucun direct pour le moment</p>
-                <p class="text-sm">Le culte de la jeunesse est retransmis en direct chaque samedi à partir de 16h30.</p>
-            </div>
-        @endif
-    </section>
-
-    @if ($videoArchives->isNotEmpty())
-        <section class="mt-10">
-            <div class="flex flex-wrap items-end justify-between gap-3">
-                <div>
-                    <p class="text-xs font-bold uppercase tracking-[0.2em] text-cyan-600">Médiathèque</p>
-                    <h2 class="mt-1 text-2xl font-bold text-slate-900">Archives vidéo</h2>
-                </div>
-                <p class="text-sm text-slate-500">Retrouvez les directs et retransmissions précédents.</p>
-            </div>
-
-            <div class="mt-5 grid gap-5 lg:grid-cols-2">
-                @foreach ($videoArchives as $video)
-                    <article class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                        <div class="video-shell aspect-video bg-slate-950" data-video-player data-video-id="{{ \App\Support\VideoEmbed::youtubeId($video->media_url) }}">
-                            <iframe src="{{ \App\Support\VideoEmbed::toEmbed($video->media_url) }}" class="video-embed-frame h-full w-full" style="border:0" loading="lazy" tabindex="-1" sandbox="allow-scripts allow-same-origin allow-presentation" allow="autoplay; encrypted-media" title="{{ $video->title }}"></iframe>
-                            @if (\App\Support\VideoEmbed::youtubeId($video->media_url))
-                                <button type="button" class="video-play-button" data-video-toggle aria-label="Lire la vidéo">▶</button>
-                            @endif
-                        </div>
-                        <div class="p-5">
-                            <div class="flex items-start justify-between gap-3">
-                                <div>
-                                    <span class="text-xs font-bold uppercase tracking-wide text-cyan-700">{{ $video->broadcast_type === 'replay' ? 'Retransmission' : 'En direct' }}</span>
-                                    <h3 class="mt-1 font-bold text-slate-900">{{ $video->title }}</h3>
-                                </div>
-                                <span class="text-xs text-slate-500">{{ $video->created_at->diffForHumans() }}</span>
-                            </div>
-                            @if ($video->description)<p class="mt-2 text-sm text-slate-600">{{ $video->description }}</p>@endif
-                            <div class="mt-4 flex items-center gap-3">
-                                @auth
-                                    <form method="POST" action="{{ route('videos.like', $video) }}">
-                                        @csrf
-                                        <button class="rounded-xl border border-rose-200 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50">♥ {{ $video->likes_count }}</button>
-                                    </form>
-                                @else
-                                    <span class="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-500">♥ {{ $video->likes_count }}</span>
-                                @endauth
-                                <span class="text-sm text-slate-500">💬 {{ $video->comments->count() }} commentaire(s)</span>
-                                <span class="text-sm text-slate-500">◉ {{ $video->views_count }} vue(s)</span>
-                            </div>
-                            @auth
-                                <form method="POST" action="{{ route('videos.comment', $video) }}" class="mt-4 flex gap-2">
-                                    @csrf
-                                    <input name="body" required maxlength="1000" placeholder="Écrire un commentaire..." class="min-w-0 flex-1 rounded-xl border-slate-300 text-sm">
-                                    <button class="rounded-xl bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500">Publier</button>
-                                </form>
-                            @endauth
-                            @if ($video->comments->isNotEmpty())
-                                <div class="mt-4 space-y-2 border-t border-slate-100 pt-3">
-                                    @foreach ($video->comments->take(3) as $comment)
-                                        <p class="text-sm text-slate-600"><strong class="text-slate-900">{{ $comment->user->full_name }}</strong> {{ $comment->body }}</p>
-                                    @endforeach
-                                </div>
-                            @endif
-                        </div>
-                    </article>
-                @endforeach
-            </div>
-        </section>
-    @endif
 
     <script src="https://www.youtube.com/iframe_api"></script>
     <script>

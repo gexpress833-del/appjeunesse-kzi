@@ -85,6 +85,95 @@ class ManagementViewsTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_choose_a_department_but_cannot_record_attendance(): void
+    {
+        Department::create(['name' => 'Social']);
+        Department::create(['name' => 'Médias/DCC']);
+
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'status' => 'active',
+        ]);
+        $event = Event::create([
+            'name' => 'Culte du dimanche',
+            'date' => now()->addDay(),
+            'created_by' => 'admin',
+        ]);
+        $member = Member::create([
+            'name' => 'Membre social',
+            'dept' => 'Social',
+            'role' => 'Membre',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('attendances.sheet', $event))
+            ->assertSee('Choisir le département à suivre')
+            ->assertSee('Social')
+            ->assertSee('Médias/DCC')
+            ->assertSee(route('attendances.sheet', ['event' => $event, 'dept' => 'Social']));
+
+        $this->actingAs($admin)
+            ->get(route('attendances.sheet', ['event' => $event, 'dept' => 'Social']))
+            ->assertSee('Membre social')
+            ->assertSee('Vue en lecture seule')
+            ->assertDontSee('Enregistrer les présences');
+
+        $this->actingAs($admin)
+            ->post(route('attendances.store', $event), [
+                'dept' => 'Social',
+                'statuses' => [$member->id => 'present'],
+            ])
+            ->assertForbidden();
+    }
+
+    public function test_admin_can_view_global_and_selected_department_attendance_statistics(): void
+    {
+        Department::create(['name' => 'Social']);
+        Department::create(['name' => 'Médias/DCC']);
+
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'status' => 'active',
+        ]);
+        $event = Event::create([
+            'name' => 'Réunion générale',
+            'date' => now()->subDay(),
+            'created_by' => 'admin',
+        ]);
+        $socialMember = Member::create([
+            'name' => 'Membre social',
+            'dept' => 'Social',
+            'role' => 'Membre',
+        ]);
+        $mediaMember = Member::create([
+            'name' => 'Membre médias',
+            'dept' => 'Médias/DCC',
+            'role' => 'Membre',
+        ]);
+        Attendance::create([
+            'member_id' => $socialMember->id,
+            'event_id' => $event->id,
+            'status' => 'present',
+        ]);
+        Attendance::create([
+            'member_id' => $mediaMember->id,
+            'event_id' => $event->id,
+            'status' => 'absent',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('attendances.report'))
+            ->assertSee('Statistiques globales')
+            ->assertSee('Membre social')
+            ->assertSee('Membre médias');
+
+        $this->actingAs($admin)
+            ->get(route('attendances.report', ['dept' => 'Social']))
+            ->assertSee('Département filtré : Social')
+            ->assertSee('Membre social')
+            ->assertDontSee('Membre médias');
+    }
+
     public function test_responsable_can_create_department_event_and_receives_member_notification(): void
     {
         Department::create(['name' => 'Social']);
@@ -208,7 +297,7 @@ class ManagementViewsTest extends TestCase
         ]);
     }
 
-    public function test_secretariat_can_record_attendance_for_members_without_department(): void
+    public function test_secretariat_can_only_view_attendance_and_cannot_record_it(): void
     {
         $secretariat = User::factory()->create([
             'role' => 'secretariat',
@@ -219,35 +308,28 @@ class ManagementViewsTest extends TestCase
             'date' => now()->addDay(),
             'created_by' => 'secretariat',
         ]);
-
-        $this->actingAs($secretariat)
-            ->post(route('members.store'), [
-                'name' => 'Fidèle sans fonction',
-                'dept' => '__none__',
-                'role' => null,
-            ])
-            ->assertRedirect(route('members.index'));
-
-        $member = Member::where('name', 'Fidèle sans fonction')->firstOrFail();
-
-        $this->assertNull($member->dept);
+        $member = Member::create([
+            'name' => 'Fidèle sans fonction',
+            'dept' => null,
+            'role' => 'Fidèle',
+        ]);
 
         $this->actingAs($secretariat)
             ->get(route('attendances.sheet', ['event' => $event, 'dept' => '__none__']))
-            ->assertOk();
+            ->assertOk()
+            ->assertSee('Vue en lecture seule')
+            ->assertDontSee('Enregistrer les présences');
 
         $this->actingAs($secretariat)
             ->post(route('attendances.store', $event), [
                 'dept' => '__none__',
                 'statuses' => [$member->id => 'present'],
             ])
-            ->assertRedirect(route('attendances.sheet', ['event' => $event, 'dept' => '__none__']))
-            ->assertSessionHas('success');
+            ->assertForbidden();
 
-        $this->assertDatabaseHas('attendances', [
+        $this->assertDatabaseMissing('attendances', [
             'event_id' => $event->id,
             'member_id' => $member->id,
-            'status' => 'present',
         ]);
     }
 

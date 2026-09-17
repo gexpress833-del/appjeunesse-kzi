@@ -57,7 +57,30 @@
 </form>
 
 @if ($summary->isNotEmpty())
-    <div class="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <section class="mt-8 rounded-2xl border border-indigo-200 bg-indigo-50/60 p-5 shadow-sm">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+                <h2 class="text-lg font-bold text-slate-900">Statistiques globales</h2>
+                <p class="mt-1 text-sm text-slate-600">Tous les départements inclus dans la sélection actuelle.</p>
+            </div>
+            @if (request('dept'))
+                <span class="rounded-full bg-white px-3 py-1 text-xs font-bold text-indigo-700 shadow-sm">Département filtré : {{ request('dept') }}</span>
+            @endif
+        </div>
+        <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <div class="rounded-xl bg-white p-3 shadow-sm"><p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Taux global</p><p class="mt-1 text-2xl font-bold text-indigo-700">{{ $overall['rate'] }}%</p></div>
+            <div class="rounded-xl bg-white p-3 shadow-sm"><p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Présents</p><p class="mt-1 text-2xl font-bold text-emerald-600">{{ $overall['present'] }}</p></div>
+            <div class="rounded-xl bg-white p-3 shadow-sm"><p class="text-xs font-semibold uppercase tracking-wide text-slate-500">En retard</p><p class="mt-1 text-2xl font-bold text-amber-600">{{ $overall['late'] }}</p></div>
+            <div class="rounded-xl bg-white p-3 shadow-sm"><p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Excusés</p><p class="mt-1 text-2xl font-bold text-sky-600">{{ $overall['excused'] }}</p></div>
+            <div class="rounded-xl bg-white p-3 shadow-sm"><p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Absents</p><p class="mt-1 text-2xl font-bold text-rose-600">{{ $overall['absent'] }}</p></div>
+        </div>
+        <p class="mt-3 text-xs text-slate-500">{{ $overall['present'] + $overall['late'] }} présence(s) confirmée(s) ou en retard sur {{ $overall['total'] }} relevé(s).</p>
+    </section>
+
+    <section class="mt-8">
+        <h2 class="text-lg font-bold text-slate-900">Statistiques par département</h2>
+        <p class="mt-1 text-sm text-slate-500">Sélectionnez un département dans les filtres pour afficher uniquement son bilan.</p>
+        <div class="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         @foreach ($summary as $item)
             <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                 <p class="text-sm font-semibold text-slate-900">{{ $item->dept ?? 'Fidèles sans département' }}</p>
@@ -65,7 +88,8 @@
                 <p class="text-xs text-slate-500">{{ $item->present + $item->late }} / {{ $item->total }} présents ou en retard</p>
             </div>
         @endforeach
-    </div>
+        </div>
+    </section>
 @endif
 
 <section class="mt-8">

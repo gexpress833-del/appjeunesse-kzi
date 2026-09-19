@@ -3,6 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    @php($firebaseConfig = array_filter([
+        'apiKey' => config('services.firebase.api_key'),
+        'authDomain' => config('services.firebase.auth_domain'),
+        'projectId' => config('services.firebase.project_id'),
+        'storageBucket' => config('services.firebase.storage_bucket'),
+        'messagingSenderId' => config('services.firebase.messaging_sender_id'),
+        'appId' => config('services.firebase.app_id'),
+        'vapidKey' => config('services.firebase.vapid_key'),
+    ], fn ($value) => filled($value)))
+    <script>
+        window.__APP_FIREBASE_CONFIG__ = @json($firebaseConfig);
+    </script>
     <title>@yield('title', 'Espace membre') — appjeunesse-kzi</title>
     <link rel="icon" type="image/jpeg" href="{{ asset('logoEglise.jpg') }}">
     <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
@@ -21,6 +34,7 @@
     @php($appSettings = \App\Models\AppSetting::current())
     <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.22),transparent_25%),radial-gradient(circle_at_bottom_right,_rgba(34,211,238,0.18),transparent_35%)]"></div>
     <div id="sidebar-backdrop" class="fixed inset-0 z-30 hidden bg-slate-950/70 backdrop-blur-sm lg:hidden" onclick="window.closeSidebar()"></div>
+    <div id="app-toast-stack" class="pointer-events-none fixed right-4 top-4 z-50 flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-3"></div>
 
     {{-- Barre latérale --}}
     <aside id="sidebar" class="sidebar-closed fixed inset-y-0 left-0 z-40 flex min-h-0 w-64 flex-col overflow-y-auto border-r border-white/10 bg-slate-950/80 text-slate-300 shadow-2xl shadow-indigo-950/20 backdrop-blur-xl transition-transform lg:static lg:flex lg:transform-none">

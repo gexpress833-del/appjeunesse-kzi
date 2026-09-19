@@ -3,6 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    @php($firebaseConfig = array_filter([
+        'apiKey' => config('services.firebase.api_key'),
+        'authDomain' => config('services.firebase.auth_domain'),
+        'projectId' => config('services.firebase.project_id'),
+        'storageBucket' => config('services.firebase.storage_bucket'),
+        'messagingSenderId' => config('services.firebase.messaging_sender_id'),
+        'appId' => config('services.firebase.app_id'),
+        'vapidKey' => config('services.firebase.vapid_key'),
+    ], fn ($value) => filled($value)))
+    <script>
+        window.__APP_FIREBASE_CONFIG__ = @json($firebaseConfig);
+    </script>
     <title>@yield('title', 'appjeunesse-kzi') — La Parole Éternelle Kolwezi</title>
     <link rel="icon" type="image/jpeg" href="{{ asset('logoEglise.jpg') }}">
     <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">

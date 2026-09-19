@@ -42,6 +42,19 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
+Route::get('/firebase-config', function () {
+    $config = array_filter([
+        'apiKey' => config('services.firebase.api_key'),
+        'authDomain' => config('services.firebase.auth_domain'),
+        'projectId' => config('services.firebase.project_id'),
+        'storageBucket' => config('services.firebase.storage_bucket'),
+        'messagingSenderId' => config('services.firebase.messaging_sender_id'),
+        'appId' => config('services.firebase.app_id'),
+        'vapidKey' => config('services.firebase.vapid_key'),
+    ], fn ($value) => filled($value));
+
+    return response()->json($config);
+})->name('firebase.config');
 
 /*
 |--------------------------------------------------------------------------
@@ -67,6 +80,8 @@ Route::middleware(['auth', 'active', 'maintenance'])->group(function () {
         Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
         Route::post('/notifications/supprimer-selection', [NotificationController::class, 'bulkDestroy'])->name('notifications.bulk.destroy');
         Route::post('/notifications/lire-tout', [NotificationController::class, 'markAllAsRead'])->name('notifications.read.all');
+        Route::post('/notifications/fcm/register', [NotificationController::class, 'registerFcmToken'])->name('notifications.fcm.register');
+        Route::post('/notifications/fcm/test', [NotificationController::class, 'sendTestPush'])->name('notifications.fcm.test');
 
         Route::post('/videos/{videoArchive}/like', [VideoArchiveController::class, 'like'])->name('videos.like');
         Route::post('/videos/{videoArchive}/commenter', [VideoArchiveController::class, 'comment'])->name('videos.comment');

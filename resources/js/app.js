@@ -1,6 +1,141 @@
 const themeStorageKey = 'appjeunesse-theme';
 const storedTheme = window.localStorage.getItem(themeStorageKey);
 const preferredTheme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+const FCM_TOKEN_STORAGE_KEY = 'appjeunesse-fcm-token';
+
+const firebaseConfig = {
+	apiKey: window.__APP_FIREBASE_CONFIG__?.apiKey || '',
+	authDomain: window.__APP_FIREBASE_CONFIG__?.authDomain || '',
+	projectId: window.__APP_FIREBASE_CONFIG__?.projectId || '',
+	messagingSenderId: window.__APP_FIREBASE_CONFIG__?.messagingSenderId || '',
+	appId: window.__APP_FIREBASE_CONFIG__?.appId || '',
+};
+
+const showAppToast = (title, body, type = 'info') => {
+	const container = document.getElementById('app-toast-stack');
+
+	if (!container) {
+		return;
+	}
+
+	const toast = document.createElement('div');
+	const toneClasses = {
+		info: 'border-cyan-400/40 bg-slate-900/90 text-slate-50',
+		success: 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100',
+		warning: 'border-amber-400/40 bg-amber-500/10 text-amber-100',
+		error: 'border-rose-400/40 bg-rose-500/10 text-rose-100',
+	};
+
+	toast.className = [
+		'pointer-events-auto',
+		'rounded-2xl',
+		'border',
+		'border-white/10',
+		'backdrop-blur-xl',
+		'shadow-2xl',
+		'shadow-slate-950/30',
+		'p-4',
+		'animate-[fadeIn_0.2s_ease-out]',
+		toneClasses[type] || toneClasses.info,
+	].join(' ');
+
+	toast.innerHTML = `
+		<div class="flex items-start gap-3">
+			<div class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/10 text-lg">
+				${type === 'success' ? '✓' : type === 'warning' ? '!' : type === 'error' ? '✕' : '🔔'}
+			</div>
+			<div class="min-w-0 flex-1">
+				<p class="text-sm font-bold leading-5">${title}</p>
+				<p class="mt-1 text-sm text-slate-300/90">${body}</p>
+			</div>
+			<button type="button" class="ml-2 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs font-semibold text-slate-200 transition hover:bg-white/10" aria-label="Fermer la notification">×</button>
+		</div>
+	`;
+
+	toast.querySelector('button').addEventListener('click', () => {
+		toast.remove();
+	});
+
+	container.appendChild(toast);
+	window.setTimeout(() => {
+		toast.style.opacity = '0';
+		toast.style.transform = 'translateY(-0.5rem)';
+		toast.style.transition = 'all 0.2s ease';
+		window.setTimeout(() => toast.remove(), 200);
+	}, 5000);
+};
+
+window.showAppToast = showAppToast;
+
+const registerFcmToken = async (token, device = 'web') => {
+	const existingToken = window.localStorage.getItem(FCM_TOKEN_STORAGE_KEY);
+
+	if (existingToken === token) {
+		return;
+	}
+
+	try {
+		const response = await fetch('/notifications/fcm/register', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '',
+			},
+			body: JSON.stringify({ token, device }),
+		});
+
+		if (response.ok) {
+			window.localStorage.setItem(FCM_TOKEN_STORAGE_KEY, token);
+		}
+	} catch (error) {
+		console.warn('FCM registration failed', error);
+	}
+};
+
+const requestFcmPermission = async () => {
+	if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+		return;
+	}
+
+	if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.messagingSenderId || !firebaseConfig.appId) {
+		return;
+	}
+
+	try {
+		const { initializeApp } = await import('firebase/app');
+		const { getMessaging, getToken, onMessage } = await import('firebase/messaging');
+		const app = initializeApp(firebaseConfig);
+		const messaging = getMessaging(app);
+
+		if (Notification.permission === 'default') {
+			const permission = await Notification.requestPermission();
+
+			if (permission !== 'granted') {
+				return;
+			}
+		}
+
+		if (Notification.permission !== 'granted') {
+			return;
+		}
+
+		const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+		const token = await getToken(messaging, { vapidKey: window.__APP_FIREBASE_CONFIG__?.vapidKey || '', serviceWorkerRegistration: registration });
+
+		if (token) {
+			await registerFcmToken(token, 'web');
+		}
+
+		onMessage(messaging, (payload) => {
+			const title = payload.notification?.title || 'Nouvelle notification';
+			const body = payload.notification?.body || 'Vous avez un nouveau message.';
+
+			showAppToast(title, body, 'info');
+		});
+	} catch (error) {
+		console.warn('Unable to initialize Firebase messaging', error);
+	}
+};
 
 document.documentElement.dataset.theme = storedTheme || preferredTheme;
 
@@ -46,7 +181,18 @@ const showInstallPrompt = () => {
 };
 
 if ('serviceWorker' in navigator) {
-	window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+	window.addEventListener('load', async () => {
+		navigator.serviceWorker.register('/sw.js').catch(() => {});
+		navigator.serviceWorker.addEventListener('message', (event) => {
+			const payload = event.data;
+			if (!payload || payload.type !== 'app-push') {
+				return;
+			}
+
+			showAppToast(payload.title || 'Nouvelle notification', payload.body || 'Vous avez un nouveau message.', 'info');
+		});
+		await requestFcmPermission();
+	});
 }
 
 window.addEventListener('beforeinstallprompt', (event) => {

@@ -45,6 +45,20 @@ class AuthPhoneAndNotificationTest extends TestCase
         $response->assertSessionHasErrors(['phone']);
     }
 
+    public function test_registration_requires_sex(): void
+    {
+        $response = $this->from('/register')->post('/register', [
+            'username' => 'jeandupont',
+            'full_name' => 'Jean Dupont',
+            'email' => 'jean@example.com',
+            'phone' => '0812345678',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ]);
+
+        $response->assertSessionHasErrors(['sex']);
+    }
+
     public function test_validating_account_creates_in_app_notification(): void
     {
         $admin = User::factory()->create([

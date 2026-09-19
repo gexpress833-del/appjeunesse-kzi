@@ -19,9 +19,14 @@
             </p>
         </div>
     </div>
-    @if (auth()->user()->isAdmin() || auth()->user()->isSecretariat())
-        <a href="{{ route('members.edit', $member) }}" class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">Modifier la fiche</a>
-    @endif
+    <div class="flex flex-wrap items-center gap-2">
+        @if (auth()->user()->isAdmin())
+            <a href="{{ route('members.pdf', $member) }}" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100">Exporter en PDF</a>
+        @endif
+        @if (auth()->user()->isAdmin() || auth()->user()->isSecretariat())
+            <a href="{{ route('members.edit', $member) }}" class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">Modifier la fiche</a>
+        @endif
+    </div>
 </div>
 
 <div class="mt-6 grid gap-4 sm:grid-cols-3">

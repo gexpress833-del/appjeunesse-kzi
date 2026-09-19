@@ -85,6 +85,79 @@ class ManagementViewsTest extends TestCase
         ]);
     }
 
+    public function test_member_creation_requires_an_existing_user_account(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'status' => 'active']);
+
+        $this->actingAs($admin)
+            ->post(route('members.store'), [
+                'name' => 'Membre sans compte',
+                'sex' => 'male',
+                'dept' => '__none__',
+                'email' => 'missing.account@example.com',
+            ])
+            ->assertSessionHasErrors(['email']);
+
+        $this->assertDatabaseMissing('members', ['email' => 'missing.account@example.com']);
+    }
+
+    public function test_directory_hides_members_without_user_accounts(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'status' => 'active']);
+        $linkedUser = User::factory()->create([
+            'email' => 'linked.member@example.com',
+            'role' => 'user',
+            'status' => 'active',
+        ]);
+        Member::create([
+            'name' => 'Membre visible',
+            'sex' => 'female',
+            'email' => $linkedUser->email,
+            'dept' => null,
+            'role' => 'Fidèle',
+        ]);
+        Member::create([
+            'name' => 'Membre orphelin',
+            'sex' => 'male',
+            'email' => 'orphan.member@example.com',
+            'dept' => null,
+            'role' => 'Fidèle',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('members.index'))
+            ->assertOk()
+            ->assertSee('Membre visible')
+            ->assertDontSee('Membre orphelin');
+    }
+
+    public function test_only_admin_can_export_an_individual_member_pdf(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'status' => 'active']);
+        $secretariat = User::factory()->create(['role' => 'secretariat', 'status' => 'active']);
+        $memberUser = User::factory()->create([
+            'email' => 'pdf.member@example.com',
+            'role' => 'user',
+            'status' => 'active',
+        ]);
+        $member = Member::create([
+            'name' => 'Membre PDF',
+            'sex' => 'male',
+            'email' => $memberUser->email,
+            'dept' => null,
+            'role' => 'Fidèle',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('members.pdf', $member))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+
+        $this->actingAs($secretariat)
+            ->get(route('members.pdf', $member))
+            ->assertForbidden();
+    }
+
     public function test_admin_can_choose_a_department_but_cannot_record_attendance(): void
     {
         Department::create(['name' => 'Social']);
@@ -206,6 +279,11 @@ class ManagementViewsTest extends TestCase
             'role' => 'admin',
             'status' => 'active',
         ]);
+        User::factory()->create([
+            'email' => 'social.member@example.com',
+            'role' => 'user',
+            'status' => 'active',
+        ]);
 
         $this->actingAs($responsable)
             ->post(route('events.store'), [
@@ -225,6 +303,7 @@ class ManagementViewsTest extends TestCase
         $this->actingAs($admin)
             ->post(route('members.store'), [
                 'name' => 'Nouveau membre social',
+                'sex' => 'female',
                 'dept' => 'Social',
                 'role' => 'Membre',
                 'email' => 'social.member@example.com',

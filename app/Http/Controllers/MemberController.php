@@ -8,6 +8,7 @@ use App\Models\Member;
 use App\Models\User;
 use App\Notifications\MemberAddedToDepartment;
 use App\Services\CloudinaryService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
 class MemberController extends Controller
@@ -25,7 +26,8 @@ class MemberController extends Controller
         abort_if($user->isResponsable() && blank($user->dept), 403, 'Votre compte responsable doit être rattaché à un département.');
 
         $members = Member::query()
-            ->with('department')
+            ->with(['department', 'user'])
+            ->whereHas('user')
             // Un responsable ne voit que son département dans l'annuaire
             ->when($user->isResponsable(), fn ($q) => $q->where('dept', $user->dept))
             ->when($request->filled('dept'), fn ($q) => $q->where('dept', $request->dept))
@@ -63,6 +65,31 @@ class MemberController extends Controller
             'rate' => $total > 0 ? (int) round(($ok / $total) * 100) : null,
             'total' => $total,
         ]);
+    }
+
+    public function exportPdf(Member $member)
+    {
+        abort_unless(auth()->user()->isAdmin(), 403, 'Seul un administrateur peut exporter une fiche membre.');
+
+        $attendances = $member->attendances()
+            ->with('event')
+            ->latest('id')
+            ->get();
+        $total = $attendances->count();
+        $ok = $attendances->whereIn('status', ['present', 'late'])->count();
+
+        return Pdf::setOption([
+            'tempDir' => sys_get_temp_dir(),
+            'fontDir' => sys_get_temp_dir(),
+            'fontCache' => sys_get_temp_dir(),
+            'isRemoteEnabled' => true,
+        ])->loadView('members.pdf', [
+            'member' => $member,
+            'attendances' => $attendances,
+            'total' => $total,
+            'rate' => $total > 0 ? (int) round(($ok / $total) * 100) : 0,
+            'generatedAt' => now(),
+        ])->setPaper('a4')->download('fiche-membre-'.$member->id.'.pdf');
     }
 
     public function create()
@@ -132,11 +159,12 @@ class MemberController extends Controller
     protected function validated(Request $request, ?int $ignoreId = null): array
     {
         $emailRule = $ignoreId
-            ? ['nullable', 'email', 'max:150', "unique:members,email,{$ignoreId}"]
-            : ['nullable', 'email', 'max:150', 'unique:members,email'];
+            ? ['required', 'email', 'max:150', 'exists:users,email', "unique:members,email,{$ignoreId}"]
+            : ['required', 'email', 'max:150', 'exists:users,email', 'unique:members,email'];
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:150'],
+            'sex' => ['required', 'in:male,female'],
             'dept' => ['required', 'string'],
             'role' => ['nullable', 'string', 'max:60'],
             'phone' => ['nullable', 'string', 'max:30'],

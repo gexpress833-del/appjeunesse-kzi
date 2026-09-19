@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Member;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -50,6 +51,39 @@ class SocialVisitAccessTest extends TestCase
             ->assertSee(route('members.index'), false)
             ->assertSee(route('gallery.index'), false)
             ->assertSee(route('home'), false);
+    }
+
+    public function test_member_cannot_update_sex_from_profile(): void
+    {
+        $user = User::factory()->create([
+            'role' => 'user',
+            'status' => 'active',
+            'email' => 'member.profile@example.com',
+        ]);
+        $member = Member::create([
+            'name' => 'Membre Profil',
+            'sex' => 'male',
+            'email' => $user->email,
+            'role' => 'Fidèle',
+        ]);
+
+        $this->actingAs($user)
+            ->put(route('profile.update'), [
+                'full_name' => $user->full_name,
+                'phone' => $user->phone,
+                'dept' => '',
+                'sex' => 'female',
+                'birth_date' => '',
+                'address' => '',
+                'password' => '',
+                'password_confirmation' => '',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('members', [
+            'id' => $member->id,
+            'sex' => 'male',
+        ]);
     }
 
     public function test_non_social_responsable_cannot_manage_social_visits(): void

@@ -17,6 +17,11 @@
                 <a href="{{ route('videos.archive') }}" class="archive-filter {{ $type === 'all' ? 'is-active' : '' }}">Tout</a>
                 <a href="{{ route('videos.archive', ['type' => 'live']) }}" class="archive-filter {{ $type === 'live' ? 'is-active' : '' }}">En direct</a>
                 <a href="{{ route('videos.archive', ['type' => 'replay']) }}" class="archive-filter {{ $type === 'replay' ? 'is-active' : '' }}">Retransmission</a>
+                @auth
+                    @if (auth()->user()->canManageVideoArchives())
+                        <a href="{{ route('videos.manage') }}" class="archive-filter">Gérer les vidéos</a>
+                    @endif
+                @endauth
             </div>
         </div>
 
@@ -88,6 +93,23 @@
                                     Publié par {{ $video->publisher->full_name }}
                                 </div>
                             @endif
+
+                            @auth
+                                @if (auth()->user()->canManageVideoArchives())
+                                    <div class="mt-5 flex flex-wrap items-center gap-2 border-t border-white/10 pt-4">
+                                        <a href="{{ route('videos.edit', $video) }}" class="inline-flex items-center rounded-xl border border-cyan-400/30 bg-cyan-500/10 px-3 py-2 text-xs font-bold text-cyan-100 transition hover:bg-cyan-500/20">
+                                            Modifier
+                                        </a>
+                                        <form method="POST" action="{{ route('videos.destroy', $video) }}" onsubmit="return confirm('Supprimer définitivement cette vidéo de l’historique ?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="inline-flex items-center rounded-xl border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-xs font-bold text-rose-100 transition hover:bg-rose-500/20">
+                                                Supprimer de l’historique
+                                            </button>
+                                        </form>
+                                    </div>
+                                @endif
+                            @endauth
                         </div>
                     </article>
                 @endforeach

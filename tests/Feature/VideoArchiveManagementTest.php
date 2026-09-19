@@ -86,20 +86,51 @@ class VideoArchiveManagementTest extends TestCase
         $this->assertDatabaseMissing('video_archives', ['id' => $video->id]);
     }
 
-    public function test_non_admin_cannot_manage_archived_videos(): void
+    public function test_secretariat_can_manage_archived_videos(): void
     {
         $secretariat = User::factory()->create(['role' => 'secretariat', 'status' => 'active']);
+
+        $this->actingAs($secretariat)
+            ->get(route('videos.manage'))
+            ->assertOk()
+            ->assertSee('Vidéos archivées');
+
+        $this->actingAs($secretariat)
+            ->post(route('videos.store'), [
+                'title' => 'Vidéo du secrétariat',
+                'description' => 'Vidéo publiée par le secrétariat.',
+                'media_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                'broadcast_type' => 'replay',
+            ])
+            ->assertRedirect(route('videos.manage'));
+
+        $video = VideoArchive::query()->firstOrFail();
+
+        $this->actingAs($secretariat)
+            ->delete(route('videos.destroy', $video))
+            ->assertRedirect(route('videos.manage'));
+
+        $this->assertDatabaseMissing('video_archives', ['id' => $video->id]);
+    }
+
+    public function test_responsable_outside_media_cannot_manage_archived_videos(): void
+    {
+        $responsable = User::factory()->create([
+            'role' => 'responsable',
+            'dept' => 'Social',
+            'status' => 'active',
+        ]);
         $video = VideoArchive::create([
             'title' => 'Vidéo protégée',
             'media_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
             'broadcast_type' => 'replay',
         ]);
 
-        $this->actingAs($secretariat)
+        $this->actingAs($responsable)
             ->get(route('videos.manage'))
             ->assertForbidden();
 
-        $this->actingAs($secretariat)
+        $this->actingAs($responsable)
             ->delete(route('videos.destroy', $video))
             ->assertForbidden();
     }

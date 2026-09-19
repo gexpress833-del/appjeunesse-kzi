@@ -137,6 +137,10 @@ Route::middleware(['auth', 'active', 'maintenance'])->group(function () {
         Route::delete('/membres/{member}', [MemberController::class, 'destroy'])->name('members.destroy');
     });
 
+    Route::get('/membres/{member}/pdf', [MemberController::class, 'exportPdf'])
+        ->middleware('role:admin')
+        ->name('members.pdf');
+
     /*
     |----------------------------------------------------------------------
     | Événements — création/gestion : responsable de son département,
@@ -187,8 +191,8 @@ Route::middleware(['auth', 'active', 'maintenance'])->group(function () {
         Route::post('/direct', [MediaController::class, 'liveSave'])->name('live.save');
     });
 
-    // Archives vidéo : gestion réservée à l’administrateur et au responsable DCC/Médias.
-    Route::middleware('role:admin,responsable')->group(function () {
+    // Archives vidéo : gestion réservée à l’administrateur, au secrétariat et au responsable DCC/Médias.
+    Route::middleware('role:admin,secretariat,responsable')->group(function () {
         Route::get('/videos/gestion', [VideoArchiveController::class, 'manage'])->name('videos.manage');
         Route::get('/videos/gestion/creer', [VideoArchiveController::class, 'create'])->name('videos.create');
         Route::post('/videos/gestion', [VideoArchiveController::class, 'store'])->name('videos.store');

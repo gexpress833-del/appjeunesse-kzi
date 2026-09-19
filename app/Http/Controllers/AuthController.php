@@ -54,6 +54,7 @@ class AuthController extends Controller
         $data = $request->validate([
             'username' => ['required', 'string', 'max:50', 'alpha_dash', 'unique:users,username'],
             'full_name' => ['required', 'string', 'max:150'],
+            'sex' => ['required', 'in:male,female'],
             'email' => ['required', 'email', 'max:150', 'unique:users,email'],
             'phone' => ['required', 'string', 'max:30', 'unique:users,phone', 'regex:/^\+?[0-9\s\-()]+$/'],
             'birth_date' => ['nullable', 'date', 'before:today'],

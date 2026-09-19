@@ -32,6 +32,15 @@
                        class="mt-1 w-full rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
             </div>
             <div>
+                <label for="sex" class="block text-sm font-medium text-slate-700">Sexe *</label>
+                <select id="sex" name="sex" required
+                        class="mt-1 w-full rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
+                    <option value="">— Choisir —</option>
+                    <option value="male" @selected(old('sex') === 'male')>Homme</option>
+                    <option value="female" @selected(old('sex') === 'female')>Femme</option>
+                </select>
+            </div>
+            <div>
                 <label class="block text-sm font-medium text-slate-700">Email *</label>
                 <input name="email" type="email" value="{{ old('email') }}" required
                        class="mt-1 w-full rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">

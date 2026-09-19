@@ -11,12 +11,16 @@
         'user' => 'Membre',
     ];
     $currentUser = auth()->user();
+    $sex = $member?->sex ?? $currentUser->sex;
+    $greeting = $currentUser->isResponsable()
+        ? 'Bonjour Respo. '.$currentUser->full_name
+        : 'Bonjour '.($sex === 'female' ? 'Sr. ' : ($sex === 'male' ? 'Fr. ' : 'Fr./Sr. ')).$currentUser->full_name;
 @endphp
 <div class="rounded-3xl border border-white/10 bg-slate-950/30 p-6 shadow-2xl shadow-slate-950/20 backdrop-blur-sm">
     <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
             <p class="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-300">Tableau de bord personnel</p>
-            <h1 class="mt-2 text-3xl font-black text-white">Bonjour {{ auth()->user()->full_name }} 👋</h1>
+            <h1 class="mt-2 text-3xl font-black text-white">{{ $greeting }} 👋</h1>
             <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
                 <span class="rounded-full border border-cyan-400/30 bg-cyan-500/10 px-3 py-1.5 font-semibold text-cyan-200">
                     Rôle : {{ $roleLabels[$currentUser->role] ?? ucfirst($currentUser->role) }}

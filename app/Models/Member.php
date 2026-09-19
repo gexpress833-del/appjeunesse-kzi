@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'name',
+    'sex',
     'dept',
     'role',
     'phone',
@@ -39,6 +40,11 @@ class Member extends Model
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class, 'dept', 'name');
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'email', 'email');
     }
 
     public function attendances(): HasMany

@@ -19,6 +19,16 @@
                    class="mt-1 w-full rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
         </div>
         <div>
+            <label for="sex" class="block text-sm font-medium text-slate-700">Sexe *</label>
+            <select id="sex" name="sex" required
+                    class="mt-1 w-full rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
+                <option value="">— Choisir —</option>
+                <option value="male" @selected(old('sex', $member->sex) === 'male')>Homme</option>
+                <option value="female" @selected(old('sex', $member->sex) === 'female')>Femme</option>
+            </select>
+            <p class="mt-1 text-xs text-slate-400">Ce choix permet d’afficher Fr. ou Sr. sur le dashboard.</p>
+        </div>
+        <div>
             <label class="block text-sm font-medium text-slate-700">Département</label>
             @if (auth()->user()->isResponsable())
                 <input value="{{ old('dept', $member->dept ?? auth()->user()->dept) }}" disabled
@@ -46,9 +56,10 @@
                    class="mt-1 w-full rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
         </div>
         <div>
-            <label class="block text-sm font-medium text-slate-700">Email</label>
-            <input name="email" type="email" value="{{ old('email', $member->email) }}"
+            <label class="block text-sm font-medium text-slate-700">Email du compte utilisateur *</label>
+            <input name="email" type="email" value="{{ old('email', $member->email) }}" required
                    class="mt-1 w-full rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
+            <p class="mt-1 text-xs text-slate-400">Le compte doit être créé avant l’ajout dans l’annuaire.</p>
         </div>
         <div>
             <label class="block text-sm font-medium text-slate-700">Date de naissance</label>

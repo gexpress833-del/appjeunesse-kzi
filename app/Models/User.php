@@ -17,6 +17,7 @@ use Illuminate\Notifications\Notifiable;
 #[Fillable([
     'username',
     'full_name',
+    'sex',
     'email',
     'password',
     'phone',
@@ -101,6 +102,7 @@ class User extends Authenticatable implements CanResetPasswordContract
     public function canManageVideoArchives(): bool
     {
         return $this->isAdmin()
+            || $this->isSecretariat()
             || ($this->isResponsable() && in_array($this->dept, ['Médias/DCC', 'Médias', 'DCC'], true));
     }
 

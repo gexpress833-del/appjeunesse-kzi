@@ -3,8 +3,11 @@
 @section('title', 'Tableau de bord')
 
 @section('content')
-<div class="flex items-center justify-between">
-    <h1 class="text-2xl font-bold text-slate-900">Tableau de bord</h1>
+<div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+        <p class="text-xs font-bold uppercase tracking-[0.18em] text-indigo-600">Espace de gestion</p>
+        <h1 class="mt-1 text-2xl font-bold text-slate-900">Bonjour {{ auth()->user()->isAdmin() ? 'Administrateur' : 'Secrétaire' }} {{ auth()->user()->full_name }} 👋</h1>
+    </div>
     <span class="rounded-full bg-indigo-100 px-3 py-1 text-xs font-bold uppercase text-indigo-700">
         {{ auth()->user()->isAdmin() ? 'Administration' : 'Secrétariat' }}
     </span>

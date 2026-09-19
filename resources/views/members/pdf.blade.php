@@ -4,26 +4,63 @@
     <meta charset="UTF-8">
     <title>Fiche membre - {{ $member->name }}</title>
     <style>
-        body { color: #172033; font-family: DejaVu Sans, sans-serif; font-size: 11px; margin: 32px; }
-        .header { border-bottom: 3px solid #4338ca; padding-bottom: 16px; }
-        h1 { color: #1e1b4b; font-size: 24px; margin: 0 0 6px; }
-        h2 { color: #1e1b4b; font-size: 15px; margin: 26px 0 10px; }
+        @page { margin: 28px 32px 30px; }
+        body { background: #f4f7fb; color: #172033; font-family: DejaVu Sans, sans-serif; font-size: 10px; margin: 0; }
+        .topbar { background: #0b1630; color: #fff; padding: 18px 22px; }
+        .brand { color: #69e2f5; font-size: 9px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; }
+        .header { background: #fff; border-bottom: 1px solid #dbe5f0; padding: 20px 22px 18px; }
+        h1 { color: #0b1630; font-size: 24px; margin: 0 0 5px; }
+        h2 { color: #0b1630; font-size: 14px; margin: 24px 0 10px; }
         .muted { color: #64748b; }
-        .grid { margin-top: 20px; width: 100%; }
-        .grid td { border-bottom: 1px solid #e2e8f0; padding: 9px 6px; vertical-align: top; width: 50%; }
-        .label { color: #64748b; display: block; font-size: 9px; font-weight: bold; text-transform: uppercase; }
-        .value { display: block; margin-top: 3px; }
-        .summary { background: #eef2ff; border-radius: 8px; margin-top: 18px; padding: 14px; }
+        .identity { background: #fff; border-bottom: 1px solid #dbe5f0; padding: 20px 22px; }
+        .identity-photo { background: #dbeafe; border: 4px solid #69e2f5; height: 92px; width: 92px; }
+        .identity-photo img { height: 92px; width: 92px; }
+        .identity-fallback { color: #1d4ed8; font-size: 38px; font-weight: bold; line-height: 92px; text-align: center; }
+        .identity-name { color: #0b1630; font-size: 21px; font-weight: bold; margin: 4px 0 7px; }
+        .identity-meta { color: #475569; font-size: 10px; }
+        .pill { background: #e0f7fb; color: #08798a; font-size: 9px; font-weight: bold; padding: 5px 9px; }
+        .grid { background: #fff; margin-top: 12px; padding: 8px 16px; width: 100%; }
+        .grid td { border-bottom: 1px solid #e2e8f0; padding: 10px 6px; vertical-align: top; width: 50%; }
+        .label { color: #64748b; display: block; font-size: 8px; font-weight: bold; letter-spacing: .8px; text-transform: uppercase; }
+        .value { color: #172033; display: block; font-size: 10px; margin-top: 4px; }
+        .summary { background: #0b1630; color: #fff; margin-top: 16px; padding: 15px 18px; }
+        .summary strong { color: #69e2f5; font-size: 15px; }
+        .summary .muted { color: #cbd5e1; margin-top: 4px; }
         table.history { border-collapse: collapse; width: 100%; }
-        .history th { background: #e0e7ff; color: #312e81; font-size: 9px; padding: 9px 7px; text-align: left; text-transform: uppercase; }
-        .history td { border-bottom: 1px solid #e2e8f0; padding: 8px 7px; }
-        .footer { border-top: 1px solid #cbd5e1; color: #64748b; font-size: 9px; margin-top: 28px; padding-top: 8px; }
+        .history th { background: #dbeafe; color: #1e3a8a; font-size: 8px; padding: 10px 8px; text-align: left; text-transform: uppercase; }
+        .history td { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 9px 8px; }
+        .status { color: #08798a; font-weight: bold; }
+        .footer { border-top: 1px solid #cbd5e1; color: #64748b; font-size: 8px; margin-top: 26px; padding-top: 9px; }
     </style>
 </head>
 <body>
+    <div class="topbar">
+        <span class="brand">Appjeunesse · La Parole Éternelle Kolwezi</span>
+    </div>
     <div class="header">
         <h1>Fiche individuelle du membre</h1>
-        <div class="muted">Annuaire de la jeunesse · Générée le {{ $generatedAt->translatedFormat('d F Y à H:i') }}</div>
+        <div class="muted">Profil officiel · Générée le {{ $generatedAt->translatedFormat('d F Y à H:i') }}</div>
+    </div>
+
+    <div class="identity">
+        <table width="100%">
+            <tr>
+                <td width="115" valign="top">
+                    <div class="identity-photo">
+                        @if ($member->profile_photo_url)
+                            <img src="{{ $member->profile_photo_url }}" alt="Photo de {{ $member->name }}">
+                        @else
+                            <div class="identity-fallback">{{ strtoupper(substr($member->name, 0, 1)) }}</div>
+                        @endif
+                    </div>
+                </td>
+                <td valign="middle">
+                    <div class="identity-name">{{ $member->name }}</div>
+                    <span class="pill">{{ $member->dept ?: 'Membre de la jeunesse' }}</span>
+                    <div class="identity-meta">{{ $member->role ?: 'Fidèle' }} · {{ $member->email ?: 'Compte non renseigné' }}</div>
+                </td>
+            </tr>
+        </table>
     </div>
 
     <table class="grid">
@@ -46,7 +83,7 @@
     </table>
 
     <div class="summary">
-        <strong>Taux de présence : {{ $rate }}%</strong><br>
+        <strong>{{ $rate }}% de présence</strong><br>
         <span class="muted">{{ $total }} relevé(s) de présence enregistré(s)</span>
     </div>
 

@@ -31,6 +31,7 @@
 <body class="min-h-screen bg-slate-950 font-sans text-slate-100 antialiased">
     @php($appSettings = \App\Models\AppSetting::current())
     <div class="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.18),transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(168,85,247,0.18),transparent_28%)]"></div>
+    <div id="app-toast-stack" class="pointer-events-none fixed right-4 top-4 z-50 flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-3"></div>
 
     <header class="relative z-10 border-b border-white/10 bg-slate-950/70 backdrop-blur-xl">
         <div class="guest-header-inner mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:flex-nowrap sm:py-4">
@@ -69,7 +70,7 @@
 
     <main class="relative z-10 mx-auto max-w-6xl px-4 py-8">
         @if (session('success'))
-            <div class="mb-6 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200 shadow-lg shadow-emerald-500/10">{{ session('success') }}</div>
+            <div data-app-flash data-app-flash-title="Action réussie" data-app-flash-type="success" hidden>{{ session('success') }}</div>
         @endif
         @yield('content')
     </main>

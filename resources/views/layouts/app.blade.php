@@ -153,7 +153,7 @@
 
         <main class="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
             @if (session('success'))
-                <div class="mb-6 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200 shadow-lg shadow-emerald-500/10">{{ session('success') }}</div>
+                <div data-app-flash data-app-flash-title="Action réussie" data-app-flash-type="success" hidden>{{ session('success') }}</div>
             @endif
             @if ($errors->any())
                 <div class="mb-6 rounded-2xl border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200 shadow-lg shadow-rose-500/10">

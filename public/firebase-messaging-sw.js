@@ -36,46 +36,23 @@ const ensureFirebase = async () => {
   messaging.onBackgroundMessage((payload) => {
     const title = payload?.notification?.title || 'Nouvelle notification';
     const body = payload?.notification?.body || 'Vous avez un nouveau message.';
+    const url = payload?.data?.click_action || '/notifications';
+
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        client.postMessage({ type: 'app-push', title, body, url });
+      }
+    });
 
     self.registration.showNotification(title, {
       body,
       icon: '/logoEglise.jpg',
       badge: '/logoEglise.jpg',
-      data: { url: payload?.data?.click_action || '/notifications' },
+      data: { url },
       tag: 'appjeunesse-push',
     });
   });
 };
-
-self.addEventListener('push', (event) => {
-  if (event.data) {
-    const payload = event.data.json();
-    const title = payload?.notification?.title || 'Nouvelle notification';
-    const body = payload?.notification?.body || 'Vous avez un nouveau message.';
-    const url = payload?.data?.click_action || '/notifications';
-
-    event.waitUntil(
-      clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-        for (const client of clientList) {
-          client.postMessage({
-            type: 'app-push',
-            title,
-            body,
-            url,
-          });
-        }
-
-        return self.registration.showNotification(title, {
-          body,
-          icon: '/logoEglise.jpg',
-          badge: '/logoEglise.jpg',
-          data: { url },
-          tag: 'appjeunesse-push',
-        });
-      })
-    );
-  }
-});
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();

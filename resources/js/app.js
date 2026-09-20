@@ -39,18 +39,16 @@ const showAppToast = (title, body, type = 'info') => {
 		toneClasses[type] || toneClasses.info,
 	].join(' ');
 
-	toast.innerHTML = `
-		<div class="flex items-start gap-3">
-			<div class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/10 text-lg">
-				${type === 'success' ? '✓' : type === 'warning' ? '!' : type === 'error' ? '✕' : '🔔'}
-			</div>
-			<div class="min-w-0 flex-1">
-				<p class="text-sm font-bold leading-5">${title}</p>
-				<p class="mt-1 text-sm text-slate-300/90">${body}</p>
-			</div>
-			<button type="button" class="ml-2 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs font-semibold text-slate-200 transition hover:bg-white/10" aria-label="Fermer la notification">×</button>
-		</div>
+	const content = document.createElement('div');
+	content.className = 'flex items-start gap-3';
+	content.innerHTML = `
+		<div class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/10 text-lg">${type === 'success' ? '✓' : type === 'warning' ? '!' : type === 'error' ? '✕' : '🔔'}</div>
+		<div class="min-w-0 flex-1"><p class="text-sm font-bold leading-5"></p><p class="mt-1 text-sm text-slate-300/90"></p></div>
+		<button type="button" class="ml-2 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs font-semibold text-slate-200 transition hover:bg-white/10" aria-label="Fermer la notification">×</button>
 	`;
+	content.querySelector('p:first-of-type').textContent = title;
+	content.querySelector('p:last-of-type').textContent = body;
+	toast.appendChild(content);
 
 	toast.querySelector('button').addEventListener('click', () => {
 		toast.remove();
@@ -67,13 +65,12 @@ const showAppToast = (title, body, type = 'info') => {
 
 window.showAppToast = showAppToast;
 
+document.querySelectorAll('[data-app-flash]').forEach((message) => {
+	showAppToast(message.dataset.appFlashTitle || 'Succès', message.textContent.trim(), message.dataset.appFlashType || 'success');
+	message.remove();
+});
+
 const registerFcmToken = async (token, device = 'web') => {
-	const existingToken = window.localStorage.getItem(FCM_TOKEN_STORAGE_KEY);
-
-	if (existingToken === token) {
-		return;
-	}
-
 	try {
 		const response = await fetch('/notifications/fcm/register', {
 			method: 'POST',
@@ -86,7 +83,10 @@ const registerFcmToken = async (token, device = 'web') => {
 
 		if (response.ok) {
 			window.localStorage.setItem(FCM_TOKEN_STORAGE_KEY, token);
+			return;
 		}
+
+		console.warn('FCM registration rejected', response.status, await response.text());
 	} catch (error) {
 		console.warn('FCM registration failed', error);
 	}
@@ -97,7 +97,7 @@ const requestFcmPermission = async () => {
 		return;
 	}
 
-	if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.messagingSenderId || !firebaseConfig.appId) {
+	if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.messagingSenderId || !firebaseConfig.appId || !window.__APP_FIREBASE_CONFIG__?.vapidKey) {
 		return;
 	}
 
@@ -264,6 +264,7 @@ const isNavigableLink = (link, event) => {
 		&& !href.startsWith('mailto:')
 		&& !href.startsWith('tel:')
 		&& !link.hasAttribute('download')
+		&& link.dataset.noLoading === undefined
 		&& !link.hasAttribute('target')
 		&& !event.defaultPrevented
 		&& event.button === 0

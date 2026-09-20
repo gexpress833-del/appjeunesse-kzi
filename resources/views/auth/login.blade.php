@@ -11,9 +11,6 @@
         <h1 class="text-2xl font-bold text-slate-900">Connexion</h1>
         <p class="auth-card-muted mt-1 text-sm text-slate-500">Utilisez votre email, votre nom d'utilisateur ou votre numéro de téléphone.</p>
 
-        @if (session('success'))
-            <div class="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ session('success') }}</div>
-        @endif
 
         @if ($errors->any())
             <div class="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">

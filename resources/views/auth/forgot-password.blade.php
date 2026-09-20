@@ -11,9 +11,6 @@
         <h1 class="text-2xl font-bold text-slate-900">Mot de passe oublié</h1>
         <p class="mt-2 text-sm text-slate-500">Saisissez votre adresse e-mail. Si elle correspond à un compte, vous recevrez un lien sécurisé.</p>
 
-        @if (session('success'))
-            <div class="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ session('success') }}</div>
-        @endif
         @if ($errors->any())
             <div class="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{{ $errors->first() }}</div>
         @endif

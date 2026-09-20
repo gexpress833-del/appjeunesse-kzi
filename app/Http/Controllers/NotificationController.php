@@ -101,18 +101,35 @@ class NotificationController extends Controller
         $title = $request->input('title', 'Test de notification');
         $body = $request->input('body', 'Ceci est une notification de test FCM.');
 
-        $this->sendPushToUser($user, $title, $body, [
+        $result = $this->sendPushToUser($user, $title, $body, [
             'type' => 'test',
             'click_action' => '/notifications',
         ]);
 
+        if ($result['tokens'] === 0) {
+            return response()->json([
+                'status' => 'not_registered',
+                'message' => 'Aucun navigateur FCM enregistré pour ce compte.',
+            ], 422);
+        }
+
+        if ($result['sent'] === 0) {
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'Firebase a refusé l’envoi. Consultez les logs Render.',
+            ], 502);
+        }
+
         return response()->json([
-            'status' => 'queued',
-            'message' => 'Notification de test envoyée.',
+            'status' => 'sent',
+            'message' => 'Notification de test envoyée à '.$result['sent'].' navigateur(s).',
         ]);
     }
 
-    public function sendPushToUser($user, string $title, string $body, array $data = []): void
+    /**
+     * @return array{tokens: int, sent: int, failed: int}
+     */
+    public function sendPushToUser($user, string $title, string $body, array $data = []): array
     {
         $tokens = UserFcmToken::query()
             ->where('user_id', $user->getKey())
@@ -121,7 +138,7 @@ class NotificationController extends Controller
             ->all();
 
         if ($tokens === []) {
-            return;
+            return ['tokens' => 0, 'sent' => 0, 'failed' => 0];
         }
 
         $credentials = config('firebase.projects.app.credentials') ?? config('services.firebase.credentials');
@@ -129,8 +146,11 @@ class NotificationController extends Controller
         if (blank($credentials)) {
             Log::warning('Firebase credentials are missing. Push notification not sent.');
 
-            return;
+            return ['tokens' => count($tokens), 'sent' => 0, 'failed' => count($tokens)];
         }
+
+        $sent = 0;
+        $failed = 0;
 
         try {
             $messaging = Firebase::messaging();
@@ -159,10 +179,19 @@ class NotificationController extends Controller
                     ],
                 ]);
 
-                $messaging->sendMulticast($message, $batch);
+                $report = $messaging->sendMulticast($message, $batch);
+                $sent += count($report->successes());
+                $failed += count($report->failures());
+
+                foreach ($report->invalidTokens() as $invalidToken) {
+                    UserFcmToken::query()->where('token', $invalidToken)->delete();
+                }
             }
         } catch (\Throwable $exception) {
             Log::error('FCM delivery failed: '.$exception->getMessage());
+            $failed = count($tokens);
         }
+
+        return ['tokens' => count($tokens), 'sent' => $sent, 'failed' => $failed];
     }
 }

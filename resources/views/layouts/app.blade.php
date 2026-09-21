@@ -119,6 +119,9 @@
                 <span data-theme-icon aria-hidden="true">☀</span>
                 <span data-theme-label>Clair</span>
             </button>
+            <button type="button" data-notifications-enable class="mb-3 flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-400/30 bg-cyan-500/10 px-3 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-500/20">
+                <span aria-hidden="true">🔔</span> Activer les notifications
+            </button>
             <a href="{{ route('profile.edit') }}" class="mb-2 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-2 py-2.5 transition-all hover:bg-white/10">
                 @if ($u->profile_photo_url)
                     <img src="{{ $u->profile_photo_url }}" class="h-9 w-9 rounded-full object-cover ring-2 ring-indigo-400/60" alt="">
@@ -145,6 +148,7 @@
             <img src="{{ asset('logoEglise.jpg') }}" class="h-8 w-8 rounded-xl object-cover object-center ring-1 ring-cyan-400/60" alt="Logo La Parole Éternelle Kolwezi">
             <span class="min-w-0 flex-1 truncate font-bold text-white">appjeunesse-kzi</span>
             <button type="button" data-app-install hidden class="app-install-button px-2.5 py-2" aria-label="Installer l’application"><span aria-hidden="true">＋</span><span class="hidden sm:inline">Installer</span></button>
+            <button type="button" data-notifications-enable class="rounded-xl border border-cyan-400/30 bg-cyan-500/10 px-3 py-2 text-cyan-100" aria-label="Activer les notifications">🔔</button>
             <a href="{{ route('notifications.index') }}" class="relative rounded-xl border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-amber-100" aria-label="Notifications">
                 <span aria-hidden="true">🔔</span>
                 <span class="absolute -right-1 -top-1 min-w-4 rounded-full bg-amber-400 px-1 text-center text-[10px] font-bold text-slate-950">{{ $unreadNotificationsCount }}</span>

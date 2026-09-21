@@ -94,10 +94,12 @@ const registerFcmToken = async (token, device = 'web') => {
 
 const requestFcmPermission = async () => {
 	if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+		showAppToast('Notifications indisponibles', 'Ce navigateur ou cette PWA ne prend pas en charge les notifications push.', 'warning');
 		return;
 	}
 
 	if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.messagingSenderId || !firebaseConfig.appId || !window.__APP_FIREBASE_CONFIG__?.vapidKey) {
+		showAppToast('Configuration incomplète', 'La configuration Firebase des notifications est absente ou incomplète.', 'error');
 		return;
 	}
 
@@ -116,6 +118,7 @@ const requestFcmPermission = async () => {
 		}
 
 		if (Notification.permission !== 'granted') {
+			showAppToast('Notifications désactivées', 'Autorisez les notifications dans les réglages du navigateur.', 'warning');
 			return;
 		}
 
@@ -135,6 +138,32 @@ const requestFcmPermission = async () => {
 	} catch (error) {
 		console.warn('Unable to initialize Firebase messaging', error);
 	}
+};
+
+const updateNotificationButtons = () => {
+	document.querySelectorAll('[data-notifications-enable]').forEach((button) => {
+		button.hidden = 'Notification' in window && Notification.permission === 'granted';
+	});
+};
+
+const bindNotificationButtons = () => {
+	document.querySelectorAll('[data-notifications-enable]').forEach((button) => {
+		if (button.dataset.notificationsBound === 'true') {
+			return;
+		}
+
+		button.dataset.notificationsBound = 'true';
+		button.addEventListener('click', async () => {
+			button.disabled = true;
+			button.setAttribute('aria-busy', 'true');
+			await requestFcmPermission();
+			button.disabled = false;
+			button.removeAttribute('aria-busy');
+			updateNotificationButtons();
+		});
+	});
+
+	updateNotificationButtons();
 };
 
 document.documentElement.dataset.theme = storedTheme || preferredTheme;
@@ -183,6 +212,10 @@ const showInstallPrompt = () => {
 if ('serviceWorker' in navigator) {
 	window.addEventListener('load', async () => {
 		navigator.serviceWorker.register('/sw.js').catch(() => {});
+		bindNotificationButtons();
+		if ('Notification' in window && Notification.permission === 'granted') {
+			await requestFcmPermission();
+		}
 		navigator.serviceWorker.addEventListener('message', (event) => {
 			const payload = event.data;
 			if (!payload || payload.type !== 'app-push') {
@@ -191,7 +224,6 @@ if ('serviceWorker' in navigator) {
 
 			showAppToast(payload.title || 'Nouvelle notification', payload.body || 'Vous avez un nouveau message.', 'info');
 		});
-		await requestFcmPermission();
 	});
 }
 

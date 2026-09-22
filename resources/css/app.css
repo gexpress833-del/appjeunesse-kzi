@@ -1763,6 +1763,10 @@ html[data-theme='light'] .theme-toggle:hover {
         text-overflow: ellipsis;
     }
 
+    .home-page .guest-header-actions nav a:nth-child(2) {
+        display: none;
+    }
+
     .home-page .guest-header-actions nav a:first-child {
         border-color: rgba(103, 232, 249, 0.45);
         background: linear-gradient(145deg, rgba(14, 116, 144, 0.5), rgba(15, 23, 42, 0.65));
@@ -1780,8 +1784,8 @@ html[data-theme='light'] .theme-toggle:hover {
     }
 
     .home-page #carousel {
-        min-height: 25rem;
-        height: min(68svh, 34rem);
+        min-height: 20rem;
+        height: clamp(20rem, 58svh, 30rem);
         margin: 0;
         border-radius: 1.35rem;
         background:
@@ -1792,7 +1796,8 @@ html[data-theme='light'] .theme-toggle:hover {
 
     .home-page .carousel-slide {
         border-radius: 1.35rem;
-        padding: 3.2rem 2.4rem 3.8rem;
+        justify-content: center;
+        padding: 2.5rem 2.25rem 3.25rem;
     }
 
     .home-page .carousel-label {

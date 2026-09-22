@@ -23,8 +23,12 @@
                 foreach ($banners as $b) {
                     $slides[] = ['kind' => 'banner', 'title' => $b->title, 'content' => $b->content, 'ref' => $b->author_or_reference, 'media' => $b->media_url];
                 }
-                if ($upcomingEvents->isNotEmpty()) {
-                    $slides[] = ['kind' => 'events', 'title' => 'Événements à venir', 'events' => $upcomingEvents];
+                foreach ($upcomingEvents as $event) {
+                    $slides[] = [
+                        'kind' => 'event',
+                        'title' => $event->name,
+                        'event' => $event,
+                    ];
                 }
             @endphp
 
@@ -42,20 +46,20 @@
                         <span class="carousel-label rose">📣 {{ $slide['title'] }}</span>
                         <p class="carousel-message max-w-3xl">{{ $slide['content'] }}</p>
                     @else
+                        @php($event = $slide['event'])
                         <span class="carousel-label sky">📅 {{ $slide['title'] }}</span>
-                        <ul class="mx-auto flex w-full max-w-5xl flex-wrap justify-center gap-4">
-                            @foreach ($slide['events'] as $event)
-                                <li class="carousel-event-card flex min-h-36 w-full max-w-md flex-1 basis-full flex-col items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/8 p-4 text-center shadow-[0_20px_40px_rgba(15,23,42,0.20)] backdrop-blur-xl sm:basis-[calc(50%-0.5rem)] sm:flex-none sm:flex-row sm:gap-5">
-                                    <div class="min-w-0 flex-1">
-                                        <p class="font-semibold text-white">{{ $event->name }}</p>
-                                        <p class="text-sm text-cyan-100/90">{{ $event->date->translatedFormat('l d F Y · H\hi') }}</p>
-                                    </div>
-                                    @if ($event->photo_url)
-                                        <img src="{{ $event->photo_url }}" alt="Affiche de {{ $event->name }}" class="h-40 w-40 shrink-0 rounded-xl object-cover ring-2 ring-white/20 sm:h-40 sm:w-40">
-                                    @endif
-                                </li>
-                            @endforeach
-                        </ul>
+                        <div class="carousel-event-card flex min-h-44 w-full max-w-3xl flex-col items-center justify-center gap-5 rounded-2xl border border-white/10 bg-white/8 p-5 text-center shadow-[0_20px_40px_rgba(15,23,42,0.20)] backdrop-blur-xl sm:flex-row sm:text-left">
+                            @if ($event->photo_url)
+                                <img src="{{ $event->photo_url }}" alt="Affiche de {{ $event->name }}" class="h-40 w-40 shrink-0 rounded-xl object-cover ring-2 ring-white/20">
+                            @endif
+                            <div class="min-w-0 flex-1">
+                                <p class="text-2xl font-bold text-white">{{ $event->name }}</p>
+                                <p class="mt-2 text-sm text-cyan-100/90">{{ $event->date->translatedFormat('l d F Y · H\hi') }}</p>
+                                @if ($event->description)
+                                    <p class="mt-3 text-sm leading-6 text-slate-200">{{ $event->description }}</p>
+                                @endif
+                            </div>
+                        </div>
                     @endif
                 </div>
             @endforeach

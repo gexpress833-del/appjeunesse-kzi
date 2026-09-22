@@ -115,8 +115,15 @@ class AuthController extends Controller
             'profile_photo' => ['nullable', 'image', 'max:4096'],
         ]);
 
+        if ($user->isAdmin()) {
+            $data['dept'] = $data['dept'] ?? $user->dept;
+        } else {
+            $data['dept'] = $user->dept;
+        }
+
         $user->full_name = $data['full_name'];
         $user->phone = filled($data['phone'] ?? null) ? $this->normalizePhone($data['phone']) : $user->phone;
+        $user->dept = $data['dept'];
         $user->birth_date = $data['birth_date'] ?? $user->birth_date;
         $user->address = $data['address'] ?? $user->address;
 

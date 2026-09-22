@@ -86,6 +86,55 @@ class SocialVisitAccessTest extends TestCase
         ]);
     }
 
+    public function test_user_and_responsable_cannot_change_their_assigned_department_from_profile(): void
+    {
+        $user = User::factory()->create([
+            'role' => 'user',
+            'status' => 'active',
+            'dept' => 'Chorale',
+        ]);
+
+        $this->actingAs($user)
+            ->put(route('profile.update'), [
+                'full_name' => $user->full_name,
+                'phone' => $user->phone,
+                'dept' => 'Social',
+                'birth_date' => '',
+                'address' => '',
+                'password' => '',
+                'password_confirmation' => '',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'dept' => 'Chorale',
+        ]);
+
+        $responsable = User::factory()->create([
+            'role' => 'responsable',
+            'status' => 'active',
+            'dept' => 'Médias/DCC',
+        ]);
+
+        $this->actingAs($responsable)
+            ->put(route('profile.update'), [
+                'full_name' => $responsable->full_name,
+                'phone' => $responsable->phone,
+                'dept' => 'Social',
+                'birth_date' => '',
+                'address' => '',
+                'password' => '',
+                'password_confirmation' => '',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('users', [
+            'id' => $responsable->id,
+            'dept' => 'Médias/DCC',
+        ]);
+    }
+
     public function test_non_social_responsable_cannot_manage_social_visits(): void
     {
         $user = User::factory()->create([

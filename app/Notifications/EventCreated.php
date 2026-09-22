@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Models\Event;
 use App\Models\User;
+use App\Notifications\Channels\FcmChannel;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
@@ -18,7 +19,7 @@ class EventCreated extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return ['database', FcmChannel::class];
     }
 
     public function toDatabase(object $notifiable): array

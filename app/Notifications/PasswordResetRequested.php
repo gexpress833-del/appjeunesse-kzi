@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Notifications\Channels\BrevoChannel;
+use App\Notifications\Channels\FcmChannel;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
@@ -14,7 +15,7 @@ class PasswordResetRequested extends Notification
 
     public function via(object $notifiable): array
     {
-        return [BrevoChannel::class];
+        return [BrevoChannel::class, FcmChannel::class];
     }
 
     /**

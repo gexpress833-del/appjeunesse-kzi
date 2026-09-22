@@ -41,15 +41,24 @@
             <input name="phone" value="{{ old('phone', auth()->user()->phone) }}"
                    class="mt-1 w-full rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
         </div>
-        <div>
-            <label class="block text-sm font-medium text-slate-700">Département</label>
-            <select name="dept" class="mt-1 w-full rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
-                <option value="">— Aucun —</option>
-                @foreach ($departments as $dept)
-                    <option value="{{ $dept->name }}" @selected(old('dept', auth()->user()->dept) === $dept->name)>{{ $dept->name }}</option>
-                @endforeach
-            </select>
-        </div>
+        @if (auth()->user()->isAdmin())
+            <div>
+                <label class="block text-sm font-medium text-slate-700">Département</label>
+                <select name="dept" class="mt-1 w-full rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
+                    <option value="">— Aucun —</option>
+                    @foreach ($departments as $dept)
+                        <option value="{{ $dept->name }}" @selected(old('dept', auth()->user()->dept) === $dept->name)>{{ $dept->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        @else
+            <div>
+                <label class="block text-sm font-medium text-slate-700">Département affecté</label>
+                <input value="{{ auth()->user()->dept ?? '— Aucun —' }}" disabled
+                       class="mt-1 w-full rounded-xl border-slate-200 bg-slate-50 text-slate-600">
+                <input type="hidden" name="dept" value="{{ auth()->user()->dept }}">
+            </div>
+        @endif
         <div>
             <label class="block text-sm font-medium text-slate-700">Date de naissance</label>
             <input name="birth_date" type="date" value="{{ old('birth_date', auth()->user()->birth_date?->format('Y-m-d')) }}"

@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\SocialVisit;
+use App\Notifications\Channels\FcmChannel;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
@@ -14,7 +15,7 @@ class SocialVisitAssigned extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return ['database', FcmChannel::class];
     }
 
     public function toDatabase(object $notifiable): array

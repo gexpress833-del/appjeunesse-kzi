@@ -2,6 +2,7 @@ const themeStorageKey = 'appjeunesse-theme';
 const storedTheme = window.localStorage.getItem(themeStorageKey);
 const preferredTheme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
 const FCM_TOKEN_STORAGE_KEY = 'appjeunesse-fcm-token';
+let fcmMessageHandlerBound = false;
 
 const firebaseConfig = {
 	apiKey: window.__APP_FIREBASE_CONFIG__?.apiKey || '',
@@ -129,11 +130,27 @@ const requestFcmPermission = async () => {
 			await registerFcmToken(token, 'web');
 		}
 
-		onMessage(messaging, (payload) => {
+		if (fcmMessageHandlerBound) {
+			return;
+		}
+
+		fcmMessageHandlerBound = true;
+		onMessage(messaging, async (payload) => {
 			const title = payload.notification?.title || 'Nouvelle notification';
 			const body = payload.notification?.body || 'Vous avez un nouveau message.';
+			const url = payload.data?.click_action || '/notifications';
 
 			showAppToast(title, body, 'info');
+
+			if (Notification.permission === 'granted') {
+				await registration.showNotification(title, {
+					body,
+					icon: '/logoEglise.jpg',
+					badge: '/logoEglise.jpg',
+					tag: `appjeunesse-${payload.data?.type || 'notification'}`,
+					data: { url },
+				});
+			}
 		});
 	} catch (error) {
 		console.warn('Unable to initialize Firebase messaging', error);

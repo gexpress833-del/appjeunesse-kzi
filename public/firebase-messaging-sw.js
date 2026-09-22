@@ -33,7 +33,7 @@ const ensureFirebase = async () => {
 
   const messaging = firebase.messaging();
 
-  messaging.onBackgroundMessage((payload) => {
+  messaging.onBackgroundMessage(async (payload) => {
     const title = payload?.notification?.title || 'Nouvelle notification';
     const body = payload?.notification?.body || 'Vous avez un nouveau message.';
     const url = payload?.data?.click_action || '/notifications';
@@ -44,12 +44,13 @@ const ensureFirebase = async () => {
       }
     });
 
-    self.registration.showNotification(title, {
+    await self.registration.showNotification(title, {
       body,
       icon: '/logoEglise.jpg',
       badge: '/logoEglise.jpg',
       data: { url },
       tag: 'appjeunesse-push',
+      renotify: true,
     });
   });
 };

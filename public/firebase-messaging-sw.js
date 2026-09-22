@@ -54,6 +54,19 @@ const ensureFirebase = async () => {
   });
 };
 
+self.addEventListener('install', () => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(Promise.all([
+    self.clients.claim(),
+    ensureFirebase(),
+  ]));
+});
+
+ensureFirebase();
+
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const url = event.notification.data?.url || '/notifications';

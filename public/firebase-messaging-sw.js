@@ -16,43 +16,56 @@ const getFirebaseConfig = async () => {
 };
 
 let firebaseReady = false;
+let firebaseInitialization;
 
 const ensureFirebase = async () => {
-  if (firebaseReady || typeof firebase === 'undefined') {
-    return;
+  if (firebaseReady) {
+    return true;
   }
 
-  const config = await getFirebaseConfig();
-
-  if (!config || !config.projectId || !config.messagingSenderId || !config.appId) {
-    return;
+  if (firebaseInitialization) {
+    return firebaseInitialization;
   }
 
-  firebase.initializeApp(config);
-  firebaseReady = true;
+  firebaseInitialization = (async () => {
+    if (typeof firebase === 'undefined') {
+      return false;
+    }
 
-  const messaging = firebase.messaging();
+    const config = await getFirebaseConfig();
 
-  messaging.onBackgroundMessage(async (payload) => {
-    const title = payload?.notification?.title || 'Nouvelle notification';
-    const body = payload?.notification?.body || 'Vous avez un nouveau message.';
-    const url = payload?.data?.click_action || '/notifications';
+    if (!config || !config.projectId || !config.messagingSenderId || !config.appId) {
+      return false;
+    }
 
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        client.postMessage({ type: 'app-push', title, body, url });
-      }
+    if (!firebase.apps.length) {
+      firebase.initializeApp(config);
+    }
+
+    firebaseReady = true;
+    const messaging = firebase.messaging();
+
+    messaging.onBackgroundMessage((payload) => {
+      const title = payload?.notification?.title || payload?.data?.title || 'Nouvelle notification';
+      const body = payload?.notification?.body || payload?.data?.body || 'Vous avez un nouveau message.';
+      const url = payload?.data?.click_action || payload?.fcmOptions?.link || '/notifications';
+
+      clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+        for (const client of clientList) {
+          client.postMessage({ type: 'app-push', title, body, url });
+        }
+      });
     });
 
-    await self.registration.showNotification(title, {
-      body,
-      icon: '/logoEglise.jpg',
-      badge: '/logoEglise.jpg',
-      data: { url },
-      tag: 'appjeunesse-push',
-      renotify: true,
-    });
+    return true;
+  })().catch((error) => {
+    firebaseInitialization = null;
+    console.error('Firebase messaging initialization failed', error);
+
+    return false;
   });
+
+  return firebaseInitialization;
 };
 
 self.addEventListener('install', () => {

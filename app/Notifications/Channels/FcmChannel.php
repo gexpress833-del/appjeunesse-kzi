@@ -55,12 +55,18 @@ class FcmChannel
                     'type' => (string) ($payload['type'] ?? 'notification'),
                 ], $this->normalizeData($payload)),
                 'webpush' => [
-                    'headers' => ['Urgency' => 'high'],
+                    'headers' => [
+                        'Urgency' => 'high',
+                        'TTL' => '86400',
+                    ],
                     'notification' => [
                         'title' => (string) $payload['title'],
                         'body' => (string) $payload['message'],
                         'icon' => '/logoEglise.jpg',
                         'badge' => '/logoEglise.jpg',
+                    ],
+                    'fcm_options' => [
+                        'link' => url($payload['click_action'] ?? '/notifications'),
                     ],
                 ],
             ]);

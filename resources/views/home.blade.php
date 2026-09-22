@@ -289,6 +289,8 @@
         let carouselTimer;
         let dragStartX = 0;
         let dragDeltaX = 0;
+        let isDragging = false;
+        let suppressClick = false;
 
         function updateSlidePositions() {
             if (!slides.length) return;
@@ -346,25 +348,37 @@
             carousel.addEventListener('pointerdown', (event) => {
                 dragStartX = event.clientX;
                 dragDeltaX = 0;
+                isDragging = true;
                 carousel.setPointerCapture(event.pointerId);
             });
 
             carousel.addEventListener('pointermove', (event) => {
-                if (dragStartX === 0) return;
+                if (!isDragging) return;
                 dragDeltaX = event.clientX - dragStartX;
             });
 
-            carousel.addEventListener('pointerup', () => {
+            const finishDrag = () => {
+                if (!isDragging) return;
+
                 if (Math.abs(dragDeltaX) > 80) {
                     window.carouselGo(window.carouselIndex + (dragDeltaX < 0 ? 1 : -1), true);
+                    suppressClick = true;
                 }
+                isDragging = false;
                 dragStartX = 0;
                 dragDeltaX = 0;
-            });
+            };
 
-            carousel.addEventListener('pointerleave', () => {
-                dragStartX = 0;
-                dragDeltaX = 0;
+            carousel.addEventListener('pointerup', finishDrag);
+            carousel.addEventListener('pointercancel', finishDrag);
+            carousel.addEventListener('lostpointercapture', finishDrag);
+
+            carousel.addEventListener('click', (event) => {
+                if (suppressClick) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    suppressClick = false;
+                }
             });
 
             carousel.addEventListener('mouseenter', () => window.clearInterval(carouselTimer));

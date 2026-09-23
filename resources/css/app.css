@@ -2384,6 +2384,75 @@ html[data-theme='light'] .theme-toggle:hover {
         font-size: 0.55rem;
         line-height: 1.25;
     }
+
+    .home-page .comment-stream.empty {
+        height: auto;
+        flex-basis: auto;
+        overflow: visible;
+    }
+
+    .home-page .comment-empty-card {
+        align-items: flex-start;
+        gap: 0.6rem;
+        min-height: 0;
+        padding: 0.7rem;
+        border-radius: 0.7rem;
+    }
+
+    .home-page .comment-empty-mark {
+        width: 2rem;
+        height: 2rem;
+        flex-basis: 2rem;
+        font-size: 0.8rem;
+    }
+
+    .home-page .comment-empty-label {
+        font-size: 0.46rem;
+        letter-spacing: 0.1em;
+    }
+
+    .home-page .comment-empty-title {
+        margin-top: 0.18rem;
+        font-size: 0.7rem;
+        line-height: 1.25;
+    }
+
+    .home-page .comment-empty-cta {
+        margin-top: 0.25rem;
+        font-size: 0.56rem;
+        line-height: 1.3;
+    }
+
+    .home-page .comment-login-links {
+        gap: 0.35rem;
+        margin-top: 0.45rem;
+    }
+
+    .home-page .comment-login-links a {
+        min-height: 1.65rem;
+        padding: 0.3rem 0.55rem;
+        border-radius: 0.5rem;
+        font-size: 0.52rem;
+    }
+
+    .home-page .comment-form {
+        gap: 0.3rem;
+        margin-top: 0.55rem;
+    }
+
+    .home-page .comment-input {
+        min-height: 2rem;
+        padding: 0.4rem 0.5rem;
+        border-radius: 0.55rem;
+        font-size: 0.58rem;
+    }
+
+    .home-page .comment-submit {
+        min-height: 2rem;
+        padding: 0.35rem 0.55rem;
+        border-radius: 0.55rem;
+        font-size: 0.58rem;
+    }
 }
 
 .loading-spinner {

@@ -66,6 +66,11 @@ class NotificationController extends Controller
 
     public function registerFcmToken(Request $request)
     {
+        return $this->registerOneSignalToken($request);
+    }
+
+    public function registerOneSignalToken(Request $request)
+    {
         $request->validate([
             'token' => ['required', 'string', 'max:1024'],
             'device' => ['nullable', 'string', 'max:32'],
@@ -81,7 +86,7 @@ class NotificationController extends Controller
 
         return response()->json([
             'status' => 'registered',
-            'message' => 'Token FCM enregistré.',
+            'message' => 'Token OneSignal enregistré.',
         ]);
     }
 

@@ -42,6 +42,11 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
+Route::get('/onesignal-config', function () {
+    return response()->json([
+        'appId' => config('services.onesignal.app_id'),
+    ]);
+})->name('onesignal.config');
 Route::get('/firebase-config', function () {
     $config = array_filter([
         'apiKey' => config('services.firebase.api_key'),
@@ -80,7 +85,9 @@ Route::middleware(['auth', 'active', 'maintenance'])->group(function () {
         Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
         Route::post('/notifications/supprimer-selection', [NotificationController::class, 'bulkDestroy'])->name('notifications.bulk.destroy');
         Route::post('/notifications/lire-tout', [NotificationController::class, 'markAllAsRead'])->name('notifications.read.all');
-        Route::post('/notifications/fcm/register', [NotificationController::class, 'registerFcmToken'])->name('notifications.fcm.register');
+        Route::post('/notifications/onesignal/register', [NotificationController::class, 'registerOneSignalToken'])->name('notifications.onesignal.register');
+        Route::post('/notifications/onesignal/test', [NotificationController::class, 'sendTestPush'])->name('notifications.onesignal.test');
+        Route::post('/notifications/fcm/register', [NotificationController::class, 'registerOneSignalToken'])->name('notifications.fcm.register');
         Route::post('/notifications/fcm/test', [NotificationController::class, 'sendTestPush'])->name('notifications.fcm.test');
 
         Route::post('/videos/{videoArchive}/like', [VideoArchiveController::class, 'like'])->name('videos.like');

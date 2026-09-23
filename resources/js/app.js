@@ -4,12 +4,8 @@ const preferredTheme = window.matchMedia('(prefers-color-scheme: light)').matche
 const FCM_TOKEN_STORAGE_KEY = 'appjeunesse-fcm-token';
 let fcmMessageHandlerBound = false;
 
-const firebaseConfig = {
-	apiKey: window.__APP_FIREBASE_CONFIG__?.apiKey || '',
-	authDomain: window.__APP_FIREBASE_CONFIG__?.authDomain || '',
-	projectId: window.__APP_FIREBASE_CONFIG__?.projectId || '',
-	messagingSenderId: window.__APP_FIREBASE_CONFIG__?.messagingSenderId || '',
-	appId: window.__APP_FIREBASE_CONFIG__?.appId || '',
+const onesignalConfig = {
+	appId: window.__APP_ONESIGNAL_CONFIG__?.appId || '',
 };
 
 const showAppToast = (title, body, type = 'info') => {
@@ -93,67 +89,52 @@ const registerFcmToken = async (token, device = 'web') => {
 	}
 };
 
+const initOneSignal = async () => {
+	if (!onesignalConfig.appId) {
+		showAppToast('Configuration incomplète', 'La configuration OneSignal des notifications est absente ou incomplète.', 'error');
+		return;
+	}
+
+	if (!window.OneSignal) {
+		const script = document.createElement('script');
+		script.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js';
+		script.async = true;
+		script.onload = initOneSignal;
+		document.head.appendChild(script);
+		return;
+	}
+
+	await window.OneSignal.init({
+		appId: onesignalConfig.appId,
+		allowLocalhostAsSecureOrigin: true,
+		serviceWorkerPath: 'push/onesignal/OneSignalSDKWorker.js',
+		serviceWorkerParam: { scope: '/push/onesignal/' },
+		notifyButton: {
+			enable: true,
+		},
+	});
+
+	const permission = await window.OneSignal.Notifications.permission;
+	if (permission === 'default') {
+		await window.OneSignal.Notifications.requestPermission();
+	}
+
+	const playerId = await window.OneSignal.getUserId();
+	if (playerId) {
+		await registerFcmToken(playerId, 'web');
+	}
+};
+
 const requestFcmPermission = async () => {
 	if (!('Notification' in window) || !('serviceWorker' in navigator)) {
 		showAppToast('Notifications indisponibles', 'Ce navigateur ou cette PWA ne prend pas en charge les notifications push.', 'warning');
 		return;
 	}
 
-	if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.messagingSenderId || !firebaseConfig.appId || !window.__APP_FIREBASE_CONFIG__?.vapidKey) {
-		showAppToast('Configuration incomplète', 'La configuration Firebase des notifications est absente ou incomplète.', 'error');
-		return;
-	}
-
 	try {
-		const { initializeApp } = await import('firebase/app');
-		const { getMessaging, getToken, onMessage } = await import('firebase/messaging');
-		const app = initializeApp(firebaseConfig);
-		const messaging = getMessaging(app);
-
-		if (Notification.permission === 'default') {
-			const permission = await Notification.requestPermission();
-
-			if (permission !== 'granted') {
-				return;
-			}
-		}
-
-		if (Notification.permission !== 'granted') {
-			showAppToast('Notifications désactivées', 'Autorisez les notifications dans les réglages du navigateur.', 'warning');
-			return;
-		}
-
-		const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', { updateViaCache: 'none' });
-		const token = await getToken(messaging, { vapidKey: window.__APP_FIREBASE_CONFIG__?.vapidKey || '', serviceWorkerRegistration: registration });
-
-		if (token) {
-			await registerFcmToken(token, 'web');
-		}
-
-		if (fcmMessageHandlerBound) {
-			return;
-		}
-
-		fcmMessageHandlerBound = true;
-		onMessage(messaging, async (payload) => {
-			const title = payload.notification?.title || 'Nouvelle notification';
-			const body = payload.notification?.body || 'Vous avez un nouveau message.';
-			const url = payload.data?.click_action || '/notifications';
-
-			showAppToast(title, body, 'info');
-
-			if (Notification.permission === 'granted') {
-				await registration.showNotification(title, {
-					body,
-					icon: '/logoEglise.jpg',
-					badge: '/logoEglise.jpg',
-					tag: `appjeunesse-${payload.data?.type || 'notification'}`,
-					data: { url },
-				});
-			}
-		});
+		await initOneSignal();
 	} catch (error) {
-		console.warn('Unable to initialize Firebase messaging', error);
+		console.warn('Unable to initialize OneSignal', error);
 	}
 };
 

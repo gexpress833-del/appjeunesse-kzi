@@ -14,8 +14,8 @@ class FcmTokenTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user)->postJson('/notifications/fcm/register', [
-            'token' => 'test-fcm-token-123',
+        $response = $this->actingAs($user)->postJson('/notifications/onesignal/register', [
+            'token' => 'test-onesignal-player-id-123',
             'device' => 'web',
         ]);
 
@@ -25,15 +25,15 @@ class FcmTokenTest extends TestCase
 
         $this->assertDatabaseHas('user_fcm_tokens', [
             'user_id' => $user->id,
-            'token' => 'test-fcm-token-123',
+            'token' => 'test-onesignal-player-id-123',
             'device' => 'web',
         ]);
     }
 
     public function test_unauthenticated_user_cannot_register_push_token(): void
     {
-        $this->postJson('/notifications/fcm/register', [
-            'token' => 'test-fcm-token-123',
+        $this->postJson('/notifications/onesignal/register', [
+            'token' => 'test-onesignal-player-id-123',
             'device' => 'web',
         ])->assertUnauthorized();
     }

@@ -4,6 +4,7 @@ namespace App\Notifications\Channels;
 
 use App\Models\UserFcmToken;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Kreait\Firebase\Messaging\CloudMessage;
 use Kreait\Laravel\Firebase\Facades\Firebase;
@@ -34,15 +35,60 @@ class FcmChannel
             return;
         }
 
-        $credentials = config('firebase.projects.app.credentials') ?? config('services.firebase.credentials');
+        $onesignalAppId = config('services.onesignal.app_id');
+        $onesignalRestApiKey = config('services.onesignal.rest_api_key');
 
-        if (blank($credentials)) {
-            Log::warning('Firebase credentials are missing. Push notification not sent.');
+        if (blank($onesignalAppId) || blank($onesignalRestApiKey)) {
+            $credentials = config('firebase.projects.app.credentials') ?? config('services.firebase.credentials');
 
-            return;
+            if (blank($credentials)) {
+                Log::warning('OneSignal and Firebase credentials are missing. Push notification not sent.');
+
+                return;
+            }
         }
 
         try {
+            if (filled($onesignalAppId) && filled($onesignalRestApiKey)) {
+                $response = Http::withHeaders([
+                    'Authorization' => 'Basic '.$onesignalRestApiKey,
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'application/json',
+                ])->post('https://onesignal.com/api/v1/notifications', [
+                    'app_id' => $onesignalAppId,
+                    'include_player_ids' => $tokens,
+                    'headings' => [
+                        'fr' => (string) $payload['title'],
+                        'en' => (string) $payload['title'],
+                    ],
+                    'contents' => [
+                        'fr' => (string) $payload['message'],
+                        'en' => (string) $payload['message'],
+                    ],
+                    'data' => array_merge([
+                        'title' => (string) $payload['title'],
+                        'body' => (string) $payload['message'],
+                        'click_action' => $payload['click_action'] ?? '/notifications',
+                        'type' => (string) ($payload['type'] ?? 'notification'),
+                    ], $this->normalizeData($payload)),
+                    'web_url' => url($payload['click_action'] ?? '/notifications'),
+                    'chrome_web_icon' => url('/logoEglise.jpg'),
+                    'chrome_web_badge' => url('/logoEglise.jpg'),
+                ]);
+
+                if (! $response->successful()) {
+                    Log::warning('OneSignal delivery failed: '.$response->body());
+
+                    return;
+                }
+
+                foreach ($response->json('invalid_player_ids', []) as $invalidToken) {
+                    UserFcmToken::query()->where('token', $invalidToken)->delete();
+                }
+
+                return;
+            }
+
             $message = CloudMessage::fromArray([
                 'notification' => [
                     'title' => (string) $payload['title'],
@@ -77,7 +123,7 @@ class FcmChannel
                 UserFcmToken::query()->where('token', $invalidToken)->delete();
             }
         } catch (\Throwable $exception) {
-            Log::error('FCM delivery failed: '.$exception->getMessage());
+            Log::error('Push delivery failed: '.$exception->getMessage());
         }
     }
 

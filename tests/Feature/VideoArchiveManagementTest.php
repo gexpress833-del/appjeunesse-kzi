@@ -163,4 +163,24 @@ class VideoArchiveManagementTest extends TestCase
 
         $this->assertDatabaseMissing('video_comments', ['id' => $comment->id]);
     }
+
+    public function test_comment_payload_includes_user_profile_photo_url(): void
+    {
+        $user = User::factory()->create([
+            'role' => 'user',
+            'status' => 'active',
+            'profile_photo_url' => 'https://example.com/users/avatar.jpg',
+        ]);
+
+        $video = VideoArchive::create([
+            'title' => 'Direct test photo',
+            'media_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            'broadcast_type' => 'replay',
+        ]);
+
+        $this->actingAs($user)
+            ->postJson(route('videos.comment', $video), ['body' => 'Bonjour !'])
+            ->assertOk()
+            ->assertJsonPath('comment.profile_photo_url', 'https://example.com/users/avatar.jpg');
+    }
 }

@@ -50,7 +50,7 @@
                         <span class="carousel-label sky">📅 {{ $slide['title'] }}</span>
                         <div class="carousel-event-card flex min-h-44 w-full max-w-3xl flex-col items-center justify-center gap-5 rounded-2xl border border-white/10 bg-white/8 p-5 text-center shadow-[0_20px_40px_rgba(15,23,42,0.20)] backdrop-blur-xl sm:flex-row sm:text-left">
                             @if ($event->photo_url)
-                                <img src="{{ $event->photo_url }}" alt="Affiche de {{ $event->name }}" class="h-40 w-40 shrink-0 rounded-xl object-cover ring-2 ring-white/20">
+                                <img src="{{ $event->photo_url }}" alt="Affiche de {{ $event->name }}" class="h-40 w-40 shrink-0 rounded-xl bg-slate-950/70 object-contain p-1 ring-2 ring-white/20" onerror="this.onerror=null; this.src='{{ asset('logoEglise.jpg') }}';">
                             @endif
                             <div class="min-w-0 flex-1">
                                 <p class="text-2xl font-bold text-white">{{ $event->name }}</p>
@@ -432,7 +432,16 @@
 
             const avatar = document.createElement('div');
             avatar.className = 'comment-avatar';
-            avatar.textContent = comment.user.slice(0, 1).toUpperCase();
+
+            if (comment.profile_photo_url) {
+                const avatarImage = document.createElement('img');
+                avatarImage.src = comment.profile_photo_url;
+                avatarImage.alt = 'Photo de ' + comment.user;
+                avatarImage.loading = 'lazy';
+                avatar.appendChild(avatarImage);
+            } else {
+                avatar.textContent = (comment.user || 'U').slice(0, 1).toUpperCase();
+            }
 
             const content = document.createElement('div');
             content.className = 'comment-content';
@@ -642,7 +651,7 @@
                 @foreach ($upcomingEvents as $event)
                     <article class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                         @if ($event->photo_url)
-                            <img src="{{ $event->photo_url }}" alt="Affiche de {{ $event->name }}" class="h-48 w-full object-cover">
+                            <img src="{{ $event->photo_url }}" alt="Affiche de {{ $event->name }}" class="h-48 w-full bg-slate-100 object-contain p-2" onerror="this.onerror=null; this.src='{{ asset('logoEglise.jpg') }}';">
                         @endif
                         <div class="p-5">
                             <p class="text-sm font-bold text-indigo-600">{{ $event->date->translatedFormat('l d F Y') }}</p>

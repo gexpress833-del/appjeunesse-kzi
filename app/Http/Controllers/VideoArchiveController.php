@@ -122,6 +122,7 @@ class VideoArchiveController extends Controller
             'comment' => [
                 'id' => $comment->id,
                 'user' => auth()->user()->full_name,
+                'profile_photo_url' => auth()->user()->profile_photo_url,
                 'body' => $comment->body,
                 'created_at' => $comment->created_at->diffForHumans(),
                 'delete_url' => route('videos.comment.destroy', $comment),

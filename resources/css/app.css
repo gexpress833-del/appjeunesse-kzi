@@ -506,6 +506,47 @@ body::before {
     -webkit-backdrop-filter: blur(18px) saturate(145%);
 }
 
+.notification-card {
+    --notification-accent: #0891b2;
+    --notification-soft: #ecfeff;
+    border-color: color-mix(in srgb, var(--notification-accent) 28%, #e2e8f0);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--notification-soft) 68%, white), white);
+}
+
+.notification-card.is-unread {
+    box-shadow: 0 10px 28px color-mix(in srgb, var(--notification-accent) 16%, transparent), inset 3px 0 0 var(--notification-accent);
+}
+
+.notification-event { --notification-accent: #2563eb; --notification-soft: #eff6ff; }
+.notification-attendance { --notification-accent: #059669; --notification-soft: #ecfdf5; }
+.notification-member { --notification-accent: #7c3aed; --notification-soft: #f5f3ff; }
+.notification-role { --notification-accent: #d97706; --notification-soft: #fffbeb; }
+.notification-social { --notification-accent: #db2777; --notification-soft: #fdf2f8; }
+.notification-account { --notification-accent: #16a34a; --notification-soft: #f0fdf4; }
+.notification-media { --notification-accent: #e11d48; --notification-soft: #fff1f2; }
+.notification-default { --notification-accent: #64748b; --notification-soft: #f8fafc; }
+
+.notification-icon {
+    background: color-mix(in srgb, var(--notification-accent) 14%, white);
+    color: var(--notification-accent);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.notification-kicker,
+.notification-meta {
+    color: var(--notification-accent);
+}
+
+.notification-status {
+    background: color-mix(in srgb, var(--notification-accent) 14%, white);
+    color: var(--notification-accent);
+}
+
+.notification-card.is-read {
+    filter: saturate(0.7);
+    opacity: 0.82;
+}
+
 .video-shell {
     position: relative;
     overflow: hidden;

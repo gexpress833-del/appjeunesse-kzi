@@ -34,20 +34,39 @@
 
 <div class="mt-4 space-y-3">
     @forelse ($notifications as $notification)
-        <article class="group rounded-2xl border {{ $notification->read_at ? 'border-slate-200 bg-white' : 'border-cyan-300/70 bg-cyan-50/60' }} p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+        @php
+            $notificationType = data_get($notification->data, 'type', 'notification');
+            $notificationPresentation = match ($notificationType) {
+                'event_created' => ['class' => 'notification-event', 'icon' => '📅', 'label' => 'Événement'],
+                'attendance_recorded', 'attendance_batch_recorded' => ['class' => 'notification-attendance', 'icon' => '✅', 'label' => 'Présences'],
+                'member_added' => ['class' => 'notification-member', 'icon' => '👥', 'label' => 'Nouveau membre'],
+                'role_updated' => ['class' => 'notification-role', 'icon' => '🔑', 'label' => 'Rôle et accès'],
+                'social_visit_assigned' => ['class' => 'notification-social', 'icon' => '🤝', 'label' => 'Suivi social'],
+                'account_validated' => ['class' => 'notification-account', 'icon' => '✓', 'label' => 'Compte validé'],
+                'live_published', 'replay_published' => ['class' => 'notification-media', 'icon' => '▶', 'label' => 'Média disponible'],
+                default => ['class' => 'notification-default', 'icon' => '🔔', 'label' => 'Information'],
+            };
+        @endphp
+        <article class="notification-card {{ $notificationPresentation['class'] }} {{ $notification->read_at ? 'is-read' : 'is-unread' }} group rounded-2xl border p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
             <div class="flex items-start gap-3">
                 <input form="bulk-notifications-form" type="checkbox" name="notifications[]" value="{{ $notification->id }}" class="notification-checkbox mt-1 h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500">
                 <div class="flex min-w-0 flex-1 gap-3">
-                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl {{ $notification->read_at ? 'bg-slate-100 text-slate-500' : 'bg-cyan-500 text-white shadow-sm shadow-cyan-500/30' }}" aria-hidden="true">{{ $notification->read_at ? '✓' : '!' }}</div>
+                    <div class="notification-icon flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg" aria-hidden="true">{{ $notificationPresentation['icon'] }}</div>
                     <div class="min-w-0 flex-1">
                         <div class="flex flex-wrap items-center gap-2">
-                            <p class="text-sm font-bold text-slate-900">{{ data_get($notification->data, 'title', 'Notification') }}</p>
+                            <p class="notification-kicker text-[10px] font-black uppercase tracking-[0.16em]">{{ $notificationPresentation['label'] }}</p>
                             @if (! $notification->read_at)
-                                <span class="rounded-full bg-cyan-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-cyan-700">Nouveau</span>
+                                <span class="notification-status rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">Nouveau</span>
                             @endif
                         </div>
-                        <p class="mt-1 text-sm leading-6 text-slate-600">{{ data_get($notification->data, 'message', '') }}</p>
-                        <p class="mt-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{{ $notification->created_at->diffForHumans() }}</p>
+                        <p class="notification-title mt-1 text-base font-black leading-tight text-slate-900">{{ data_get($notification->data, 'title', 'Notification') }}</p>
+                        <p class="notification-body mt-1 text-sm leading-6 text-slate-600">{{ data_get($notification->data, 'message', '') }}</p>
+                        <div class="notification-meta mt-2 flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-[0.12em]">
+                            <span>{{ $notification->created_at->diffForHumans() }}</span>
+                            @if (filled(data_get($notification->data, 'department')))
+                                <span>· {{ data_get($notification->data, 'department') }}</span>
+                            @endif
+                        </div>
                     </div>
                 </div>
                 <div class="flex shrink-0 items-center gap-2">

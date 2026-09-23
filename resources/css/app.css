@@ -1711,16 +1711,13 @@ html[data-theme='light'] .theme-toggle:hover {
     }
 
     .home-page .guest-header-inner {
-        display: flex;
-        flex-wrap: nowrap;
-        gap: 0.55rem;
+        display: block;
         min-width: 0;
         padding: 0.7rem 0.75rem 0.35rem;
     }
 
     .home-page .guest-brand {
-        flex: 0 1 auto;
-        width: auto;
+        width: 100%;
     }
 
     .home-page .guest-brand img {
@@ -1730,13 +1727,14 @@ html[data-theme='light'] .theme-toggle:hover {
     }
 
     .home-page .guest-brand span span:first-child {
-        font-size: 0.56rem;
+        font-size: 0.72rem;
     }
 
     .home-page .guest-header-actions {
         display: flex;
         min-width: 0;
-        flex: 1 1 auto;
+        margin-top: 0.5rem;
+        width: 100%;
         gap: 0.35rem;
     }
 
@@ -1767,6 +1765,10 @@ html[data-theme='light'] .theme-toggle:hover {
         letter-spacing: 0.01em;
         line-height: 1.05;
         text-overflow: ellipsis;
+    }
+
+    .home-page .guest-header-actions nav a {
+        flex: 1 1 0;
     }
 
     .home-page .guest-header-actions nav a:nth-child(2) {

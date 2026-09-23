@@ -1738,9 +1738,16 @@ html[data-theme='light'] .theme-toggle:hover {
         gap: 0.35rem;
     }
 
-    .home-page .guest-header-actions > .theme-toggle,
     .home-page .guest-header-actions > .app-install-button {
         display: none;
+    }
+
+    .home-page .guest-header-actions > .theme-toggle {
+        display: inline-flex;
+        flex: 0 0 2.75rem;
+        min-width: 2.75rem;
+        min-height: 2.45rem;
+        padding: 0.45rem;
     }
 
     .home-page .guest-header-actions nav {

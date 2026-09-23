@@ -89,6 +89,30 @@ const registerFcmToken = async (token, device = 'web') => {
 	}
 };
 
+const getOneSignalPlayerId = async () => {
+	if (typeof window.OneSignal?.getUserId === 'function') {
+		const legacyPlayerId = await window.OneSignal.getUserId();
+		if (legacyPlayerId) {
+			return legacyPlayerId;
+		}
+	}
+
+	if (window.OneSignal?.User?.PushSubscription) {
+		if (typeof window.OneSignal.User.PushSubscription.id === 'string' && window.OneSignal.User.PushSubscription.id.length > 0) {
+			return window.OneSignal.User.PushSubscription.id;
+		}
+
+		if (typeof window.OneSignal.User.PushSubscription.getId === 'function') {
+			const subscriptionId = await window.OneSignal.User.PushSubscription.getId();
+			if (subscriptionId) {
+				return subscriptionId;
+			}
+		}
+	}
+
+	return null;
+};
+
 const initOneSignal = async () => {
 	if (!onesignalConfig.appId) {
 		showAppToast('Configuration incomplète', 'La configuration OneSignal des notifications est absente ou incomplète.', 'error');
@@ -123,7 +147,7 @@ const initOneSignal = async () => {
 
 	updateNotificationButtons();
 
-	const playerId = await window.OneSignal.getUserId();
+	const playerId = await getOneSignalPlayerId();
 	if (playerId) {
 		await registerFcmToken(playerId, 'web');
 	}

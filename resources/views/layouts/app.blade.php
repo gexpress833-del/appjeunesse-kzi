@@ -29,7 +29,7 @@
     </script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="min-h-screen bg-slate-950 font-sans text-slate-100 antialiased">
+<body class="app-page min-h-screen bg-slate-950 font-sans text-slate-100 antialiased">
 <div class="relative flex min-h-screen overflow-x-hidden">
     @php($appSettings = \App\Models\AppSetting::current())
     <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.22),transparent_25%),radial-gradient(circle_at_bottom_right,_rgba(34,211,238,0.18),transparent_35%)]"></div>

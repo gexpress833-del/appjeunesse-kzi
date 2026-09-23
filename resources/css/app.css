@@ -1955,6 +1955,127 @@ html[data-theme='light'] .theme-toggle:hover {
 }
 
 @media (max-width: 320px) {
+    .guest-page:not(.home-page) main,
+    .app-page main {
+        box-sizing: border-box;
+        min-width: 0;
+        width: 100%;
+        max-width: 100vw;
+        overflow-x: hidden;
+        padding: 0.75rem 0.5rem;
+    }
+
+    .guest-page:not(.home-page) main h1,
+    .app-page main h1 {
+        font-size: 1.1rem;
+        line-height: 1.2;
+        overflow-wrap: anywhere;
+    }
+
+    .guest-page:not(.home-page) main h2,
+    .app-page main h2 {
+        font-size: 0.9rem;
+        line-height: 1.25;
+        overflow-wrap: anywhere;
+    }
+
+    .guest-page:not(.home-page) main h3,
+    .app-page main h3 {
+        font-size: 0.75rem;
+        line-height: 1.25;
+        overflow-wrap: anywhere;
+    }
+
+    .guest-page:not(.home-page) main p,
+    .guest-page:not(.home-page) main label,
+    .guest-page:not(.home-page) main li,
+    .app-page main p,
+    .app-page main label,
+    .app-page main li {
+        font-size: 0.62rem;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+    }
+
+    .guest-page:not(.home-page) main .text-sm,
+    .app-page main .text-sm {
+        font-size: 0.62rem;
+    }
+
+    .guest-page:not(.home-page) main .text-xs,
+    .app-page main .text-xs {
+        font-size: 0.52rem;
+    }
+
+    .guest-page:not(.home-page) main .text-2xl,
+    .app-page main .text-2xl {
+        font-size: 1rem;
+        line-height: 1.2;
+    }
+
+    .guest-page:not(.home-page) main .p-8,
+    .guest-page:not(.home-page) main .p-6,
+    .app-page main .p-8,
+    .app-page main .p-6 {
+        padding: 0.75rem;
+    }
+
+    .guest-page:not(.home-page) main .p-5,
+    .app-page main .p-5 {
+        padding: 0.6rem;
+    }
+
+    .guest-page:not(.home-page) main .mt-6,
+    .app-page main .mt-6 {
+        margin-top: 0.75rem;
+    }
+
+    .guest-page:not(.home-page) main form,
+    .app-page main form,
+    .guest-page:not(.home-page) main section,
+    .app-page main section,
+    .app-page main article,
+    .app-page main aside {
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .guest-page:not(.home-page) main input,
+    .guest-page:not(.home-page) main select,
+    .guest-page:not(.home-page) main textarea,
+    .app-page main input,
+    .app-page main select,
+    .app-page main textarea {
+        min-width: 0;
+        max-width: 100%;
+        font-size: 0.65rem;
+    }
+
+    .guest-page:not(.home-page) main img,
+    .app-page main img {
+        max-width: 100%;
+    }
+
+    .app-page main .grid,
+    .app-page main .flex {
+        min-width: 0;
+    }
+
+    .app-page main .overflow-x-auto {
+        max-width: 100%;
+        overflow-x: auto;
+    }
+
+    .app-page main table {
+        min-width: 28rem;
+        font-size: 0.58rem;
+    }
+
+    .app-page main th,
+    .app-page main td {
+        padding: 0.35rem;
+    }
+
     .home-page .guest-header-inner {
         padding: 0.3rem 0.35rem 0.2rem;
     }

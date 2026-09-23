@@ -1695,6 +1695,10 @@ html[data-theme='light'] .theme-toggle:hover {
 
 @media (max-width: 639px) {
     .home-page {
+        box-sizing: border-box;
+        overflow-x: hidden;
+        width: 100vw;
+        max-width: 100vw;
         background:
             radial-gradient(circle at 50% 8%, rgba(56, 189, 248, 0.2), transparent 20%),
             radial-gradient(circle at 12% 48%, rgba(59, 130, 246, 0.18), transparent 22%),
@@ -1710,6 +1714,7 @@ html[data-theme='light'] .theme-toggle:hover {
         display: flex;
         flex-wrap: nowrap;
         gap: 0.55rem;
+        min-width: 0;
         padding: 0.7rem 0.75rem 0.35rem;
     }
 
@@ -1741,6 +1746,7 @@ html[data-theme='light'] .theme-toggle:hover {
     }
 
     .home-page .guest-header-actions nav {
+        flex-shrink: 1;
         min-width: 0;
         width: 100%;
         gap: 0.3rem;
@@ -1774,18 +1780,27 @@ html[data-theme='light'] .theme-toggle:hover {
     }
 
     .home-page main {
+        box-sizing: border-box;
+        min-width: 0;
+        width: 100%;
+        overflow-x: hidden;
         padding: 0.35rem 0.75rem 1.5rem;
     }
 
     .home-page .carousel-atmosphere {
+        box-sizing: border-box;
+        max-width: calc(100vw - 1.5rem);
+        width: calc(100vw - 1.5rem);
         border-radius: 1.65rem;
         padding: 0.4rem;
         box-shadow: 0 24px 60px rgba(2, 6, 23, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25);
     }
 
     .home-page #carousel {
+        box-sizing: border-box;
+        max-width: 100%;
         min-height: 20rem;
-        height: clamp(20rem, 58svh, 30rem);
+        height: clamp(21rem, 44svh, 25rem);
         margin: 0;
         border-radius: 1.35rem;
         background:
@@ -1798,6 +1813,16 @@ html[data-theme='light'] .theme-toggle:hover {
         border-radius: 1.35rem;
         justify-content: center;
         padding: 2.5rem 2.25rem 3.25rem;
+    }
+
+    .home-page .carousel-empty {
+        overflow-wrap: anywhere;
+    }
+
+    .home-page .carousel-empty p {
+        max-width: 16rem;
+        font-size: 1rem;
+        line-height: 1.45;
     }
 
     .home-page .carousel-label {

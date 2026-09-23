@@ -65,8 +65,8 @@
             @endforeach
 
             @if (empty($slides))
-                <div class="absolute inset-0 flex items-center justify-center">
-                    <p class="text-lg text-sky-100/90">Bienvenue sur la plateforme de la jeunesse !</p>
+                <div class="carousel-empty absolute inset-0 flex items-center justify-center px-6 text-center">
+                    <p class="max-w-full text-lg text-sky-100/90">Bienvenue sur la plateforme de la jeunesse !</p>
                 </div>
             @endif
         </div>

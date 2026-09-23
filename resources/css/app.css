@@ -1826,22 +1826,39 @@ html[data-theme='light'] .theme-toggle:hover {
 
     .home-page .carousel-event-card {
         box-sizing: border-box;
+        align-items: center;
+        justify-content: center;
         min-height: 0;
         max-width: 100%;
+        width: 100%;
         overflow: hidden;
-        padding: 0.9rem;
+        gap: 0.7rem;
+        padding: 0.85rem 0.75rem 1rem;
+        text-align: center;
     }
 
     .home-page .carousel-event-card img {
-        width: min(8rem, 100%);
+        width: min(7.25rem, 100%);
         height: auto;
         aspect-ratio: 1;
         object-fit: cover;
+        border-radius: 0.8rem;
     }
 
     .home-page .carousel-event-card > div {
         min-width: 0;
         max-width: 100%;
+        width: 100%;
+    }
+
+    .home-page .carousel-event-card > div > p:first-child {
+        font-size: 1.15rem;
+        line-height: 1.2;
+        overflow-wrap: anywhere;
+    }
+
+    .home-page .carousel-event-card > div > p:not(:first-child) {
+        overflow-wrap: anywhere;
     }
 
     .home-page .carousel-empty {
@@ -1934,6 +1951,271 @@ html[data-theme='light'] .theme-toggle:hover {
     .app-install-button {
         width: auto !important;
         justify-self: end;
+    }
+}
+
+@media (max-width: 320px) {
+    .home-page .guest-header-inner {
+        padding: 0.3rem 0.35rem 0.2rem;
+    }
+
+    .home-page .guest-header-actions {
+        margin-top: 0.2rem;
+        gap: 0.15rem;
+    }
+
+    .home-page .guest-header-actions > .theme-toggle {
+        flex-basis: 1.7rem;
+        min-width: 1.7rem;
+        min-height: 1.6rem;
+        padding: 0.12rem;
+    }
+
+    .home-page .guest-header-actions nav {
+        gap: 0.12rem;
+    }
+
+    .home-page .guest-header-actions nav a {
+        min-height: 1.6rem;
+        padding: 0.16rem 0.12rem;
+        font-size: 0.37rem;
+        border-radius: 0.55rem;
+    }
+
+    .home-page main {
+        padding: 0.25rem 0.5rem 1rem;
+    }
+
+    .home-page .carousel-atmosphere {
+        max-width: calc(100vw - 1rem);
+        width: calc(100vw - 1rem);
+        padding: 0.25rem;
+        border-radius: 1rem;
+    }
+
+    .home-page #carousel {
+        height: 13.5rem;
+        min-height: 13.5rem;
+        border-radius: 0.85rem;
+    }
+
+    .home-page .carousel-slide {
+        border-radius: 0.85rem;
+        gap: 0.35rem;
+        padding: 1.4rem 1.5rem 1.7rem;
+    }
+
+    .home-page .carousel-label {
+        max-width: 9rem;
+        padding: 0.35rem 0.45rem;
+        font-size: 0.42rem;
+    }
+
+    .home-page .carousel-event-card {
+        gap: 0.3rem;
+        padding: 0.35rem;
+    }
+
+    .home-page .carousel-event-card img {
+        width: 4.2rem;
+        height: 4.2rem;
+        border-radius: 0.45rem;
+    }
+
+    .home-page .carousel-event-card > div > p:first-child {
+        font-size: 0.72rem;
+        line-height: 1.1;
+    }
+
+    .home-page .carousel-event-card > div > p:not(:first-child) {
+        margin-top: 0.2rem;
+        font-size: 0.48rem;
+        line-height: 1.2;
+    }
+
+    .home-page .carousel-nav {
+        width: 1.45rem;
+        height: 2rem;
+        border-radius: 0.65rem;
+        font-size: 0.85rem;
+    }
+
+    .home-page #carousel-dots {
+        display: none;
+    }
+
+    .home-page .home-video-section {
+        min-width: 0;
+        margin-top: 0.75rem;
+    }
+
+    .home-page .home-video-section > div:first-child {
+        align-items: center;
+        gap: 0.2rem;
+        margin-bottom: 0.35rem;
+    }
+
+    .home-page .home-video-section > div:first-child h2 {
+        min-width: 0;
+        font-size: 0.72rem;
+        line-height: 1.1;
+    }
+
+    .home-page .home-video-section > div:first-child h2 span,
+    .home-page .home-video-section > div:first-child > span {
+        font-size: 0.35rem;
+        letter-spacing: 0.04em;
+    }
+
+    .home-page .home-video-section > p,
+    .home-page .home-events-section,
+    .home-page .home-cta,
+    .home-page .youth-path {
+        font-size: 0.58rem;
+    }
+
+    .home-page .home-events-section h2,
+    .home-page .home-cta h2,
+    .home-page main > p.text-2xl,
+    .home-page .youth-path-heading h2 {
+        font-size: 0.85rem;
+        line-height: 1.2;
+    }
+
+    .home-page .home-events-section article h3 {
+        font-size: 0.62rem;
+        line-height: 1.2;
+    }
+
+    .home-page .home-events-section article p,
+    .home-page .home-cta p,
+    .home-page .youth-path-heading p,
+    .home-page .youth-path-card p {
+        font-size: 0.52rem;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+    }
+
+    .home-page .home-cta {
+        margin-top: 1rem;
+        padding: 1rem 0.7rem;
+        border-radius: 0.85rem;
+    }
+
+    .home-page .home-cta > div {
+        gap: 0.3rem;
+        margin-top: 0.7rem;
+    }
+
+    .home-page .home-cta a {
+        min-height: 1.8rem;
+        padding: 0.35rem 0.6rem;
+        border-radius: 0.55rem;
+        font-size: 0.55rem;
+    }
+
+    .home-page .live-feed-shell {
+        box-sizing: border-box;
+        width: 100%;
+        max-width: 100%;
+        padding: 0.25rem;
+        border-radius: 0.85rem;
+    }
+
+    .home-page .live-feed-grid,
+    .home-page .live-feed-sidebar {
+        min-width: 0;
+        gap: 0.3rem;
+    }
+
+    .home-page .video-shell,
+    .home-page .video-shell .aspect-video {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 0.65rem;
+    }
+
+    .home-page .video-play-button {
+        width: 2.3rem;
+        height: 2.3rem;
+        font-size: 0.8rem;
+    }
+
+    .home-page .live-feed-card {
+        min-width: 0;
+        border-radius: 0.65rem;
+    }
+
+    .home-page .live-feed-stats,
+    .home-page .live-feed-comments {
+        padding: 0.45rem;
+    }
+
+    .home-page .live-feed-stat-title,
+    .home-page .live-feed-comment-header {
+        margin-bottom: 0.35rem;
+        font-size: 0.42rem;
+        letter-spacing: 0.08em;
+    }
+
+    .home-page .live-feed-stats .flex {
+        gap: 0.2rem;
+    }
+
+    .home-page .live-social-pill {
+        min-height: 1.55rem;
+        padding: 0.25rem 0.42rem;
+        border-radius: 0.6rem;
+        font-size: 0.5rem;
+    }
+
+    .home-page .comment-stream {
+        height: 8.5rem;
+        flex-basis: 8.5rem;
+        min-width: 0;
+        overflow-x: hidden;
+    }
+
+    .home-page .comment-bubble {
+        min-width: 0;
+        gap: 0.3rem;
+        padding: 0.42rem;
+        border-radius: 0.6rem;
+    }
+
+    .home-page .comment-avatar {
+        width: 1.45rem;
+        height: 1.45rem;
+        flex-basis: 1.45rem;
+        font-size: 0.65rem;
+    }
+
+    .home-page .comment-content,
+    .home-page .comment-meta {
+        min-width: 0;
+    }
+
+    .home-page .comment-meta {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.05rem;
+    }
+
+    .home-page .comment-user {
+        max-width: 100%;
+        overflow-wrap: anywhere;
+        font-size: 0.58rem;
+        line-height: 1.1;
+    }
+
+    .home-page .comment-time {
+        font-size: 0.42rem;
+    }
+
+    .home-page .comment-bubble p {
+        overflow-wrap: anywhere;
+        font-size: 0.55rem;
+        line-height: 1.25;
     }
 }
 

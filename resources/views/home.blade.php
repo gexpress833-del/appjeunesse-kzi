@@ -83,7 +83,7 @@
     </section>
 
     {{-- ==================== LIVE VIDÉO ==================== --}}
-    <section class="mt-10">
+    <section class="home-video-section mt-10">
         <div class="mb-4 flex items-center justify-between gap-3">
             <h2 class="flex items-center gap-2 text-2xl font-bold text-slate-900">
                 Culte vidéo
@@ -636,7 +636,7 @@
 
     {{-- ==================== ÉVÉNEMENTS À VENIR ==================== --}}
     @if ($upcomingEvents->isNotEmpty())
-        <section class="mt-10">
+        <section class="home-events-section mt-10">
             <h2 class="mb-4 text-2xl font-bold text-slate-900">📅 Événements à venir</h2>
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 @foreach ($upcomingEvents as $event)
@@ -660,7 +660,7 @@
 
     {{-- ==================== APPEL À L'ACTION ==================== --}}
     @guest
-        <section class="mt-12 rounded-3xl bg-slate-900 px-6 py-12 text-center text-white">
+        <section class="home-cta mt-12 rounded-3xl bg-slate-900 px-6 py-12 text-center text-white">
             <h2 class="text-2xl font-bold">Vous faites partie de la jeunesse ?</h2>
             <p class="mx-auto mt-2 max-w-xl text-slate-300">Créez votre compte pour suivre vos présences, consulter l'annuaire, la galerie et les événements. Votre compte sera validé par le Président responsable de la jeunesse de La Parole Éternelle, Centre-Ville de Kolwezi.</p>
             <div class="mt-6 flex flex-wrap justify-center gap-3">

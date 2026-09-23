@@ -110,7 +110,9 @@ const initOneSignal = async () => {
 		serviceWorkerPath: 'push/onesignal/OneSignalSDKWorker.js',
 		serviceWorkerParam: { scope: '/push/onesignal/' },
 		notifyButton: {
-			enable: false,
+			enable: true,
+			autoHide: true,
+			showCredit: false,
 		},
 	});
 
@@ -118,6 +120,8 @@ const initOneSignal = async () => {
 	if (permission === 'default') {
 		await window.OneSignal.Notifications.requestPermission();
 	}
+
+	updateNotificationButtons();
 
 	const playerId = await window.OneSignal.getUserId();
 	if (playerId) {
@@ -139,8 +143,10 @@ const requestFcmPermission = async () => {
 };
 
 const updateNotificationButtons = () => {
+	const isGranted = 'Notification' in window && Notification.permission === 'granted';
+
 	document.querySelectorAll('[data-notifications-enable]').forEach((button) => {
-		button.hidden = 'Notification' in window && Notification.permission === 'granted';
+		button.hidden = isGranted;
 	});
 };
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\UserFcmToken;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Kreait\Firebase\Messaging\CloudMessage;
 use Kreait\Laravel\Firebase\Facades\Firebase;
@@ -144,6 +145,57 @@ class NotificationController extends Controller
 
         if ($tokens === []) {
             return ['tokens' => 0, 'sent' => 0, 'failed' => 0];
+        }
+
+        $onesignalAppId = config('services.onesignal.app_id');
+        $onesignalRestApiKey = config('services.onesignal.rest_api_key');
+
+        if (filled($onesignalAppId) && filled($onesignalRestApiKey)) {
+            try {
+                $response = Http::withHeaders([
+                    'Authorization' => 'Basic '.$onesignalRestApiKey,
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'application/json',
+                ])->post('https://onesignal.com/api/v1/notifications', [
+                    'app_id' => $onesignalAppId,
+                    'include_player_ids' => $tokens,
+                    'headings' => [
+                        'fr' => $title,
+                        'en' => $title,
+                    ],
+                    'contents' => [
+                        'fr' => $body,
+                        'en' => $body,
+                    ],
+                    'data' => array_merge([
+                        'title' => $title,
+                        'body' => $body,
+                        'click_action' => $data['click_action'] ?? '/notifications',
+                        'type' => $data['type'] ?? 'notification',
+                    ], $data),
+                    'web_url' => url($data['click_action'] ?? '/notifications'),
+                    'chrome_web_icon' => url('/logoEglise.jpg'),
+                    'chrome_web_badge' => url('/logoEglise.jpg'),
+                ]);
+
+                if (! $response->successful()) {
+                    Log::warning('OneSignal delivery failed: '.$response->body());
+
+                    return ['tokens' => count($tokens), 'sent' => 0, 'failed' => count($tokens)];
+                }
+
+                $invalidIds = $response->json('invalid_player_ids', []);
+
+                foreach ($invalidIds as $invalidId) {
+                    UserFcmToken::query()->where('token', $invalidId)->delete();
+                }
+
+                return ['tokens' => count($tokens), 'sent' => count($tokens), 'failed' => 0];
+            } catch (\Throwable $exception) {
+                Log::error('OneSignal delivery failed: '.$exception->getMessage());
+
+                return ['tokens' => count($tokens), 'sent' => 0, 'failed' => count($tokens)];
+            }
         }
 
         $credentials = config('firebase.projects.app.credentials') ?? config('services.firebase.credentials');

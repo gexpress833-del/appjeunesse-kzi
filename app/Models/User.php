@@ -114,6 +114,11 @@ class User extends Authenticatable implements CanResetPasswordContract
         return Member::where('email', $this->email)->first();
     }
 
+    public function fcmTokens()
+    {
+        return $this->hasMany(UserFcmToken::class);
+    }
+
     public function sendPasswordResetNotification($token): void
     {
         $this->notify(new PasswordResetRequested($token));

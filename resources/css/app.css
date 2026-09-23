@@ -1824,6 +1824,26 @@ html[data-theme='light'] .theme-toggle:hover {
         padding: 2.5rem 2.25rem 3.25rem;
     }
 
+    .home-page .carousel-event-card {
+        box-sizing: border-box;
+        min-height: 0;
+        max-width: 100%;
+        overflow: hidden;
+        padding: 0.9rem;
+    }
+
+    .home-page .carousel-event-card img {
+        width: min(8rem, 100%);
+        height: auto;
+        aspect-ratio: 1;
+        object-fit: cover;
+    }
+
+    .home-page .carousel-event-card > div {
+        min-width: 0;
+        max-width: 100%;
+    }
+
     .home-page .carousel-empty {
         overflow-wrap: anywhere;
     }

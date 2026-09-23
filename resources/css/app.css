@@ -1880,9 +1880,11 @@ html[data-theme='light'] .theme-toggle:hover {
 
     .home-page .carousel-event-card img {
         width: min(7.25rem, 100%);
-        height: auto;
+        height: 7.25rem;
         aspect-ratio: 1;
-        object-fit: cover;
+        object-fit: contain;
+        background: rgba(2, 6, 23, 0.55);
+        padding: 0.25rem;
         border-radius: 0.8rem;
     }
 
@@ -2179,8 +2181,11 @@ html[data-theme='light'] .theme-toggle:hover {
     }
 
     .home-page .carousel-event-card img {
-        width: 4.2rem;
-        height: 4.2rem;
+        width: min(6rem, 42vw);
+        height: min(6rem, 42vw);
+        object-fit: contain;
+        background: rgba(2, 6, 23, 0.55);
+        padding: 0.2rem;
         border-radius: 0.45rem;
     }
 

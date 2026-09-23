@@ -110,7 +110,7 @@ const initOneSignal = async () => {
 		serviceWorkerPath: 'push/onesignal/OneSignalSDKWorker.js',
 		serviceWorkerParam: { scope: '/push/onesignal/' },
 		notifyButton: {
-			enable: true,
+			enable: false,
 		},
 	});
 

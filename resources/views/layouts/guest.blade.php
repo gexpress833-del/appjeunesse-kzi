@@ -50,7 +50,9 @@
                         <span aria-hidden="true">⌂</span>
                         <span>Accueil</span>
                     </a>
-                    <a href="{{ route('videos.archive') }}" class="whitespace-nowrap rounded-xl px-2 py-2 text-slate-200 transition hover:bg-white/5 hover:text-white sm:px-3">Archives vidéos</a>
+                    <a href="{{ route('dashboard') }}" class="whitespace-nowrap rounded-xl bg-indigo-500/20 px-3 py-2 font-semibold text-indigo-100 transition hover:bg-indigo-500/35 sm:px-4">Église</a>
+                    <a href="{{ route('dashboard.youth') }}" class="whitespace-nowrap rounded-xl bg-emerald-500/15 px-3 py-2 font-semibold text-emerald-100 transition hover:bg-emerald-500/25 sm:px-4">Jeunesse</a>
+                    <a href="{{ route('videos.archive') }}" class="whitespace-nowrap rounded-xl px-2 py-2 text-slate-200 transition hover:bg-white/5 hover:text-white sm:px-3">Archives</a>
                     @auth
                         <a href="{{ route('dashboard') }}" class="whitespace-nowrap rounded-xl bg-indigo-500/20 px-3 py-2 font-semibold text-indigo-100 transition hover:bg-indigo-500/35 sm:px-4">Mon espace</a>
                     @else

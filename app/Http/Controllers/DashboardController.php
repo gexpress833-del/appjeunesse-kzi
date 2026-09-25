@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attendance;
+use App\Models\Department;
 use App\Models\Event;
 use App\Models\HomeContent;
 use App\Models\Member;
@@ -22,7 +23,7 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->isAdmin() || $user->isSecretariat()) {
+        if ($user->portalNavigationKey() === 'church') {
             return $this->global();
         }
 
@@ -84,6 +85,14 @@ class DashboardController extends Controller
             'upcoming' => Event::upcoming()->take(3)->get(),
             'lastEvents' => $lastEvents,
             'deptStats' => $this->deptPresenceRates($lastEvents->pluck('id')),
+            'departments' => Department::query()->with('leader')->withCount('members')->orderBy('name')->get(),
+            'recentAnnouncements' => HomeContent::query()
+                ->where('source', 'church')
+                ->whereIn('type', ['verset', 'temoignage', 'event_banner'])
+                ->active()
+                ->latest('updated_at')
+                ->take(4)
+                ->get(),
         ]);
     }
 

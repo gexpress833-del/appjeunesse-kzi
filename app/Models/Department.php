@@ -5,9 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['name'])]
+#[Fillable(['name', 'code', 'leader_user_id', 'leader_assigned_by', 'leader_assigned_at'])]
 class Department extends Model
 {
     use HasFactory;
@@ -15,5 +16,20 @@ class Department extends Model
     public function members(): HasMany
     {
         return $this->hasMany(Member::class, 'dept', 'name');
+    }
+
+    public function leader(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'leader_user_id');
+    }
+
+    public function leaderAssignedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'leader_assigned_by');
+    }
+
+    public function isPortalDepartment(): bool
+    {
+        return in_array($this->code, ['youth', 'ecodim'], true);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Church;
 use App\Models\Event;
 use App\Models\Photo;
 use App\Models\User;
@@ -147,7 +148,13 @@ class GalleryMediaAccessTest extends TestCase
 
     public function test_gallery_groups_photos_by_event_with_normalized_metadata(): void
     {
-        $admin = User::factory()->create(['role' => 'admin', 'status' => 'active']);
+        $church = Church::create([
+            'name' => 'Église de la galerie',
+            'slug' => 'eglise-de-la-galerie',
+            'type' => 'main',
+            'status' => 'active',
+        ]);
+        $admin = User::factory()->create(['role' => 'admin', 'status' => 'active', 'church_id' => $church->id]);
 
         $this->actingAs($admin)
             ->post(route('events.store'), [

@@ -167,6 +167,28 @@
                     <input name="name" value="{{ $department->name }}" required maxlength="100" class="min-w-0 flex-1 rounded-lg border-white/10 bg-slate-950/70 text-white">
                     <button class="rounded-lg border border-cyan-400/20 px-3 py-2 text-xs font-semibold text-cyan-200 hover:bg-cyan-400/10">Renommer</button>
                 </form>
+                <div class="w-full border-t border-white/10 pt-3 sm:w-auto sm:min-w-72 sm:border-t-0 sm:pt-0">
+                    <p class="mb-1 text-[10px] font-bold uppercase tracking-wide text-slate-500">
+                        Responsable : {{ $department->leader?->full_name ?? 'Non nommé' }}
+                    </p>
+                    @if (auth()->user()->isPastorPrincipal())
+                        <form method="POST" action="{{ route('settings.departments.leader', $department) }}" class="flex gap-2">
+                            @csrf
+                            @method('PUT')
+                            <select name="leader_user_id" class="min-w-0 flex-1 rounded-lg border-white/10 bg-slate-950/70 text-xs text-white">
+                                <option value="">Retirer la nomination</option>
+                                @foreach ($eligibleLeaders as $eligibleLeader)
+                                    <option value="{{ $eligibleLeader->id }}" @selected($department->leader_user_id === $eligibleLeader->id)>
+                                        {{ $eligibleLeader->full_name }}{{ $eligibleLeader->dept ? ' · '.$eligibleLeader->dept : '' }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <button class="rounded-lg border border-amber-400/30 px-3 py-2 text-xs font-semibold text-amber-200 hover:bg-amber-400/10">Nommer</button>
+                        </form>
+                    @else
+                        <p class="text-xs text-slate-500">Nomination réservée au pasteur principal.</p>
+                    @endif
+                </div>
                 <span class="text-xs text-slate-500">{{ $department->members_count }} membre(s)</span>
                 <form method="POST" action="{{ route('settings.departments.destroy', $department) }}" onsubmit="return confirm('Supprimer ce département ?')">
                     @csrf

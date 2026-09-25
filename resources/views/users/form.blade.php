@@ -28,7 +28,7 @@
         <div>
             <label class="block text-sm font-medium text-slate-700">Rôle *</label>
             <select name="role" class="mt-1 w-full rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
-                @foreach (['user' => 'Membre', 'responsable' => 'Responsable', 'secretariat' => 'Secrétariat'] as $value => $label)
+                @foreach (['user' => 'Membre', 'responsable' => 'Responsable', 'pasteur_n1' => 'Pasteur principal', 'secretariat' => 'Secrétariat'] as $value => $label)
                     @if (auth()->user()->isAdmin() || $value !== 'secretariat')
                         <option value="{{ $value }}" @selected(old('role') === $value)>{{ $label }}</option>
                     @endif

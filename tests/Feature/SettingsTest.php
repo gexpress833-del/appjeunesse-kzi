@@ -83,6 +83,24 @@ class SettingsTest extends TestCase
             ->assertSessionHasErrors('department');
     }
 
+    public function test_church_administrators_can_rename_departments(): void
+    {
+        $department = Department::create(['name' => 'Jeunesse']);
+        $roles = ['admin', 'secretariat', 'pasteur_n1'];
+
+        foreach ($roles as $role) {
+            $user = User::factory()->create(['role' => $role, 'status' => 'active']);
+
+            $this->actingAs($user)
+                ->put(route('settings.departments.update', $department), ['name' => 'Jeunesse active'])
+                ->assertRedirect();
+
+            $this->assertDatabaseHas('departments', ['id' => $department->id, 'name' => 'Jeunesse active']);
+
+            $department->update(['name' => 'Jeunesse']);
+        }
+    }
+
     public function test_maintenance_mode_blocks_active_members_but_not_admin(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'status' => 'active']);

@@ -26,6 +26,11 @@
 <body class="app-page min-h-screen bg-slate-950 font-sans text-slate-100 antialiased">
 <div class="relative flex min-h-screen overflow-x-hidden">
     @php($appSettings = \App\Models\AppSetting::current())
+    @php($u = auth()->user())
+    @php($portalDashboardRoute = $u->dashboardRouteName())
+    @php($portalDashboardLabel = $u->primaryPortal() === 'church' ? 'Tableau de bord' : 'Portail jeunesse')
+    @php($portalBadge = $u->portalLabel())
+    @php($portalNavigationKey = $u->portalNavigationKey())
     <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.22),transparent_25%),radial-gradient(circle_at_bottom_right,_rgba(34,211,238,0.18),transparent_35%)]"></div>
     <div id="sidebar-backdrop" class="fixed inset-0 z-30 hidden bg-slate-950/70 backdrop-blur-sm lg:hidden" onclick="window.closeSidebar()"></div>
     <div id="app-toast-stack" class="pointer-events-none fixed right-4 top-4 z-50 flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-3"></div>
@@ -38,43 +43,38 @@
             <div>
                 <p class="text-sm font-bold text-white text-glow">{{ $appSettings->application_name }}</p>
                 <p class="text-[11px] text-slate-400">{{ $appSettings->church_name }}</p>
+                <span class="mt-1 inline-flex rounded-full border border-cyan-400/30 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-cyan-200">{{ $portalBadge }}</span>
             </div>
             </div>
             <button type="button" class="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-lg leading-none text-slate-200 lg:hidden" aria-label="Fermer le menu" onclick="window.closeSidebar()">×</button>
         </div>
 
         <nav class="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-4 text-sm">
-            @php($u = auth()->user())
             @php($unreadNotificationsCount = $u->unreadNotifications()->count())
             <a href="{{ route('notifications.index') }}" class="mb-3 flex items-center justify-between gap-3 rounded-xl border border-amber-400/30 bg-amber-500/10 px-3 py-2.5 text-amber-100 transition-all hover:bg-amber-500/20" aria-label="Notifications">
                 <span class="flex items-center gap-3"><span aria-hidden="true">🔔</span> Notifications</span>
                 <span class="rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-bold text-slate-950">{{ $unreadNotificationsCount }}</span>
             </a>
-            @foreach ([
-                ['home', 'Accueil public', '🌐'],
-                ['dashboard', 'Tableau de bord', '🏠'],
-                ['profile.edit', 'Mon profil', '👤'],
-                ['members.index', 'Annuaire', '👥'],
-                ['events.index', 'Événements', '📅'],
-                ['gallery.index', 'Galerie photos', '🖼️'],
-                ['social-visits.index', 'Visites sociales', '🤝'],
-            ] as [$route, $label, $icon])
-                <a href="{{ route($route) }}"
-                   class="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all {{ request()->routeIs($route) ? 'bg-gradient-to-r from-indigo-600/80 to-cyan-500/70 font-semibold text-white shadow-lg shadow-indigo-500/20' : 'text-slate-300 hover:bg-white/5 hover:text-white' }}">
-                    <span>{{ $icon }}</span> {{ $label }}
+
+            @foreach (array_merge([
+                ['route' => 'home', 'label' => 'Accueil public', 'icon' => '🌐'],
+            ], $u->portalNavigationItems()) as $item)
+                <a href="{{ route($item['route']) }}"
+                   class="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all {{ request()->routeIs($item['route']) ? 'bg-gradient-to-r from-indigo-600/80 to-cyan-500/70 font-semibold text-white shadow-lg shadow-indigo-500/20' : 'text-slate-300 hover:bg-white/5 hover:text-white' }}">
+                    <span>{{ $item['icon'] }}</span> {{ $item['label'] }}
                 </a>
             @endforeach
 
             <p class="px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Mon activité</p>
             <a href="{{ route('dashboard.bilan') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all {{ request()->routeIs('dashboard.bilan') ? 'bg-gradient-to-r from-indigo-600/80 to-cyan-500/70 font-semibold text-white shadow-lg shadow-indigo-500/20' : 'text-slate-300 hover:bg-white/5 hover:text-white' }}"><span>📈</span> Ma progression</a>
 
-            @if ($u->isAdmin() || $u->isSecretariat() || $u->isResponsable())
+            @if (($u->isChurchAdministrator() && $u->portalNavigationKey() === 'church') || $u->isResponsable())
                 <p class="px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Gestion</p>
-                @if ($u->isAdmin() || $u->isSecretariat())
+                @if ($u->isChurchAdministrator() && $u->portalNavigationKey() === 'church')
                     <a href="{{ route('members.create') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-slate-300 transition-all hover:bg-white/5 hover:text-white"><span>➕</span> Nouveau membre</a>
                 @endif
                 <a href="{{ route('attendances.pick') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all {{ request()->routeIs('attendances.*') ? 'bg-gradient-to-r from-indigo-600/80 to-cyan-500/70 font-semibold text-white shadow-lg shadow-indigo-500/20' : 'text-slate-300 hover:bg-white/5 hover:text-white' }}"><span>✅</span> Présences</a>
-                @if ($u->isAdmin() || $u->isSecretariat() || $u->isSocialResponsable())
+                @if (($u->isChurchAdministrator() && $u->portalNavigationKey() === 'church') || $u->isSocialResponsable())
                     <a href="{{ route('social-visits.create') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-slate-300 transition-all hover:bg-white/5 hover:text-white"><span>➕</span> Planifier une visite</a>
                 @endif
             @endif
@@ -88,17 +88,32 @@
                 <a href="{{ route('videos.manage') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all {{ request()->routeIs('videos.manage', 'videos.create', 'videos.edit') ? 'bg-gradient-to-r from-indigo-600/80 to-cyan-500/70 font-semibold text-white shadow-lg shadow-indigo-500/20' : 'text-slate-300 hover:bg-white/5 hover:text-white' }}"><span>🎬</span> Vidéos archivées</a>
             @endif
 
-            @if ($u->isAdmin() || $u->isSecretariat())
+            @if ($u->isChurchAdministrator() && $u->portalNavigationKey() === 'church')
                 <p class="px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Communication</p>
-                <a href="{{ route('carousel.index') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all {{ request()->routeIs('carousel.*') ? 'bg-gradient-to-r from-indigo-600/80 to-cyan-500/70 font-semibold text-white shadow-lg shadow-indigo-500/20' : 'text-slate-300 hover:bg-white/5 hover:text-white' }}"><span>🎡</span> Carrousel d'accueil</a>
+                <a href="{{ route('carousel.index') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all {{ request()->routeIs('carousel.*') ? 'bg-gradient-to-r from-indigo-600/80 to-cyan-500/70 font-semibold text-white shadow-lg shadow-indigo-500/20' : 'text-slate-300 hover:bg-white/5 hover:text-white' }}"><span>🎡</span> Annonces & carrousel</a>
                 <a href="{{ route('attendances.report') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all {{ request()->routeIs('attendances.report') || request()->routeIs('attendances.export') ? 'bg-gradient-to-r from-indigo-600/80 to-cyan-500/70 font-semibold text-white shadow-lg shadow-indigo-500/20' : 'text-slate-300 hover:bg-white/5 hover:text-white' }}"><span>📊</span> Rapports</a>
+            @endif
+
+            @if (! $u->isChurchAdministrator() && $u->manageableContentSourcesForCurrentPortal() !== [])
+                <p class="px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Communication</p>
+                <a href="{{ route('carousel.index') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-slate-300 transition-all hover:bg-white/5 hover:text-white"><span>🎡</span> Annonces de mon espace</a>
+            @endif
+
+            @php($departmentActions = $u->departmentActions())
+            @if ($departmentActions !== [])
+                <div class="mt-4 rounded-xl border border-cyan-400/20 bg-cyan-500/5 p-3">
+                    <p class="text-[10px] font-bold uppercase tracking-[0.16em] text-cyan-200">Actions autorisées</p>
+                    @foreach ($departmentActions as $actionLabel)
+                        <p class="mt-2 text-xs text-slate-300">• {{ $actionLabel }}</p>
+                    @endforeach
+                </div>
             @endif
 
                 @if ($u->isResponsable())
                     <a href="{{ route('attendances.pdf') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-slate-300 transition-all hover:bg-white/5 hover:text-white"><span>📄</span> Exporter mes rapports PDF</a>
                 @endif
 
-            @if ($u->isSecretariat() || $u->isAdmin())
+            @if ($u->isChurchAdministrator() && $u->portalNavigationKey() === 'church')
                 <p class="px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Comptes</p>
                 <a href="{{ route('users.create') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-slate-300 transition-all hover:bg-white/5 hover:text-white"><span>👤</span> Créer un compte</a>
                 @if ($u->isAdmin())
@@ -124,7 +139,7 @@
                 @endif
                 <span class="min-w-0">
                     <span class="block truncate text-sm font-semibold text-white">{{ $u->full_name }}</span>
-                    <span class="block text-[11px] uppercase text-slate-400">{{ $u->role }}@if($u->dept) · {{ $u->dept }}@endif</span>
+                    <span class="block text-[11px] uppercase text-slate-400">{{ $u->roleLabel() }}@if($u->dept) · {{ $u->dept }}@endif</span>
                 </span>
             </a>
             <button type="button" data-app-install hidden class="app-install-button mb-2 w-full"><span aria-hidden="true">＋</span> Installer l’application</button>

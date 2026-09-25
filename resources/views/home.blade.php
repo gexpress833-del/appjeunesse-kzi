@@ -15,13 +15,13 @@
             @php
                 $slides = [];
                 foreach ($versets as $v) {
-                    $slides[] = ['kind' => 'verset', 'title' => $v->title ?? 'Le Verset du Jour', 'content' => $v->content, 'ref' => $v->author_or_reference];
+                    $slides[] = ['kind' => 'verset', 'title' => $v->title ?? 'Le Verset du Jour', 'content' => $v->content, 'ref' => $v->author_or_reference, 'source' => $v->sourceLabel()];
                 }
                 foreach ($temoignages as $t) {
-                    $slides[] = ['kind' => 'temoignage', 'title' => $t->title ?? 'Témoignage', 'content' => $t->content, 'ref' => $t->author_or_reference];
+                    $slides[] = ['kind' => 'temoignage', 'title' => $t->title ?? 'Témoignage', 'content' => $t->content, 'ref' => $t->author_or_reference, 'source' => $t->sourceLabel()];
                 }
                 foreach ($banners as $b) {
-                    $slides[] = ['kind' => 'banner', 'title' => $b->title, 'content' => $b->content, 'ref' => $b->author_or_reference, 'media' => $b->media_url];
+                    $slides[] = ['kind' => 'banner', 'title' => $b->title, 'content' => $b->content, 'ref' => $b->author_or_reference, 'media' => $b->media_url, 'source' => $b->sourceLabel()];
                 }
                 foreach ($upcomingEvents as $event) {
                     $slides[] = [
@@ -32,8 +32,9 @@
                 }
             @endphp
 
-            @foreach ($slides as $i => $slide)
+                @foreach ($slides as $i => $slide)
                 <div class="carousel-slide absolute inset-0 flex flex-col items-center justify-center gap-4 px-8 py-12 text-center sm:px-14 {{ $i === 0 ? 'is-active' : 'pointer-events-none' }}" data-slide-index="{{ $i }}">
+                    <span class="rounded-full border border-white/30 bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white">Source : {{ $slide['source'] ?? 'Église' }}</span>
                     @if ($slide['kind'] === 'verset')
                         <span class="carousel-label">📖 {{ $slide['title'] }}</span>
                         <blockquote class="carousel-quote max-w-4xl">« {{ $slide['content'] }} »</blockquote>
@@ -82,11 +83,90 @@
         @endif
     </section>
 
+    {{-- ==================== PORTAILS ==================== --}}
+    <section class="mt-10">
+        <div class="mb-6 flex flex-col gap-3 text-center md:text-left">
+            <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-indigo-600">Choisissez votre espace</p>
+            <h2 class="text-3xl font-black text-slate-900">Choisissez votre espace</h2>
+        </div>
+
+        <div class="grid gap-6 md:grid-cols-3">
+            <div class="group relative overflow-hidden rounded-[2rem] border border-[#D4A72C]/80 bg-slate-950/90 p-6 text-white shadow-[0_30px_90px_rgba(212,167,44,0.22)]">
+                <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(234,179,8,0.18),transparent_18%),radial-gradient(circle_at_bottom_right,_rgba(120,113,108,0.24),transparent_28%)]"></div>
+                <div class="absolute inset-x-4 top-0 h-px bg-[#D4A72C]"></div>
+                <div class="relative">
+                    <div class="mb-5 flex items-center justify-between gap-3">
+                        <span class="rounded-full border border-[#D4A72C]/80 bg-[#D4A72C]/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-[#F6E7A8]">PORTAIL ÉGLISE</span>
+                        <span aria-hidden="true" class="flex h-12 w-12 items-center justify-center rounded-xl border border-[#D4A72C]/70 bg-slate-900/70 text-2xl shadow-[0_0_16px_rgba(212,167,44,0.28)]">🏛️</span>
+                    </div>
+                    <h3 class="text-3xl font-black tracking-tight text-white">Portail Église</h3>
+                    <p class="mt-3 text-sm leading-6 text-slate-200">
+                        Cultes, membres, événements et administration.
+                    </p>
+                    <div class="mt-6 flex flex-wrap gap-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[#F6E7A8]">
+                        <span class="rounded-full border border-[#D4A72C]/70 bg-[#D4A72C]/10 px-2.5 py-1.5">Membres</span>
+                        <span class="rounded-full border border-[#D4A72C]/70 bg-[#D4A72C]/10 px-2.5 py-1.5">Cultes</span>
+                        <span class="rounded-full border border-[#D4A72C]/70 bg-[#D4A72C]/10 px-2.5 py-1.5">Événements</span>
+                    </div>
+                    <div class="mt-6">
+                        <a href="{{ auth()->check() ? route('dashboard') : route('login') }}" class="inline-flex rounded-xl border border-[#D4A72C]/80 bg-[#D4A72C]/15 px-4 py-2.5 font-semibold text-[#F8F1D5] shadow-[0_0_16px_rgba(212,167,44,0.24)] transition duration-200 hover:-translate-y-0.5 hover:bg-[#D4A72C]/25">Accéder</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="group relative overflow-hidden rounded-[2rem] border border-[#8B5CF6]/80 bg-slate-950/90 p-6 text-white shadow-[0_30px_90px_rgba(139,92,246,0.22)]">
+                <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(167,139,250,0.18),transparent_18%),radial-gradient(circle_at_bottom_right,_rgba(91,33,182,0.26),transparent_28%)]"></div>
+                <div class="absolute inset-x-4 top-0 h-px bg-[#8B5CF6]"></div>
+                <div class="relative">
+                    <div class="mb-5 flex items-center justify-between gap-3">
+                        <span class="rounded-full border border-[#8B5CF6]/80 bg-[#8B5CF6]/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-[#E9DDFF]">PORTAIL JEUNESSE</span>
+                        <span aria-hidden="true" class="flex h-12 w-12 items-center justify-center rounded-xl border border-[#8B5CF6]/70 bg-slate-900/70 text-2xl shadow-[0_0_16px_rgba(139,92,246,0.28)]">🎉</span>
+                    </div>
+                    <h3 class="text-3xl font-black tracking-tight text-white">Portail Jeunesse</h3>
+                    <p class="mt-3 text-sm leading-6 text-slate-200">
+                        Activités, groupes, présences et engagement.
+                    </p>
+                    <div class="mt-6 flex flex-wrap gap-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[#E9DDFF]">
+                        <span class="rounded-full border border-[#8B5CF6]/70 bg-[#8B5CF6]/10 px-2.5 py-1.5">Profil</span>
+                        <span class="rounded-full border border-[#8B5CF6]/70 bg-[#8B5CF6]/10 px-2.5 py-1.5">Activités</span>
+                        <span class="rounded-full border border-[#8B5CF6]/70 bg-[#8B5CF6]/10 px-2.5 py-1.5">Présences</span>
+                    </div>
+                    <div class="mt-6">
+                        <a href="{{ auth()->check() ? route('dashboard.youth') : route('login') }}" class="inline-flex rounded-xl border border-[#8B5CF6]/80 bg-[#8B5CF6]/15 px-4 py-2.5 font-semibold text-[#F3EBFF] shadow-[0_0_16px_rgba(139,92,246,0.24)] transition duration-200 hover:-translate-y-0.5 hover:bg-[#8B5CF6]/25">Accéder</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="group relative overflow-hidden rounded-[2rem] border border-[#22C55E]/80 bg-slate-950/90 p-6 text-white shadow-[0_30px_90px_rgba(34,197,94,0.22)]">
+                <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(134,239,172,0.18),transparent_18%),radial-gradient(circle_at_bottom_right,_rgba(21,128,61,0.26),transparent_28%)]"></div>
+                <div class="absolute inset-x-4 top-0 h-px bg-[#22C55E]"></div>
+                <div class="relative">
+                    <div class="mb-5 flex items-center justify-between gap-3">
+                        <span class="rounded-full border border-[#22C55E]/80 bg-[#22C55E]/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-[#DDFCE7]">PORTAIL ECODIM</span>
+                        <span aria-hidden="true" class="flex h-12 w-12 items-center justify-center rounded-xl border border-[#22C55E]/70 bg-slate-900/70 text-2xl shadow-[0_0_16px_rgba(34,197,94,0.28)]">🧒</span>
+                    </div>
+                    <h3 class="text-3xl font-black tracking-tight text-white">Portail ECODIM</h3>
+                    <p class="mt-3 text-sm leading-6 text-slate-200">
+                        Enfants, classes, présences et parcours.
+                    </p>
+                    <div class="mt-6 flex flex-wrap gap-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[#DDFCE7]">
+                        <span class="rounded-full border border-[#22C55E]/70 bg-[#22C55E]/10 px-2.5 py-1.5">Enfants</span>
+                        <span class="rounded-full border border-[#22C55E]/70 bg-[#22C55E]/10 px-2.5 py-1.5">Classes</span>
+                        <span class="rounded-full border border-[#22C55E]/70 bg-[#22C55E]/10 px-2.5 py-1.5">Transition</span>
+                    </div>
+                    <div class="mt-6">
+                        <a href="{{ auth()->check() ? route('dashboard.ecodim') : route('login') }}" class="inline-flex rounded-xl border border-[#22C55E]/80 bg-[#22C55E]/15 px-4 py-2.5 font-semibold text-[#EAFEF0] shadow-[0_0_16px_rgba(34,197,94,0.24)] transition duration-200 hover:-translate-y-0.5 hover:bg-[#22C55E]/25">Accéder</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     {{-- ==================== LIVE VIDÉO ==================== --}}
     <section class="home-video-section mt-10">
         <div class="mb-4 flex items-center justify-between gap-3">
             <h2 class="flex items-center gap-2 text-2xl font-bold text-slate-900">
-                Culte vidéo
+                📺 Culte en direct
                 @if ($live && $live->is_active)
                     <span class="rounded-full px-2 py-0.5 text-xs font-bold uppercase text-white {{ $live->broadcast_type === 'replay' ? 'bg-slate-600' : 'animate-pulse bg-rose-600' }}">
                         {{ $live->broadcast_type === 'replay' ? 'Retransmission' : 'En direct' }}
@@ -97,6 +177,8 @@
                 <span class="rounded-full border border-cyan-200 bg-cyan-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-700">Live social</span>
             @endif
         </div>
+
+        <p class="mb-4 text-sm text-slate-600">Retrouvez ici les directs disponibles.</p>
 
         @if ($live && $live->is_active && \App\Support\VideoEmbed::toEmbed($live->media_url))
             <div class="live-feed-shell">
@@ -224,18 +306,18 @@
         @endif
     </section>
 
-    <p class="mx-auto mt-8 max-w-3xl text-center text-2xl font-bold text-slate-900 sm:text-3xl">
-        Une jeunesse qui sert Dieu avec foi, excellence et dévouement
+    <p class="home-vision-tagline mx-auto mt-8 max-w-5xl text-center">
+        Une communauté, trois parcours, une même vision : <span>ECODIM, Jeunesse, Église.</span>
     </p>
 
     <section class="youth-path mt-10" aria-labelledby="youth-path-title">
         <div class="youth-path-heading">
             <div>
                 <p class="youth-path-kicker"><span></span> Notre fonctionnement</p>
-                <h2 id="youth-path-title">Une jeunesse unie dans la foi</h2>
-                <p>À La Parole Éternelle Kolwezi, chaque jeune est encouragé à grandir dans la vérité, à vivre en fraternité et à répondre à l’appel de Dieu avec fidélité et passion.</p>
-            </div>
-            <div class="youth-path-code" aria-hidden="true">LPK / JEUNESSE / 04</div>
+                <h2 id="youth-path-title">Une seule communauté, un même parcours</h2>
+                <p>De l’ECODIM à la Jeunesse, puis dans la vie de l’Église, chacun grandit, participe et avance au sein d’une même communauté.</p>
+                </div>
+                <div class="youth-path-code" aria-hidden="true">ECODIM / JEUNESSE / ÉGLISE</div>
         </div>
 
         <div class="youth-path-grid">
@@ -244,9 +326,9 @@
                     <span class="youth-path-index">01</span>
                     <span class="youth-path-symbol" aria-hidden="true">✦</span>
                 </div>
-                <h3>Grandir dans la vérité</h3>
-                <p>La Parole de Dieu, la prière et la communion avec le Seigneur nous forment dans la vérité, la fidélité et l’adoration.</p>
-                <span class="youth-path-label">Foi · Prière · Écriture</span>
+                    <h3>Grandir dans la foi</h3>
+                    <p>La Parole de Dieu, la prière et l’enseignement nous accompagnent à chaque étape du parcours.</p>
+                    <span class="youth-path-label">Foi · Prière · Enseignement</span>
             </article>
 
             <article class="youth-path-card">
@@ -254,9 +336,9 @@
                     <span class="youth-path-index">02</span>
                     <span class="youth-path-symbol" aria-hidden="true">◌</span>
                 </div>
-                <h3>Vivre en fraternité</h3>
-                <p>Nous grandissons ensemble, nous nous encourageons et nous avançons comme une famille unie dans le Christ.</p>
-                <span class="youth-path-label">Accueil · Écoute · Fraternité</span>
+                    <h3>Vivre en communauté</h3>
+                    <p>Enfants, jeunes et adultes grandissent ensemble dans l’accueil, la fraternité et la communion.</p>
+                    <span class="youth-path-label">Accueil · Fraternité · Communauté</span>
             </article>
 
             <article class="youth-path-card">
@@ -264,9 +346,9 @@
                     <span class="youth-path-index">03</span>
                     <span class="youth-path-symbol" aria-hidden="true">⌁</span>
                 </div>
-                <h3>Servir avec passion</h3>
-                <p>Chaque jeune peut contribuer selon son appel et ses talents : musique, accueil, intercession, enseignement, communication, aide sociale et accompagnement.</p>
-                <span class="youth-path-label">Musique · Service · Intercession · Aide</span>
+                    <h3>Servir selon ses dons</h3>
+                    <p>Chacun peut participer à la vie de l’Église selon ses talents, ses capacités et ses responsabilités.</p>
+                    <span class="youth-path-label">Musique · Enseignement · Intercession · Service</span>
             </article>
 
             <article class="youth-path-card youth-path-card-featured">
@@ -274,9 +356,9 @@
                     <span class="youth-path-index">04</span>
                     <span class="youth-path-symbol" aria-hidden="true">↗</span>
                 </div>
-                <h3>Répondre à la mission</h3>
-                <p>Retrouve les cultes, rassemblements, événements et archives pour rester connecté à la vie spirituelle de la jeunesse à Kolwezi.</p>
-                <a href="{{ route('videos.archive') }}" class="youth-path-link">Explorer la médiathèque <span aria-hidden="true">→</span></a>
+                    <h3>Avancer dans son parcours</h3>
+                    <p>Chaque étape s’inscrit dans une continuité : <strong>ECODIM → JEUNESSE → ÉGLISE</strong>, avec un accompagnement adapté à chaque parcours.</p>
+                    <span class="youth-path-label">Parcours · Engagement · Responsabilités</span>
             </article>
         </div>
     </section>

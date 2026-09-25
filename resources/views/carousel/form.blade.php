@@ -21,6 +21,18 @@
     </div>
 
     <div>
+        <label class="block text-sm font-medium text-slate-700">Source de publication *</label>
+        <select name="source" required class="mt-1 w-full rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
+            @foreach ($sources as $source)
+                <option value="{{ $source }}" @selected(old('source', $content->source ?? 'church') === $source)>
+                    {{ match ($source) { 'youth' => 'Portail jeunesse', 'ecodim' => 'ECODIM', default => 'Église' } }}
+                </option>
+            @endforeach
+        </select>
+        <p class="mt-1 text-xs text-slate-500">La provenance sera visible sur chaque annonce.</p>
+    </div>
+
+    <div>
         <label class="block text-sm font-medium text-slate-700">Titre</label>
         <input name="title" value="{{ old('title', $content->title) }}" placeholder="Titre ou libellé"
                class="mt-1 w-full rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">

@@ -5,7 +5,7 @@
 @section('content')
 <div class="flex flex-wrap items-center justify-between gap-3">
     <h1 class="text-2xl font-bold text-slate-900">Événements</h1>
-    @if (auth()->user()->isAdmin() || auth()->user()->isSecretariat() || auth()->user()->isResponsable())
+    @if (auth()->user()->isChurchAdministrator() && auth()->user()->portalNavigationKey() === 'church')
         <a href="{{ route('events.create') }}" class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">➕ Créer un événement</a>
     @endif
 </div>
@@ -27,10 +27,10 @@
                     </p>
                 </div>
             </div>
-            @if (auth()->user()->isAdmin() || auth()->user()->isSecretariat() || auth()->user()->isResponsable())
+            @if (auth()->user()->isChurchAdministrator() && auth()->user()->portalNavigationKey() === 'church')
                 <div class="flex items-center gap-3 text-sm">
                     <a href="{{ auth()->user()->isResponsable() ? route('attendances.sheet', ['event' => $event, 'dept' => auth()->user()->dept]) : route('attendances.sheet', $event) }}" class="rounded-lg bg-emerald-50 px-3 py-2 font-semibold text-emerald-700 hover:bg-emerald-100">✅ Faire l'appel</a>
-                    @if (auth()->user()->isAdmin() || auth()->user()->isSecretariat())
+                    @if (auth()->user()->isChurchAdministrator())
                         <a href="{{ route('events.edit', $event) }}" class="text-indigo-600 hover:underline">Modifier</a>
                     @endif
                 </div>
@@ -56,7 +56,7 @@
                     <p class="text-xs text-slate-400">{{ $event->date->translatedFormat('d/m/Y') }} · {{ $event->members_count }} présence(s)</p>
                 </div>
             </div>
-            @if (auth()->user()->isAdmin() || auth()->user()->isSecretariat() || auth()->user()->isResponsable())
+            @if (auth()->user()->isChurchAdministrator() && auth()->user()->portalNavigationKey() === 'church')
                 <a href="{{ auth()->user()->isResponsable() ? route('attendances.sheet', ['event' => $event, 'dept' => auth()->user()->dept]) : route('attendances.sheet', $event) }}" class="text-sm text-slate-500 hover:underline">Voir l'appel</a>
             @endif
         </div>

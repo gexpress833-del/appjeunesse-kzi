@@ -1,6 +1,9 @@
 <?php
 
+use App\Http\Middleware\CheckContentManagementAccess;
 use App\Http\Middleware\CheckMaintenance;
+use App\Http\Middleware\CheckMediaManagementAccess;
+use App\Http\Middleware\CheckPortalAccess;
 use App\Http\Middleware\CheckRole;
 use App\Http\Middleware\EnsureActive;
 use Illuminate\Auth\AuthenticationException;
@@ -23,12 +26,23 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'role' => CheckRole::class,
+            'portal' => CheckPortalAccess::class,
+            'content.manage' => CheckContentManagementAccess::class,
+            'media.manage' => CheckMediaManagementAccess::class,
             'active' => EnsureActive::class,
             'maintenance' => CheckMaintenance::class,
         ]);
 
         $middleware->redirectGuestsTo(fn () => route('login'));
-        $middleware->redirectUsersTo(fn () => route('dashboard'));
+        $middleware->redirectUsersTo(function () {
+            $user = auth()->user();
+
+            if (! $user) {
+                return route('login');
+            }
+
+            return route($user->dashboardRouteName());
+        });
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

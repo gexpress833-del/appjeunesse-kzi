@@ -76,8 +76,18 @@ Route::get('/en-attente', [AuthController::class, 'pending'])->middleware('auth'
 Route::middleware(['auth', 'active', 'maintenance'])->group(function () {
 
     // Tableau de bord personnel / global
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/dashboard/bilan', [DashboardController::class, 'bilan'])->name('dashboard.bilan');
+    Route::middleware('portal:church')->group(function () {
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/dashboard/bilan', [DashboardController::class, 'bilan'])->name('dashboard.bilan');
+    });
+
+    Route::middleware('portal:youth')->group(function () {
+        Route::get('/portail-jeunesse', [DashboardController::class, 'index'])->name('dashboard.youth');
+    });
+
+    Route::middleware('portal:ecodim')->group(function () {
+        Route::get('/portail-ecodim', [DashboardController::class, 'index'])->name('dashboard.ecodim');
+    });
 
     Route::middleware('auth')->group(function () {
         Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
@@ -99,12 +109,15 @@ Route::middleware(['auth', 'active', 'maintenance'])->group(function () {
     Route::get('/profil', [AuthController::class, 'profile'])->name('profile.edit');
     Route::put('/profil', [AuthController::class, 'updateProfile'])->name('profile.update');
 
-    Route::middleware('role:admin,secretariat')->group(function () {
+    Route::middleware(['portal:church', 'role:admin,secretariat,pasteur_n1'])->group(function () {
         Route::get('/parametres', [SettingsController::class, 'index'])->name('settings.index');
         Route::put('/parametres', [SettingsController::class, 'update'])->name('settings.update');
         Route::post('/parametres/departements', [SettingsController::class, 'storeDepartment'])->name('settings.departments.store');
         Route::put('/parametres/departements/{department}', [SettingsController::class, 'updateDepartment'])->name('settings.departments.update');
         Route::delete('/parametres/departements/{department}', [SettingsController::class, 'destroyDepartment'])->name('settings.departments.destroy');
+        Route::put('/parametres/departements/{department}/responsable', [SettingsController::class, 'assignDepartmentLeader'])
+            ->middleware('role:pasteur_n1')
+            ->name('settings.departments.leader');
     });
 
     // Annuaire : consultation pour tous les comptes actifs
@@ -136,7 +149,7 @@ Route::middleware(['auth', 'active', 'maintenance'])->group(function () {
     | Gestion des membres — secrétariat et admin
     |----------------------------------------------------------------------
     */
-    Route::middleware('role:admin,secretariat')->group(function () {
+    Route::middleware(['portal:church', 'role:admin,secretariat,pasteur_n1'])->group(function () {
         Route::get('/membres/creer', [MemberController::class, 'create'])->name('members.create');
         Route::post('/membres', [MemberController::class, 'store'])->name('members.store');
         Route::get('/membres/{member}/modifier', [MemberController::class, 'edit'])->name('members.edit');
@@ -145,7 +158,7 @@ Route::middleware(['auth', 'active', 'maintenance'])->group(function () {
     });
 
     Route::get('/membres/{member}/pdf', [MemberController::class, 'exportPdf'])
-        ->middleware('role:admin')
+        ->middleware(['portal:church', 'role:admin,pasteur_n1'])
         ->name('members.pdf');
 
     /*
@@ -154,7 +167,7 @@ Route::middleware(['auth', 'active', 'maintenance'])->group(function () {
     | secrétariat & admin
     |----------------------------------------------------------------------
     */
-    Route::middleware('role:admin,secretariat,responsable')->group(function () {
+    Route::middleware(['portal:church', 'role:admin,secretariat,pasteur_n1,responsable'])->group(function () {
         Route::get('/evenements/creer', [EventController::class, 'create'])->name('events.create');
         Route::post('/evenements', [EventController::class, 'store'])->name('events.store');
         Route::get('/evenements/{event}/modifier', [EventController::class, 'edit'])->name('events.edit');
@@ -172,12 +185,12 @@ Route::middleware(['auth', 'active', 'maintenance'])->group(function () {
     Route::post('/presences/{event}', [AttendanceController::class, 'store'])->name('attendances.store');
 
     // Rapport global : réservé à admin & secrétariat.
-    Route::middleware('role:admin,secretariat')->group(function () {
+    Route::middleware(['portal:church', 'role:admin,secretariat,pasteur_n1'])->group(function () {
         Route::get('/rapports', [AttendanceController::class, 'report'])->name('attendances.report');
     });
 
     // Export PDF de rapport : responsable sur son département uniquement, admin & secrétariat sur tout.
-    Route::middleware('role:admin,secretariat,responsable')->group(function () {
+    Route::middleware(['portal:church', 'role:admin,secretariat,pasteur_n1,responsable'])->group(function () {
         Route::get('/rapports/pdf', [AttendanceController::class, 'exportPdf'])->name('attendances.pdf');
     });
 
@@ -186,20 +199,20 @@ Route::middleware(['auth', 'active', 'maintenance'])->group(function () {
     | Galerie — téléversement réservé à l’admin, au secrétariat ou au DCC
     |----------------------------------------------------------------------
     */
-    Route::middleware('role:admin,secretariat,responsable')->group(function () {
+    Route::middleware('media.manage')->group(function () {
         Route::get('/galerie/publier', [MediaController::class, 'uploadForm'])->name('gallery.upload');
         Route::post('/galerie', [MediaController::class, 'storePhotos'])->name('gallery.store');
         Route::delete('/galerie/{photo}', [MediaController::class, 'destroyPhoto'])->name('gallery.destroy');
     });
 
     // Direct vidéo : administration et responsable du DCC uniquement.
-    Route::middleware('role:admin,responsable')->group(function () {
+    Route::middleware('media.manage')->group(function () {
         Route::get('/direct', [MediaController::class, 'liveForm'])->name('live.edit');
         Route::post('/direct', [MediaController::class, 'liveSave'])->name('live.save');
     });
 
     // Archives vidéo : gestion réservée à l’administrateur, au secrétariat et au responsable DCC/Médias.
-    Route::middleware('role:admin,secretariat,responsable')->group(function () {
+    Route::middleware('media.manage')->group(function () {
         Route::get('/videos/gestion', [VideoArchiveController::class, 'manage'])->name('videos.manage');
         Route::get('/videos/gestion/creer', [VideoArchiveController::class, 'create'])->name('videos.create');
         Route::post('/videos/gestion', [VideoArchiveController::class, 'store'])->name('videos.store');
@@ -210,10 +223,11 @@ Route::middleware(['auth', 'active', 'maintenance'])->group(function () {
 
     /*
     |----------------------------------------------------------------------
-    | Carrousel (versets, témoignages, bannières) — secrétariat & admin
+    | Carrousel (versets, témoignages, bannières) — église et gouvernance
+    | Le pasteur principal peut aussi publier les annonces et contenus publics.
     |----------------------------------------------------------------------
     */
-    Route::middleware('role:admin,secretariat')->group(function () {
+    Route::middleware('content.manage')->group(function () {
         Route::get('/carrousel', [CarouselController::class, 'index'])->name('carousel.index');
         Route::get('/carrousel/creer', [CarouselController::class, 'create'])->name('carousel.create');
         Route::post('/carrousel', [CarouselController::class, 'store'])->name('carousel.store');
@@ -229,12 +243,12 @@ Route::middleware(['auth', 'active', 'maintenance'])->group(function () {
     | rôles & statuts : admin uniquement
     |----------------------------------------------------------------------
     */
-    Route::middleware('role:admin,secretariat')->group(function () {
+    Route::middleware(['portal:church', 'role:admin,secretariat,pasteur_n1'])->group(function () {
         Route::get('/utilisateurs/creer', [UserController::class, 'create'])->name('users.create');
         Route::post('/utilisateurs', [UserController::class, 'store'])->name('users.store');
     });
 
-    Route::middleware('role:admin')->group(function () {
+    Route::middleware(['portal:church', 'role:admin,pasteur_n1'])->group(function () {
         Route::get('/utilisateurs', [UserController::class, 'index'])->name('users.index');
         Route::patch('/utilisateurs/{user}/valider', [UserController::class, 'validateAccount'])->name('users.validate');
         Route::patch('/utilisateurs/{user}/role', [UserController::class, 'assignRole'])->name('users.role');

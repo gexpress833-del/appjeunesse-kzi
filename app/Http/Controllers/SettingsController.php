@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\AppSetting;
 use App\Models\Department;
+use App\Models\MemberRoleAssignment;
+use App\Models\Role;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -13,11 +15,12 @@ use Illuminate\View\View;
 
 class SettingsController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
         return view('settings.index', [
             'settings' => AppSetting::current(),
-            'departments' => Department::query()->withCount('members')->orderBy('name')->get(),
+            'departments' => Department::query()->with(['leader', 'leaderAssignedBy'])->withCount('members')->orderBy('name')->get(),
+            'eligibleLeaders' => $this->eligibleLeaders($request),
         ]);
     }
 
@@ -86,6 +89,8 @@ class SettingsController extends Controller
 
     public function storeDepartment(Request $request): RedirectResponse
     {
+        $this->authorizeDepartmentManagement($request);
+
         $data = $request->validate(['name' => ['required', 'string', 'max:100', 'unique:departments,name']]);
         Department::create($data);
 
@@ -94,6 +99,8 @@ class SettingsController extends Controller
 
     public function updateDepartment(Request $request, Department $department): RedirectResponse
     {
+        $this->authorizeDepartmentManagement($request);
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:100', Rule::unique('departments', 'name')->ignore($department->id)],
         ]);
@@ -109,8 +116,10 @@ class SettingsController extends Controller
         return back()->with('success', 'Département renommé.');
     }
 
-    public function destroyDepartment(Department $department): RedirectResponse
+    public function destroyDepartment(Request $request, Department $department): RedirectResponse
     {
+        $this->authorizeDepartmentManagement($request);
+
         if ($department->members()->exists()
             || DB::table('users')->where('dept', $department->name)->exists()
             || DB::table('events')->where('dept', $department->name)->exists()) {
@@ -122,6 +131,86 @@ class SettingsController extends Controller
         $department->delete();
 
         return back()->with('success', 'Département supprimé.');
+    }
+
+    public function assignDepartmentLeader(Request $request, Department $department): RedirectResponse
+    {
+        abort_unless($request->user()->isPastorPrincipal(), 403, 'Seul le pasteur principal peut nommer un responsable de département.');
+
+        $data = $request->validate([
+            'leader_user_id' => ['nullable', 'integer', 'exists:users,id'],
+        ]);
+
+        $leader = isset($data['leader_user_id'])
+            ? $request->user()->newQuery()->whereKey($data['leader_user_id'])->where('status', 'active')->where('church_id', $request->user()->church_id)->firstOrFail()
+            : null;
+
+        DB::transaction(function () use ($department, $leader, $request): void {
+            $previousLeader = $department->leader()->first();
+
+            $department->update([
+                'leader_user_id' => $leader?->id,
+                'leader_assigned_by' => $request->user()->id,
+                'leader_assigned_at' => $leader ? now() : null,
+            ]);
+
+            if (! $leader) {
+                if ($previousLeader && $previousLeader->dept === $department->name) {
+                    $previousLeader->update(['dept' => null]);
+                }
+
+                return;
+            }
+
+            if ($previousLeader && $previousLeader->isNot($leader) && $previousLeader->dept === $department->name) {
+                $previousLeader->update(['dept' => null]);
+            }
+
+            $leader->update(['dept' => $department->name]);
+
+            $roleSlug = match ($department->code) {
+                'youth' => 'responsable_jeunesse',
+                'ecodim' => 'responsable_ecodim',
+                default => 'responsable',
+            };
+
+            $role = Role::firstOrCreate(
+                ['slug' => $roleSlug],
+                ['name' => str($roleSlug)->replace('_', ' ')->title(), 'status' => 'active'],
+            );
+
+            MemberRoleAssignment::query()
+                ->where('scope_id', $department->id)
+                ->where('scope_type', $department->code ?: 'department')
+                ->where('status', 'active')
+                ->update(['status' => 'inactive', 'ends_at' => now()]);
+
+            MemberRoleAssignment::create([
+                'user_id' => $leader->id,
+                'role_id' => $role->id,
+                'scope_type' => $department->code ?: 'department',
+                'scope_id' => $department->id,
+                'status' => 'active',
+                'starts_at' => now(),
+                'assigned_by' => $request->user()->id,
+            ]);
+        });
+
+        return back()->with('success', $leader ? 'Responsable de département nommé par le pasteur.' : 'Responsable de département retiré.');
+    }
+
+    private function eligibleLeaders(Request $request)
+    {
+        return $request->user()->newQuery()
+            ->where('status', 'active')
+            ->where('church_id', $request->user()->church_id)
+            ->orderBy('full_name')
+            ->get(['id', 'full_name', 'email', 'role', 'dept']);
+    }
+
+    private function authorizeDepartmentManagement(Request $request): void
+    {
+        abort_unless($request->user()?->isChurchAdministrator(), 403, 'Seuls le pasteur, l’administrateur et le secrétariat peuvent gérer les départements.');
     }
 
     /** @return array<string, bool> */

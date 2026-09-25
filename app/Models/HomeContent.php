@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 #[Fillable([
     'type',
+    'source',
     'title',
     'content',
     'author_or_reference',
@@ -41,5 +42,14 @@ class HomeContent extends Model
     public function scopeOrdered($query)
     {
         return $query->orderBy('display_order')->orderBy('id');
+    }
+
+    public function sourceLabel(): string
+    {
+        return match ($this->source) {
+            'youth' => 'Portail jeunesse',
+            'ecodim' => 'ECODIM',
+            default => 'Église',
+        };
     }
 }

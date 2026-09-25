@@ -13,7 +13,10 @@
         <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    <p class="text-xs font-bold uppercase tracking-wide text-indigo-600">{{ $content->type }}</p>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <p class="text-xs font-bold uppercase tracking-wide text-indigo-600">{{ $content->type }}</p>
+                        <span class="rounded-full bg-amber-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-800">Source : {{ $content->sourceLabel() }}</span>
+                    </div>
                     <h2 class="mt-1 text-lg font-semibold text-slate-900">{{ $content->title ?? 'Sans titre' }}</h2>
                 </div>
                 <div class="flex items-center gap-2">

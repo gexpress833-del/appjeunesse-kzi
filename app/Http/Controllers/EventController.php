@@ -67,10 +67,11 @@ class EventController extends Controller
         $event = Event::create($data);
 
         $eventOwners = User::query()
-            ->whereIn('role', ['admin', 'secretariat', 'responsable'])
+            ->whereIn('role', ['admin', 'secretariat', 'pasteur_n1', 'responsable'])
             ->when($event->dept, fn ($query) => $query->where(function ($departmentQuery) use ($event) {
                 $departmentQuery->where('role', 'admin')
                     ->orWhere('role', 'secretariat')
+                    ->orWhere('role', 'pasteur_n1')
                     ->orWhere(fn ($responsableQuery) => $responsableQuery->where('role', 'responsable')->where('dept', $event->dept));
             }))
             ->get();

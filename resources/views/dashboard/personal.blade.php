@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Mon tableau de bord')
+@section('title', 'Portail jeunesse')
 
 @section('content')
 @php
@@ -19,7 +19,7 @@
 <div class="rounded-3xl border border-white/10 bg-slate-950/30 p-6 shadow-2xl shadow-slate-950/20 backdrop-blur-sm">
     <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-            <p class="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-300">Tableau de bord personnel</p>
+            <p class="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-300">Portail jeunesse</p>
             <h1 class="mt-2 text-3xl font-black text-white">{{ $greeting }} 👋</h1>
             <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
                 <span class="rounded-full border border-cyan-400/30 bg-cyan-500/10 px-3 py-1.5 font-semibold text-cyan-200">
@@ -75,7 +75,8 @@
             </div>
             @forelse ($announcements as $announcement)
                 <article class="mt-4 border-b border-white/10 pb-3 last:border-0 last:pb-0">
-                    <p class="text-sm font-semibold text-amber-100">{{ $announcement->title ?? 'Annonce' }}</p>
+                            <p class="text-sm font-semibold text-amber-100">{{ $announcement->title ?? 'Annonce' }}</p>
+                            <p class="mt-1 text-[10px] font-bold uppercase tracking-wide text-cyan-200">Source : {{ $announcement->sourceLabel() }}</p>
                     <p class="mt-1 line-clamp-2 text-xs leading-5 text-slate-300">{{ $announcement->content }}</p>
                 </article>
             @empty

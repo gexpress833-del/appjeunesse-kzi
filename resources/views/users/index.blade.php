@@ -22,7 +22,7 @@
         <label class="block text-xs font-medium text-slate-500">Rôle</label>
         <select name="role" class="mt-1 w-full rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
             <option value="">Tous</option>
-            @foreach (['admin' => 'Admin', 'secretariat' => 'Secrétariat', 'responsable' => 'Responsable', 'user' => 'Membre'] as $value => $label)
+            @foreach (['admin' => 'Admin', 'secretariat' => 'Secrétariat', 'responsable' => 'Responsable', 'pasteur_n1' => 'Pasteur principal', 'user' => 'Membre'] as $value => $label)
                 <option value="{{ $value }}" @selected(request('role') === $value)>{{ $label }}</option>
             @endforeach
         </select>
@@ -76,7 +76,7 @@
                                     @csrf
                                     @method('PATCH')
                                     <select name="role" class="w-full rounded-lg border-slate-300 py-1.5 text-xs focus:border-indigo-500 focus:ring-indigo-500">
-                                        @foreach (['admin' => 'Admin', 'secretariat' => 'Secrétariat', 'responsable' => 'Responsable', 'user' => 'Membre'] as $roleValue => $roleLabel)
+                                        @foreach (['admin' => 'Admin', 'secretariat' => 'Secrétariat', 'responsable' => 'Responsable', 'pasteur_n1' => 'Pasteur principal', 'user' => 'Membre'] as $roleValue => $roleLabel)
                                             <option value="{{ $roleValue }}" @selected($userItem->role === $roleValue)>{{ $roleLabel }}</option>
                                         @endforeach
                                     </select>

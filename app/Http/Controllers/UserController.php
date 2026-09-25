@@ -77,7 +77,7 @@ class UserController extends Controller
         $this->ensurePrimaryAdminIsProtected($user);
 
         $data = $request->validate([
-            'role' => ['required', 'in:admin,secretariat,responsable,user'],
+            'role' => ['required', 'in:admin,secretariat,responsable,pasteur_n1,user'],
             'dept' => ['nullable', 'string', 'exists:departments,name'],
         ]);
 
@@ -146,8 +146,8 @@ class UserController extends Controller
     protected function validated(Request $request): array
     {
         $roles = auth()->user()->isAdmin()
-            ? ['admin', 'secretariat', 'responsable', 'user']
-            : ['responsable', 'user']; // le secrétariat ne crée pas d'admins
+            ? ['admin', 'secretariat', 'responsable', 'pasteur_n1', 'user']
+            : ['responsable', 'pasteur_n1', 'user']; // le secrétariat ne crée pas d'admins
 
         return $request->validate([
             'username' => ['required', 'string', 'max:50', 'alpha_dash', 'unique:users,username'],

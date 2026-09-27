@@ -124,7 +124,7 @@ Route::middleware(['auth', 'active', 'maintenance'])->group(function () {
     Route::get('/membres', [MemberController::class, 'index'])->name('members.index');
 
     // Événements : consultation pour tous
-    Route::get('/evenements', [EventController::class, 'index'])->name('events.index');
+    Route::get('/evenements', [EventController::class, 'index'])->middleware('portal:church')->name('events.index');
 
     // Galerie & direct : consultation pour tous
     Route::get('/galerie', [MediaController::class, 'gallery'])->name('gallery.index');
@@ -142,7 +142,7 @@ Route::middleware(['auth', 'active', 'maintenance'])->group(function () {
 
     // Route publique détaillée après les routes statiques pour éviter les collisions
     Route::get('/membres/{member}', [MemberController::class, 'show'])->whereNumber('member')->name('members.show');
-    Route::get('/evenements/{event}', [EventController::class, 'show'])->whereNumber('event')->name('events.show');
+    Route::get('/evenements/{event}', [EventController::class, 'show'])->whereNumber('event')->middleware('portal:church')->name('events.show');
 
     /*
     |----------------------------------------------------------------------
@@ -180,9 +180,19 @@ Route::middleware(['auth', 'active', 'maintenance'])->group(function () {
     | Présences — responsable : son département ; secrétariat & admin : tout
     |----------------------------------------------------------------------
     */
-    Route::get('/presences', [AttendanceController::class, 'pick'])->name('attendances.pick');
-    Route::get('/presences/{event}', [AttendanceController::class, 'sheet'])->name('attendances.sheet');
-    Route::post('/presences/{event}', [AttendanceController::class, 'store'])->name('attendances.store');
+    Route::get('/presences', [AttendanceController::class, 'pick'])->middleware('portal:church')->name('attendances.pick');
+    Route::get('/presences/{event}', [AttendanceController::class, 'sheet'])->middleware('portal:church')->name('attendances.sheet');
+    Route::post('/presences/{event}', [AttendanceController::class, 'store'])->middleware('portal:church')->name('attendances.store');
+
+    Route::prefix('portail-jeunesse')->name('youth.')->middleware('portal:youth')->group(function () {
+        Route::get('/evenements/creer', [EventController::class, 'create'])->name('events.create');
+        Route::post('/evenements', [EventController::class, 'store'])->name('events.store');
+        Route::get('/evenements', [EventController::class, 'index'])->name('events.index');
+        Route::get('/presences', [AttendanceController::class, 'pick'])->name('attendances.pick');
+        Route::get('/presences/{event}', [AttendanceController::class, 'sheet'])->name('attendances.sheet');
+        Route::post('/presences/{event}', [AttendanceController::class, 'store'])->name('attendances.store');
+        Route::get('/rapports/pdf', [AttendanceController::class, 'exportPdf'])->name('attendances.pdf');
+    });
 
     // Rapport global : réservé à admin & secrétariat.
     Route::middleware(['portal:church', 'role:admin,secretariat,pasteur_n1'])->group(function () {

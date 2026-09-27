@@ -90,8 +90,8 @@
             <h2 class="text-3xl font-black text-slate-900">Choisissez votre espace</h2>
         </div>
 
-        <div class="grid gap-6 md:grid-cols-3">
-            <div class="group relative overflow-hidden rounded-[2rem] border border-[#D4A72C]/80 bg-slate-950/90 p-6 text-white shadow-[0_30px_90px_rgba(212,167,44,0.22)]">
+        <div class="portal-card-grid grid gap-6 md:grid-cols-3">
+            <div class="portal-card group relative overflow-hidden rounded-[2rem] border border-[#D4A72C]/80 bg-slate-950/90 p-6 text-white shadow-[0_30px_90px_rgba(212,167,44,0.22)]">
                 <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(234,179,8,0.18),transparent_18%),radial-gradient(circle_at_bottom_right,_rgba(120,113,108,0.24),transparent_28%)]"></div>
                 <div class="absolute inset-x-4 top-0 h-px bg-[#D4A72C]"></div>
                 <div class="relative">
@@ -114,7 +114,7 @@
                 </div>
             </div>
 
-            <div class="group relative overflow-hidden rounded-[2rem] border border-[#8B5CF6]/80 bg-slate-950/90 p-6 text-white shadow-[0_30px_90px_rgba(139,92,246,0.22)]">
+            <div class="portal-card group relative overflow-hidden rounded-[2rem] border border-[#8B5CF6]/80 bg-slate-950/90 p-6 text-white shadow-[0_30px_90px_rgba(139,92,246,0.22)]">
                 <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(167,139,250,0.18),transparent_18%),radial-gradient(circle_at_bottom_right,_rgba(91,33,182,0.26),transparent_28%)]"></div>
                 <div class="absolute inset-x-4 top-0 h-px bg-[#8B5CF6]"></div>
                 <div class="relative">
@@ -137,7 +137,7 @@
                 </div>
             </div>
 
-            <div class="group relative overflow-hidden rounded-[2rem] border border-[#22C55E]/80 bg-slate-950/90 p-6 text-white shadow-[0_30px_90px_rgba(34,197,94,0.22)]">
+            <div class="portal-card group relative overflow-hidden rounded-[2rem] border border-[#22C55E]/80 bg-slate-950/90 p-6 text-white shadow-[0_30px_90px_rgba(34,197,94,0.22)]">
                 <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(134,239,172,0.18),transparent_18%),radial-gradient(circle_at_bottom_right,_rgba(21,128,61,0.26),transparent_28%)]"></div>
                 <div class="absolute inset-x-4 top-0 h-px bg-[#22C55E]"></div>
                 <div class="relative">

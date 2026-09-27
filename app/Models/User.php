@@ -25,6 +25,7 @@ use Illuminate\Notifications\Notifiable;
     'phone',
     'role',
     'church_id',
+    'member_id',
     'status',
     'dept',
     'birth_date',
@@ -145,11 +146,31 @@ class User extends Authenticatable implements CanResetPasswordContract
 
     public function portalAccesses(): array
     {
-        if (! $this->isChurchMember()) {
-            return [];
+        $accesses = [];
+        $explicitMemberships = Membership::query()
+            ->where('user_id', $this->id)
+            ->where('status', 'active')
+            ->pluck('type')
+            ->map(fn ($type) => strtolower((string) $type))
+            ->all();
+
+        if ($this->isChurchMember()) {
+            $accesses[] = 'church';
         }
 
-        return ['church', 'youth', 'ecodim'];
+        $hasExplicitMembershipData = $explicitMemberships !== [];
+
+        if (! $hasExplicitMembershipData && $this->isChurchMember()) {
+            return ['church', 'youth', 'ecodim'];
+        }
+
+        foreach (['youth', 'ecodim'] as $portal) {
+            if (in_array($portal, $explicitMemberships, true) || $this->hasPortalRole($portal, ['responsable_jeunesse', 'responsable_ecodim', 'animateur_jeunesse', 'animateur_ecodim', 'enseignant_ecodim', 'leader_youth', 'leader_ecodim'])) {
+                $accesses[] = $portal;
+            }
+        }
+
+        return array_values(array_unique($accesses));
     }
 
     public function primaryPortal(): string
@@ -236,19 +257,46 @@ class User extends Authenticatable implements CanResetPasswordContract
             ];
         }
 
-        return [
+        $items = [
             ['route' => 'dashboard.youth', 'label' => 'Portail jeunesse', 'icon' => '🏠'],
             ['route' => 'profile.edit', 'label' => 'Mon profil', 'icon' => '👤'],
             ['route' => 'members.index', 'label' => 'Annuaire', 'icon' => '👥'],
-            ['route' => 'events.index', 'label' => 'Événements', 'icon' => '📅'],
+            ['route' => 'youth.events.index', 'label' => 'Événements', 'icon' => '📅'],
             ['route' => 'gallery.index', 'label' => 'Galerie', 'icon' => '🖼️'],
             ['route' => 'social-visits.index', 'label' => 'Visites sociales', 'icon' => '🤝'],
         ];
+
+        if ($this->attendanceDepartments('youth')->isNotEmpty()) {
+            array_splice($items, 4, 0, [[
+                'route' => 'youth.attendances.pick',
+                'label' => 'Présences jeunesse',
+                'icon' => '✅',
+            ]]);
+        }
+
+        return $items;
     }
 
     public function canAccessPortal(string $portal): bool
     {
-        return in_array(strtolower($portal), $this->portalAccesses(), true);
+        $requestedPortal = strtolower($portal);
+
+        if ($requestedPortal === 'church') {
+            $activeMemberships = Membership::query()
+                ->where('user_id', $this->id)
+                ->where('status', 'active')
+                ->pluck('type')
+                ->map(fn ($type) => strtolower((string) $type))
+                ->all();
+
+            if ($activeMemberships !== [] && ! in_array('church', $activeMemberships, true)) {
+                return false;
+            }
+
+            return $this->isChurchMember() || $this->isChurchAdministrator();
+        }
+
+        return in_array($requestedPortal, $this->portalAccesses(), true);
     }
 
     public function portalRoleAssignments(string $portal): Collection
@@ -340,6 +388,59 @@ class User extends Authenticatable implements CanResetPasswordContract
         return false;
     }
 
+    public function attendanceDepartments(string $portal): Collection
+    {
+        if ($portal === 'church') {
+            if ($this->isResponsable() && filled($this->dept)) {
+                return Department::query()->where('name', $this->dept)->get();
+            }
+
+            $departmentIds = MemberRoleAssignment::query()
+                ->where('user_id', $this->id)
+                ->where('scope_type', 'department')
+                ->where('status', 'active')
+                ->whereHas('role', fn ($query) => $query->where('slug', 'responsable'))
+                ->pluck('scope_id');
+
+            return Department::query()->whereIn('id', $departmentIds)->orderBy('name')->get();
+        }
+
+        if ($portal !== 'youth') {
+            return new Collection;
+        }
+
+        $scopeIds = MemberRoleAssignment::query()
+            ->where('user_id', $this->id)
+            ->where('scope_type', 'youth')
+            ->where('status', 'active')
+            ->whereHas('role', fn ($query) => $query->whereIn('slug', [
+                'responsable_jeunesse',
+                'leader_youth',
+                'animateur_jeunesse',
+            ]))
+            ->pluck('scope_id');
+        $youthPortalDepartmentId = Department::query()->where('code', 'youth')->value('id');
+
+        if ($youthPortalDepartmentId && $scopeIds->contains($youthPortalDepartmentId)) {
+            return Department::query()
+                ->where(fn ($query) => $query->whereNull('code')->orWhere('code', 'youth'))
+                ->orderBy('name')
+                ->get();
+        }
+
+        return Department::query()
+            ->whereIn('id', $scopeIds)
+            ->where(fn ($query) => $query->whereNull('code')->orWhere('code', 'youth'))
+            ->orderBy('name')
+            ->get();
+    }
+
+    public function canManageAttendance(string $portal, ?string $department): bool
+    {
+        return filled($department)
+            && $this->attendanceDepartments($portal)->contains('name', $department);
+    }
+
     /** @return array<string, string> */
     public function departmentActions(): array
     {
@@ -404,12 +505,9 @@ class User extends Authenticatable implements CanResetPasswordContract
         return $this->managesMedia();
     }
 
-    /**
-     * Membre du répertoire correspondant au compte (rattachement par email).
-     */
-    public function member(): ?Member
+    public function member(): BelongsTo
     {
-        return Member::where('email', $this->email)->first();
+        return $this->belongsTo(Member::class, 'member_id');
     }
 
     public function fcmTokens()

@@ -16,8 +16,15 @@
         .brand-subtitle { color: #a5f3fc; font-size: 9px; margin-top: 4px; }
         .document-tag { border: 1px solid #2dd4bf; color: #99f6e4; font-size: 8px; font-weight: bold; padding: 7px 10px; text-align: center; }
         .eyebrow { color: #0891b2; font-size: 8px; font-weight: bold; letter-spacing: 1.2px; margin-top: 22px; text-transform: uppercase; }
-        .title { color: #082f49; font-size: 22px; font-weight: bold; margin: 5px 0 6px; }
+        .title { color: #082f49; font-size: 18px; font-weight: bold; margin: 5px 0 8px; }
         .meta { color: #64748b; font-size: 9px; }
+        .portal-badge { border: 1px solid; display: inline-block; font-size: 10px; font-weight: bold; margin-top: 4px; padding: 7px 10px; }
+        .portal-badge.church { background: #fffbeb; border-color: #f59e0b; color: #92400e; }
+        .portal-badge.youth { background: #f5f3ff; border-color: #8b5cf6; color: #6d28d9; }
+        .portal-badge.ecodim { background: #ecfdf5; border-color: #10b981; color: #047857; }
+        .report-details { border-collapse: collapse; color: #334155; font-size: 9px; margin-top: 8px; width: 100%; }
+        .report-details td { padding: 3px 12px 3px 0; width: 50%; }
+        .report-scope { border-left: 4px solid #06b6d4; color: #0f172a; font-size: 10px; font-weight: bold; margin-top: 8px; padding: 6px 9px; }
         .filters { background: #f0f9ff; border-left: 4px solid #06b6d4; color: #334155; font-size: 9px; margin-top: 12px; padding: 9px 11px; }
         .summary { border-collapse: separate; border-spacing: 8px 0; margin: 22px -8px 0; width: calc(100% + 16px); }
         .summary td { background: #f0fdfa; border: 1px solid #99f6e4; padding: 11px 12px; width: 25%; }
@@ -67,16 +74,28 @@
                     <img class="logo" src="{{ public_path('logoEglise.jpg') }}" alt="Logo La Parole Éternelle">
                 </td>
                 <td class="brand-cell">
-                    <div class="brand">appjeunesse-kzi</div>
-                    <div class="brand-subtitle">La Parole Éternelle — Kolwezi</div>
+                    <div class="brand">LA PAROLE ÉTERNELLE KOLWEZI</div>
+                    <div class="brand-subtitle">Rapport officiel de suivi des présences</div>
                 </td>
-                <td class="document-tag">DOCUMENT OFFICIEL<br>PRÉSENCES</td>
+                <td class="document-tag">DOCUMENT OFFICIEL<br>RAPPORT DES PRÉSENCES</td>
             </tr>
         </table>
     </div>
 
     <div class="eyebrow">Suivi de participation</div>
-    <div class="title">Rapport de présence</div>
+    <div class="title">RAPPORT DES PRÉSENCES</div>
+    <div><span class="portal-badge {{ $portalColor }}">{{ $portalLabel }}</span></div>
+    <table class="report-details">
+        <tr>
+            <td><strong>Événement :</strong> {{ $eventName }}</td>
+            <td><strong>Date :</strong> {{ $eventDate }}</td>
+        </tr>
+        <tr>
+            <td><strong>Département / groupe :</strong> {{ $departmentName }}</td>
+            <td><strong>Responsable :</strong> {{ $responsibleName }}</td>
+        </tr>
+    </table>
+    <div class="report-scope">Périmètre du rapport : {{ $reportScope }}</div>
     <div class="meta">Généré le {{ $generatedAt->translatedFormat('d F Y à H\hi') }}</div>
 
     @if (collect($filters)->filter()->isNotEmpty())

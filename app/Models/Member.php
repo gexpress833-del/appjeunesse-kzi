@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'name',
@@ -42,9 +43,9 @@ class Member extends Model
         return $this->belongsTo(Department::class, 'dept', 'name');
     }
 
-    public function user(): BelongsTo
+    public function user(): HasOne
     {
-        return $this->belongsTo(User::class, 'email', 'email');
+        return $this->hasOne(User::class, 'member_id');
     }
 
     public function attendances(): HasMany

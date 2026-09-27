@@ -3,12 +3,13 @@
 @section('title', 'Feuille de présence')
 
 @section('content')
+@php($isYouthPortal = ($portal ?? 'church') === 'youth')
 <div class="flex flex-wrap items-center justify-between gap-3">
     <div>
-        <h1 class="text-2xl font-bold text-slate-900">Présences — {{ $event->name }}</h1>
+        <h1 class="text-2xl font-bold text-slate-900">{{ $isYouthPortal ? 'Présences jeunesse' : 'Présences' }} — {{ $event->name }}</h1>
         <p class="mt-1 text-sm text-slate-500">Groupe : <span class="font-semibold text-slate-700">{{ $dept ?? 'Fidèles sans département' }}</span> · {{ $event->date->translatedFormat('d/m/Y · H\hi') }}</p>
     </div>
-    <a href="{{ route('attendances.pick') }}" class="text-sm font-semibold text-indigo-600 hover:underline">← Retour</a>
+    <a href="{{ route($isYouthPortal ? 'youth.attendances.pick' : 'attendances.pick') }}" class="text-sm font-semibold text-indigo-600 hover:underline">← Retour</a>
 </div>
 
 <div class="mt-4 flex flex-wrap gap-2 text-xs font-bold">
@@ -31,24 +32,25 @@
                     {{ $department->name }}
                 </a>
             @endforeach
-            <a href="{{ route('attendances.sheet', ['event' => $event, 'dept' => '__none__']) }}" class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-100">
-                Fidèles sans département
-            </a>
+            @if ($canViewAllDepartments && ! $isYouthPortal && blank($event->dept))
+                <a href="{{ route('attendances.sheet', ['event' => $event, 'dept' => '__none__']) }}" class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-100">
+                    Fidèles sans département
+                </a>
+            @endif
         </div>
     </div>
 @else
-    @php($readOnly = auth()->user()->isAdmin() || auth()->user()->isSecretariat())
     @php($statusLabels = ['present' => 'Présent', 'late' => 'En retard', 'excused' => 'Excusé', 'absent' => 'Absent'])
     @php($availableStatuses = array_intersect_key($statusLabels, array_flip(\App\Models\AppSetting::current()->attendance_statuses ?? array_keys($statusLabels))))
 
     @if ($readOnly)
         <div class="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-            Vue en lecture seule : les présences sont saisies par les responsables de département. L’administration et le secrétariat peuvent uniquement consulter les relevés.
+            Vue en lecture seule : seules les personnes disposant d’une affectation active pour ce portail et ce département peuvent enregistrer les présences.
         </div>
     @endif
 
     @if (! $readOnly)
-        <form method="POST" action="{{ route('attendances.store', $event) }}" class="mt-6 space-y-4">
+        <form method="POST" action="{{ route($isYouthPortal ? 'youth.attendances.store' : 'attendances.store', $event) }}" class="mt-6 space-y-4">
             @csrf
             <input type="hidden" name="dept" value="{{ $dept ?? '__none__' }}">
     @endif

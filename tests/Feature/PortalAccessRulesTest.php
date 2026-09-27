@@ -7,6 +7,7 @@ use App\Models\Department;
 use App\Models\Event;
 use App\Models\HomeContent;
 use App\Models\MemberRoleAssignment;
+use App\Models\Membership;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -31,10 +32,24 @@ class PortalAccessRulesTest extends TestCase
             'church_id' => $church->id,
         ]);
 
+        Membership::create([
+            'user_id' => $member->id,
+            'type' => 'church',
+            'entity_id' => $church->id,
+            'status' => 'active',
+        ]);
+
+        Membership::create([
+            'user_id' => $member->id,
+            'type' => 'youth',
+            'entity_id' => $church->id,
+            'status' => 'active',
+        ]);
+
         $this->assertTrue($member->isChurchMember());
         $this->assertTrue($member->canAccessPortal('church'));
         $this->assertTrue($member->canAccessPortal('youth'));
-        $this->assertSame(['church', 'youth', 'ecodim'], $member->portalAccesses());
+        $this->assertSame(['church', 'youth'], $member->portalAccesses());
         $this->assertSame('youth', $member->primaryPortal());
     }
 
@@ -193,6 +208,13 @@ class PortalAccessRulesTest extends TestCase
             'church_id' => $church->id,
         ]);
 
+        Membership::create([
+            'user_id' => $member->id,
+            'type' => 'ecodim',
+            'entity_id' => $church->id,
+            'status' => 'active',
+        ]);
+
         $response = $this->actingAs($member)->get(route('dashboard.ecodim'));
 
         $response->assertOk();
@@ -286,6 +308,59 @@ class PortalAccessRulesTest extends TestCase
         $this->actingAs($youthLeader)->get(route('carousel.index'))->assertSee('Communication jeunesse')->assertDontSee('Communication église');
     }
 
+    public function test_access_is_controlled_by_active_memberships_and_roles(): void
+    {
+        $church = Church::create([
+            'name' => 'Église des accès',
+            'slug' => 'eglise-des-acces',
+            'type' => 'main',
+            'status' => 'active',
+        ]);
+
+        $member = User::factory()->create([
+            'role' => 'user',
+            'status' => 'active',
+            'church_id' => $church->id,
+        ]);
+
+        Membership::create([
+            'user_id' => $member->id,
+            'type' => 'church',
+            'entity_id' => $church->id,
+            'status' => 'active',
+        ]);
+
+        $this->assertTrue($member->canAccessPortal('church'));
+        $this->assertFalse($member->canAccessPortal('youth'));
+        $this->assertFalse($member->canAccessPortal('ecodim'));
+
+        $youthLeader = User::factory()->create([
+            'role' => 'user',
+            'status' => 'active',
+            'church_id' => $church->id,
+        ]);
+
+        Membership::create([
+            'user_id' => $youthLeader->id,
+            'type' => 'youth',
+            'entity_id' => $church->id,
+            'status' => 'active',
+        ]);
+
+        $role = Role::create(['name' => 'Responsable jeunesse', 'slug' => 'responsable_jeunesse']);
+        MemberRoleAssignment::create([
+            'user_id' => $youthLeader->id,
+            'role_id' => $role->id,
+            'scope_type' => 'youth',
+            'scope_id' => $church->id,
+            'status' => 'active',
+            'assigned_by' => $youthLeader->id,
+        ]);
+
+        $this->assertTrue($youthLeader->canAccessPortal('youth'));
+        $this->assertFalse($youthLeader->canAccessPortal('ecodim'));
+    }
+
     public function test_all_announcement_sources_are_visible_on_the_public_homepage(): void
     {
         foreach (['church' => 'Annonce église', 'youth' => 'Annonce jeunesse', 'ecodim' => 'Annonce ECODIM'] as $source => $title) {
@@ -304,8 +379,8 @@ class PortalAccessRulesTest extends TestCase
         $response->assertSee('Annonce église');
         $response->assertSee('Annonce jeunesse');
         $response->assertSee('Annonce ECODIM');
-        $response->assertSee('Portail église');
-        $response->assertSee('Portail jeunesse');
+        $response->assertSee('Portail Église');
+        $response->assertSee('Portail Jeunesse');
         $response->assertSee('ECODIM');
     }
 
@@ -330,13 +405,47 @@ class PortalAccessRulesTest extends TestCase
         $leader->refresh();
 
         $this->assertSame($leader->id, $department->leader_user_id);
-        $this->assertSame('Portail jeunesse', $leader->dept);
+        $this->assertNull($leader->dept);
         $this->assertTrue($leader->canManageContentSource('youth'));
         $this->assertFalse($pastor->canManageContentSource('youth'));
 
         $this->actingAs($secretariat)
             ->put(route('settings.departments.leader', $department), ['leader_user_id' => $secretariat->id])
             ->assertForbidden();
+    }
+
+    public function test_youth_nomination_preserves_the_leaders_church_department(): void
+    {
+        $church = Church::create([
+            'name' => 'Église aux responsabilités séparées',
+            'slug' => 'eglise-responsabilites-separees',
+            'type' => 'main',
+            'status' => 'active',
+        ]);
+        $pastor = User::factory()->create(['role' => 'pasteur_n1', 'church_id' => $church->id]);
+        $leader = User::factory()->create([
+            'role' => 'responsable',
+            'dept' => 'Social',
+            'church_id' => $church->id,
+        ]);
+        $churchDepartment = Department::create(['name' => 'Social']);
+        $youthDepartment = Department::where('code', 'youth')->firstOrFail();
+
+        $this->actingAs($pastor)
+            ->put(route('settings.departments.leader', $youthDepartment), ['leader_user_id' => $leader->id])
+            ->assertRedirect();
+
+        $this->assertSame('Social', $leader->fresh()->dept);
+        $this->assertTrue($leader->fresh()->canManageAttendance('church', 'Social'));
+        $this->assertTrue($leader->fresh()->canManageAttendance('youth', 'Social'));
+        $this->assertDatabaseHas('member_role_assignments', [
+            'user_id' => $leader->id,
+            'scope_type' => 'youth',
+            'scope_id' => $youthDepartment->id,
+            'status' => 'active',
+        ]);
+
+        $this->assertModelExists($churchDepartment);
     }
 
     public function test_pastor_cannot_manage_youth_or_dcc_media_actions(): void

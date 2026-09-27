@@ -148,6 +148,34 @@ body::before {
     }
 }
 
+@keyframes portalCardFloat {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-7px);
+    }
+}
+
+.portal-card {
+    animation: portalCardFloat 6.4s ease-in-out infinite;
+    transition: transform 220ms ease, filter 220ms ease;
+}
+
+.portal-card:nth-child(2) {
+    animation-delay: 0.85s;
+}
+
+.portal-card:nth-child(3) {
+    animation-delay: 1.7s;
+}
+
+.portal-card:hover {
+    animation-play-state: paused;
+    transform: translateY(-5px) scale(1.01);
+    filter: brightness(1.08);
+}
+
 .home-vision-tagline {
     padding: 1.2rem 1.5rem;
     color: #fff8dc;
@@ -2549,4 +2577,289 @@ button[aria-busy='true'] {
 html[data-theme='light'] .theme-toggle {
     color: #334155;
     background: rgba(255, 255, 255, 0.75);
+}
+
+@media (max-width: 639px) {
+    .home-page .guest-header-actions nav {
+        flex-wrap: wrap;
+        overflow: visible;
+    }
+
+    .home-page .guest-header-actions nav a {
+        flex: 1 1 calc(33.333% - 0.25rem);
+        min-width: 0;
+        max-width: none;
+        overflow: visible;
+        white-space: normal;
+        text-overflow: clip;
+        overflow-wrap: anywhere;
+    }
+}
+
+@media (max-width: 639px) {
+    .home-page {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .home-page .carousel-atmosphere {
+        width: 100%;
+        max-width: 100%;
+    }
+}
+
+.home-page {
+    --home-copy-size: clamp(0.72rem, 2.8vw, 1rem);
+    --home-small-size: clamp(0.58rem, 2.3vw, 0.78rem);
+    --home-section-size: clamp(1rem, 4.4vw, 1.9rem);
+    --home-card-title-size: clamp(0.98rem, 4.6vw, 1.65rem);
+}
+
+.home-page main {
+    font-size: var(--home-copy-size);
+}
+
+.home-page main h1,
+.home-page main h2 {
+    font-size: var(--home-section-size);
+    line-height: 1.18;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+}
+
+.home-page main h3 {
+    font-size: var(--home-card-title-size);
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+}
+
+.home-page main p,
+.home-page main blockquote {
+    font-size: var(--home-copy-size);
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+.home-page .carousel-slide {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.home-page .carousel-slide > span:not(.carousel-label) {
+    max-width: 100%;
+    padding-inline: clamp(0.45rem, 2vw, 0.75rem);
+    font-size: var(--home-small-size);
+    line-height: 1.25;
+    letter-spacing: clamp(0.02em, 0.45vw, 0.1em);
+}
+
+.home-page .carousel-label {
+    max-width: 100%;
+    padding: clamp(0.35rem, 1.8vw, 0.75rem) clamp(0.55rem, 2.7vw, 1.25rem);
+    font-size: var(--home-small-size);
+    line-height: 1.25;
+    letter-spacing: clamp(0.02em, 0.5vw, 0.12em);
+    overflow-wrap: anywhere;
+}
+
+.home-page .carousel-quote,
+.home-page .carousel-message {
+    width: 100%;
+    max-width: min(100%, 56rem);
+    font-size: clamp(0.88rem, 4.3vw, 2.4rem);
+    line-height: 1.4;
+    letter-spacing: 0;
+    overflow-wrap: anywhere;
+}
+
+.home-page .carousel-reference {
+    max-width: 100%;
+    font-size: clamp(0.62rem, 2.7vw, 0.9rem);
+    line-height: 1.35;
+    letter-spacing: clamp(0.01em, 0.35vw, 0.06em);
+    overflow-wrap: anywhere;
+}
+
+.home-page .carousel-event-card > div > p:first-child {
+    font-size: clamp(0.82rem, 4.3vw, 1.5rem);
+    line-height: 1.2;
+}
+
+.home-page .carousel-event-card > div > p:not(:first-child) {
+    font-size: clamp(0.68rem, 2.8vw, 0.92rem);
+    line-height: 1.4;
+}
+
+.home-page .portal-card {
+    min-width: 0;
+    padding: clamp(0.75rem, 3vw, 1.5rem);
+    border-radius: clamp(0.75rem, 4vw, 1.5rem);
+}
+
+.home-page .portal-card h3 {
+    font-size: var(--home-card-title-size);
+}
+
+.home-page .portal-card p {
+    font-size: var(--home-copy-size);
+    line-height: 1.45;
+}
+
+.home-page .portal-card .mb-5 > span:first-child {
+    min-width: 0;
+    padding-inline: clamp(0.35rem, 1.5vw, 0.75rem);
+    font-size: clamp(0.52rem, 2.25vw, 0.7rem);
+    line-height: 1.25;
+    letter-spacing: clamp(0.01em, 0.35vw, 0.09em);
+    text-align: center;
+    overflow-wrap: anywhere;
+}
+
+.home-page .portal-card .mb-5 > span:last-child {
+    width: clamp(2rem, 10vw, 3rem);
+    height: clamp(2rem, 10vw, 3rem);
+    flex: 0 0 auto;
+    font-size: clamp(1rem, 5vw, 1.5rem);
+}
+
+.home-page .portal-card .mt-6.flex.flex-wrap {
+    gap: clamp(0.25rem, 1.2vw, 0.5rem);
+    font-size: clamp(0.56rem, 2.35vw, 0.7rem);
+    line-height: 1.25;
+    letter-spacing: clamp(0.01em, 0.3vw, 0.08em);
+}
+
+.home-page .portal-card .mt-6.flex.flex-wrap > span {
+    padding: clamp(0.25rem, 1vw, 0.38rem) clamp(0.4rem, 1.6vw, 0.65rem);
+    overflow-wrap: anywhere;
+}
+
+.home-page .portal-card a {
+    min-height: clamp(2rem, 10vw, 2.75rem);
+    padding: clamp(0.4rem, 1.7vw, 0.7rem) clamp(0.65rem, 2.4vw, 1rem);
+    font-size: clamp(0.7rem, 2.8vw, 0.9rem);
+    line-height: 1.2;
+}
+
+.home-page .home-video-section > div:first-child {
+    min-width: 0;
+    flex-wrap: wrap;
+}
+
+.home-page .home-video-section > div:first-child h2 {
+    min-width: 0;
+    flex: 1 1 12rem;
+    flex-wrap: wrap;
+    gap: clamp(0.25rem, 1.4vw, 0.5rem);
+    font-size: clamp(1rem, 4.2vw, 1.55rem);
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+
+.home-page .home-video-section > div:first-child h2 span,
+.home-page .home-video-section > div:first-child > span {
+    max-width: 100%;
+    padding: clamp(0.22rem, 1vw, 0.4rem) clamp(0.38rem, 1.5vw, 0.65rem);
+    font-size: clamp(0.58rem, 2.4vw, 0.75rem);
+    line-height: 1.25;
+    letter-spacing: clamp(0.01em, 0.3vw, 0.08em);
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.home-page .home-video-section > p,
+.home-page .home-video-section .live-feed-shell > p {
+    font-size: var(--home-copy-size);
+    line-height: 1.45;
+}
+
+.home-page .live-feed-stat-title,
+.home-page .live-feed-comment-header,
+.home-page .comment-empty-label {
+    font-size: var(--home-small-size);
+    line-height: 1.3;
+    letter-spacing: clamp(0.01em, 0.35vw, 0.1em);
+}
+
+.home-page .live-social-pill,
+.home-page .comment-empty-title,
+.home-page .comment-login-links a,
+.home-page .comment-submit {
+    font-size: clamp(0.65rem, 2.8vw, 0.9rem);
+    line-height: 1.35;
+}
+
+.home-page .comment-empty-cta,
+.home-page .comment-bubble p {
+    font-size: clamp(0.68rem, 2.9vw, 0.95rem);
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.home-page .home-vision-tagline {
+    font-size: clamp(0.9rem, 4.2vw, 1.8rem);
+    line-height: 1.3;
+    letter-spacing: 0;
+    overflow-wrap: anywhere;
+}
+
+.home-page .youth-path-heading h2 {
+    font-size: clamp(1rem, 4.6vw, 2rem);
+    line-height: 1.2;
+}
+
+.home-page .youth-path-card h3,
+.home-page .home-cta h2 {
+    font-size: clamp(0.95rem, 4vw, 1.45rem);
+    line-height: 1.25;
+}
+
+.home-page .youth-path-heading p,
+.home-page .youth-path-card p,
+.home-page .home-cta p {
+    font-size: clamp(0.7rem, 3vw, 0.95rem);
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+.home-page .youth-path-label,
+.home-page footer {
+    font-size: clamp(0.62rem, 2.6vw, 0.82rem);
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.home-page .guest-header-actions nav a {
+    font-size: clamp(0.5rem, 2.4vw, 0.78rem);
+    letter-spacing: 0;
+    line-height: 1.2;
+}
+
+@media (max-width: 360px) {
+    .home-page .home-video-section > div:first-child {
+        align-items: flex-start;
+    }
+
+    .home-page .home-video-section > div:first-child h2 {
+        flex-basis: 100%;
+    }
+
+    .home-page .home-video-section > div:first-child > span {
+        margin-left: auto;
+    }
+
+    .home-page .carousel-slide {
+        justify-content: flex-start;
+        gap: clamp(0.4rem, 2.2vw, 0.65rem);
+        padding: clamp(0.85rem, 5.5vw, 1.2rem) clamp(1.55rem, 8vw, 1.9rem) clamp(1.2rem, 7vw, 1.6rem);
+    }
+
+    .home-page .carousel-event-card {
+        padding: clamp(0.3rem, 1.8vw, 0.5rem);
+    }
+
+    .home-page .portal-card .mb-5 {
+        gap: clamp(0.25rem, 1.6vw, 0.45rem);
+    }
 }

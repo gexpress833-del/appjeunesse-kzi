@@ -5,7 +5,9 @@
 @section('content')
 <div class="flex flex-wrap items-center justify-between gap-3">
     <h1 class="text-2xl font-bold text-slate-900">Événements</h1>
-    @if (auth()->user()->isChurchAdministrator() && auth()->user()->portalNavigationKey() === 'church')
+    @if ($portal === 'youth' && auth()->user()->canManageAttendance('youth', auth()->user()->dept))
+        <a href="{{ route('youth.events.create') }}" class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">➕ Créer un événement jeunesse</a>
+    @elseif (auth()->user()->isChurchAdministrator() && $portal === 'church')
         <a href="{{ route('events.create') }}" class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">➕ Créer un événement</a>
     @endif
 </div>
@@ -27,13 +29,15 @@
                     </p>
                 </div>
             </div>
-            @if (auth()->user()->isChurchAdministrator() && auth()->user()->portalNavigationKey() === 'church')
+            @if ($portal === 'church' && (auth()->user()->isChurchAdministrator() || auth()->user()->canManageAttendance('church', $event->dept ?: auth()->user()->dept)))
                 <div class="flex items-center gap-3 text-sm">
                     <a href="{{ auth()->user()->isResponsable() ? route('attendances.sheet', ['event' => $event, 'dept' => auth()->user()->dept]) : route('attendances.sheet', $event) }}" class="rounded-lg bg-emerald-50 px-3 py-2 font-semibold text-emerald-700 hover:bg-emerald-100">✅ Faire l'appel</a>
                     @if (auth()->user()->isChurchAdministrator())
                         <a href="{{ route('events.edit', $event) }}" class="text-indigo-600 hover:underline">Modifier</a>
                     @endif
                 </div>
+            @elseif ($portal === 'youth' && auth()->user()->canManageAttendance('youth', $event->dept))
+                <a href="{{ route('youth.attendances.sheet', ['event' => $event, 'dept' => $event->dept]) }}" class="rounded-lg bg-emerald-50 px-3 py-2 font-semibold text-emerald-700 hover:bg-emerald-100">✅ Faire l'appel jeunesse</a>
             @endif
         </div>
     @empty
@@ -56,8 +60,10 @@
                     <p class="text-xs text-slate-400">{{ $event->date->translatedFormat('d/m/Y') }} · {{ $event->members_count }} présence(s)</p>
                 </div>
             </div>
-            @if (auth()->user()->isChurchAdministrator() && auth()->user()->portalNavigationKey() === 'church')
+            @if ($portal === 'church' && (auth()->user()->isChurchAdministrator() || auth()->user()->canManageAttendance('church', $event->dept ?: auth()->user()->dept)))
                 <a href="{{ auth()->user()->isResponsable() ? route('attendances.sheet', ['event' => $event, 'dept' => auth()->user()->dept]) : route('attendances.sheet', $event) }}" class="text-sm text-slate-500 hover:underline">Voir l'appel</a>
+            @elseif ($portal === 'youth' && auth()->user()->canManageAttendance('youth', $event->dept))
+                <a href="{{ route('youth.attendances.sheet', ['event' => $event, 'dept' => $event->dept]) }}" class="text-sm text-slate-500 hover:underline">Voir l'appel jeunesse</a>
             @endif
         </div>
     @empty

@@ -155,18 +155,20 @@ class SettingsController extends Controller
             ]);
 
             if (! $leader) {
-                if ($previousLeader && $previousLeader->dept === $department->name) {
+                if (! $department->isPortalDepartment() && $previousLeader && $previousLeader->dept === $department->name) {
                     $previousLeader->update(['dept' => null]);
                 }
 
                 return;
             }
 
-            if ($previousLeader && $previousLeader->isNot($leader) && $previousLeader->dept === $department->name) {
+            if (! $department->isPortalDepartment() && $previousLeader && $previousLeader->isNot($leader) && $previousLeader->dept === $department->name) {
                 $previousLeader->update(['dept' => null]);
             }
 
-            $leader->update(['dept' => $department->name]);
+            if (! $department->isPortalDepartment()) {
+                $leader->update(['dept' => $department->name]);
+            }
 
             $roleSlug = match ($department->code) {
                 'youth' => 'responsable_jeunesse',

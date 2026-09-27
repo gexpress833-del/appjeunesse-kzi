@@ -13,7 +13,7 @@
 @endif
 
 <form method="POST"
-      action="{{ $event->exists ? route('events.update', $event) : route('events.store') }}"
+    action="{{ $event->portal === 'youth' ? route('youth.events.store') : ($event->exists ? route('events.update', $event) : route('events.store')) }}"
       enctype="multipart/form-data"
       class="mt-6 max-w-2xl space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
     @csrf
@@ -47,7 +47,7 @@
         <button class="rounded-xl bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-500">
             {{ $event->exists ? 'Enregistrer' : 'Créer l\'événement' }}
         </button>
-        <a href="{{ route('events.index') }}" class="text-sm text-slate-500 hover:underline">Annuler</a>
+        <a href="{{ $event->portal === 'youth' ? route('youth.events.index') : route('events.index') }}" class="text-sm text-slate-500 hover:underline">Annuler</a>
     </div>
 </form>
 

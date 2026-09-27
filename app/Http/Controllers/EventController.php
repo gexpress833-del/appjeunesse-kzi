@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Event;
+use App\Models\MemberRoleAssignment;
 use App\Models\User;
 use App\Notifications\EventCreated;
 use App\Services\CloudinaryService;
@@ -17,9 +18,12 @@ class EventController extends Controller
     public function index()
     {
         $user = auth()->user();
+        $portal = $user->currentPortal();
 
         return view('events.index', [
+            'portal' => $portal,
             'upcoming' => Event::query()
+                ->where('portal', $portal)
                 ->when($user->isResponsable(), fn ($query) => $query->where(fn ($query) => $query
                     ->whereNull('dept')
                     ->orWhere('dept', $user->dept)))
@@ -28,6 +32,7 @@ class EventController extends Controller
                 ->paginate(10, ['*'], 'up')
                 ->withQueryString(),
             'past' => Event::query()
+                ->where('portal', $portal)
                 ->when($user->isResponsable(), fn ($query) => $query->where(fn ($query) => $query
                     ->whereNull('dept')
                     ->orWhere('dept', $user->dept)))
@@ -40,12 +45,27 @@ class EventController extends Controller
 
     public function create()
     {
-        abort_if(auth()->user()->isResponsable() && blank(auth()->user()->dept), 403, 'Votre compte responsable doit être rattaché à un département.');
+        $user = auth()->user();
+        $portal = $user->currentPortal();
+
+        if ($portal === 'youth') {
+            $departments = $user->attendanceDepartments('youth');
+            $department = $departments->firstWhere('name', $user->dept)
+                ?? $departments->firstWhere('code', 'youth')
+                ?? $departments->first();
+
+            abort_unless($department && $user->canManageAttendance('youth', $department->name), 403, 'Une affectation active de responsable jeunesse est requise.');
+            $departmentName = $department->name;
+        } else {
+            abort_if($user->isResponsable() && blank($user->dept), 403, 'Votre compte responsable doit être rattaché à un département.');
+            $departmentName = $user->isResponsable() ? $user->dept : null;
+        }
 
         return view('events.form', [
             'event' => new Event([
                 'date' => now()->next('sunday')->setTime(9, 0),
-                'dept' => auth()->user()->isResponsable() ? auth()->user()->dept : null,
+                'dept' => $departmentName,
+                'portal' => $portal,
             ]),
         ]);
     }
@@ -54,27 +74,43 @@ class EventController extends Controller
     {
         $data = $this->validated($request);
         $user = auth()->user();
+        $portal = $request->attributes->get('portal', 'church');
 
-        if ($user->isResponsable()) {
+        if ($portal === 'youth') {
+            $departments = $user->attendanceDepartments('youth');
+            $department = $departments->firstWhere('name', $user->dept)
+                ?? $departments->firstWhere('code', 'youth')
+                ?? $departments->first();
+
+            abort_unless($department && $user->canManageAttendance('youth', $department->name), 403, 'Une affectation active de responsable jeunesse est requise.');
+            $data['dept'] = $department->name;
+        } elseif ($user->isResponsable()) {
             abort_if(blank($user->dept), 403, 'Votre compte responsable doit être rattaché à un département.');
             $data['dept'] = $user->dept;
         }
 
+        $data['portal'] = $portal;
         $data['name'] = $this->normalizeEventName($data['name']);
         $data['created_by'] = $user->username;
         $data = $this->handlePhoto($request, $cloudinary, $data);
 
         $event = Event::create($data);
 
-        $eventOwners = User::query()
-            ->whereIn('role', ['admin', 'secretariat', 'pasteur_n1', 'responsable'])
-            ->when($event->dept, fn ($query) => $query->where(function ($departmentQuery) use ($event) {
-                $departmentQuery->where('role', 'admin')
-                    ->orWhere('role', 'secretariat')
-                    ->orWhere('role', 'pasteur_n1')
-                    ->orWhere(fn ($responsableQuery) => $responsableQuery->where('role', 'responsable')->where('dept', $event->dept));
-            }))
-            ->get();
+        $eventOwners = $portal === 'youth'
+            ? User::query()->whereIn('id', MemberRoleAssignment::query()
+                ->where('scope_type', 'youth')
+                ->where('status', 'active')
+                ->whereHas('role', fn ($query) => $query->whereIn('slug', ['responsable_jeunesse', 'leader_youth', 'animateur_jeunesse']))
+                ->pluck('user_id'))->get()
+            : User::query()
+                ->whereIn('role', ['admin', 'secretariat', 'pasteur_n1', 'responsable'])
+                ->when($event->dept, fn ($query) => $query->where(function ($departmentQuery) use ($event) {
+                    $departmentQuery->where('role', 'admin')
+                        ->orWhere('role', 'secretariat')
+                        ->orWhere('role', 'pasteur_n1')
+                        ->orWhere(fn ($responsableQuery) => $responsableQuery->where('role', 'responsable')->where('dept', $event->dept));
+                }))
+                ->get();
 
         foreach ($eventOwners as $owner) {
             $owner->notify(new EventCreated($event, $user));
@@ -86,7 +122,7 @@ class EventController extends Controller
             ->get()
             ->each(fn (User $recipient) => $recipient->notify(new EventCreated($event, $user)));
 
-        return redirect()->route('events.index')->with('success', 'Événement créé.');
+        return redirect()->route($portal === 'youth' ? 'youth.events.index' : 'events.index')->with('success', 'Événement créé.');
     }
 
     public function edit(Event $event)
@@ -164,6 +200,8 @@ class EventController extends Controller
     protected function authorizeDepartment(Event $event): void
     {
         $user = auth()->user();
+
+        abort_unless($event->portal === $user->currentPortal(), 403, 'Cet événement appartient à un autre portail.');
 
         if ($user->isResponsable() && $event->dept !== $user->dept) {
             abort(403, 'Vous ne pouvez gérer que les événements de votre département.');

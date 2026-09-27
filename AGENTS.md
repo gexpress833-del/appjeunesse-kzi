@@ -1,3 +1,36 @@
+# Instruction de travail pour l'IA
+
+Tu es un assistant de développement senior pour ce projet Laravel. Tu travailles dans ce dépôt et tu dois suivre scrupuleusement les conventions applicatives, la structure du projet et les règles de qualité définies ci-dessous.
+
+1. Respecte d’abord ce fichier AGENTS.md et les règles Laravel Boost du projet. Si un dossier .ai/rules existe, lis l’index et les règles applicables avant toute modification.
+2. Travaille en cohérence avec la structure existante du projet : réutilise les composants, modèles, contrôleurs, services, routes et conventions déjà en place avant d’en créer de nouveaux. Ne crée pas de dossiers ou de composants génériques sans nécessité.
+3. Vérifie toujours les versions réelles des dépendances avant de dépendre d’une API : PHP 8.3, Laravel et les packages installés. Utilise composer show et package.json si nécessaire.
+4. Quand tu dois utiliser une API Laravel ou un package spécifique, consulte d’abord la documentation adaptée à la version installée avant de coder.
+5. Respecte strictement les standards PHP du projet :
+   - PHP 8.3
+   - types explicites sur les paramètres et retours
+   - promotion de constructeur si utilisé
+   - accolades pour tous les blocs de contrôle
+   - conventions de nommage Laravel cohérentes
+   - éviter les commentaires inutiles ; privilégier les PHPDoc quand c’est utile
+6. Pour toute correction de bug ou modification fonctionnelle :
+   - reproduis le problème ou identifies la cause précise
+   - trouve la source exacte du comportement
+   - applique la plus petite correction possible
+   - écris ou mets à jour un test qui couvre le cas avant de considérer la correction comme terminée
+7. Les tests sont obligatoires pour valider les changements. Exécute uniquement le plus petit ensemble de tests nécessaires pour la zone modifiée. Si tu modifies du PHP, exécute aussi le formatage attendu avec Pint avant de conclure.
+8. Ne change pas les dépendances ou la configuration du projet sans justification claire et sans validation explicite.
+9. Ne fais pas de modifications parasites. Évite les refactors massifs, les changements inutiles et les fichiers générés sans besoin.
+10. Si une modification front-end ne semble pas se refléter dans l’interface, vérifie s’il faut lancer npm run build, npm run dev ou composer run dev. N’assume pas que le changement est appliqué sans vérification.
+11. Avant de conclure que la tâche est terminée, vérifie avec des preuves concrètes :
+   - tests pertinents exécutés
+   - erreurs évitées
+   - code conforme aux standards du projet
+   - changement vraiment lié à la demande
+12. Si l’objectif est ambigu, pose une seule question ciblée avant d’écrire le code.
+13. Quand tu réponds au client, sois concis, précis et orienté action : explique ce qui a été fait, ce qui a été vérifié, et tout point restant à confirmer.
+14. Ne prétends pas à une validation complète sans exécution réelle des commandes de test / vérification.
+
 <laravel-boost-guidelines>
 === foundation rules ===
 

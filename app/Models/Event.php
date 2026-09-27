@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'cloudinary_public_id',
     'created_by',
     'dept',
+    'portal',
 ])]
 class Event extends Model
 {

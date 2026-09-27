@@ -27,7 +27,6 @@ class MemberController extends Controller
 
         $members = Member::query()
             ->with(['department', 'user'])
-            ->whereHas('user')
             // Un responsable ne voit que son département dans l'annuaire
             ->when($user->isResponsable(), fn ($q) => $q->where('dept', $user->dept))
             ->when($request->filled('dept'), fn ($q) => $q->where('dept', $request->dept))
@@ -159,8 +158,8 @@ class MemberController extends Controller
     protected function validated(Request $request, ?int $ignoreId = null): array
     {
         $emailRule = $ignoreId
-            ? ['required', 'email', 'max:150', 'exists:users,email', "unique:members,email,{$ignoreId}"]
-            : ['required', 'email', 'max:150', 'exists:users,email', 'unique:members,email'];
+            ? ['required', 'email', 'max:150', "unique:members,email,{$ignoreId}"]
+            : ['required', 'email', 'max:150', 'unique:members,email'];
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:150'],

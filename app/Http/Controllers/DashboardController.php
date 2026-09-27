@@ -38,7 +38,7 @@ class DashboardController extends Controller
             return redirect()->route('dashboard');
         }
 
-        $member = $user->member();
+        $member = $user->member()->first();
 
         if (! $member) {
             return view('dashboard.bilan', [
@@ -75,14 +75,14 @@ class DashboardController extends Controller
 
     protected function global()
     {
-        $lastEvents = Event::past()->take(5)->withCount('members')->get();
+        $lastEvents = Event::query()->where('portal', 'church')->past()->take(5)->withCount('members')->get();
 
         return view('dashboard.global', [
             'membersCount' => Member::count(),
             'usersCount' => User::where('status', 'active')->count(),
             'pendingCount' => User::where('status', 'pending')->count(),
             'photosCount' => Photo::count(),
-            'upcoming' => Event::upcoming()->take(3)->get(),
+            'upcoming' => Event::query()->where('portal', 'church')->upcoming()->take(3)->get(),
             'lastEvents' => $lastEvents,
             'deptStats' => $this->deptPresenceRates($lastEvents->pluck('id')),
             'departments' => Department::query()->with('leader')->withCount('members')->orderBy('name')->get(),
@@ -98,7 +98,8 @@ class DashboardController extends Controller
 
     protected function personal($user)
     {
-        $member = $user->member();
+        $member = $user->member()->first();
+        $portal = $user->currentPortal();
 
         $departmentMembersCount = $user->dept ? Member::where('dept', $user->dept)->count() : 0;
 
@@ -109,6 +110,7 @@ class DashboardController extends Controller
                 'visits' => collect(),
                 'recent' => collect(),
                 'upcoming' => Event::query()
+                    ->where('portal', $portal)
                     ->when($user->isResponsable(), fn ($query) => $query->where('dept', $user->dept))
                     ->upcoming()->take(3)->get(),
                 'announcements' => HomeContent::whereIn('type', ['verset', 'temoignage', 'event_banner'])
@@ -139,6 +141,7 @@ class DashboardController extends Controller
                 ->where('member_id', $member->id)
                 ->latest('id')->take(6)->get(),
             'upcoming' => Event::query()
+                ->where('portal', $portal)
                 ->when($user->isResponsable(), fn ($query) => $query->where('dept', $user->dept))
                 ->upcoming()->take(3)->get(),
             'announcements' => HomeContent::whereIn('type', ['verset', 'temoignage', 'event_banner'])

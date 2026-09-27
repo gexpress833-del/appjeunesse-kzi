@@ -7,6 +7,7 @@ use App\Models\Attendance;
 use App\Models\Department;
 use App\Models\Event;
 use App\Models\Member;
+use App\Models\MemberRoleAssignment;
 use App\Models\User;
 use App\Notifications\AttendanceBatchRecorded;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -20,25 +21,92 @@ class AttendanceController extends Controller
      * Choix de l'événement pour la prise de présence.
      * Un responsable voit les événements globaux et ceux de son département.
      */
-    public function pick()
+    public function pick(Request $request)
     {
         $user = auth()->user();
+        $portal = $request->attributes->get('portal', 'church');
 
-        abort_if($user->isResponsable() && blank($user->dept), 403, 'Votre compte responsable doit être rattaché à un département.');
+        if ($portal === 'church' && $user->isPastorPrincipal()) {
+            $filters = $request->validate([
+                'event_id' => ['nullable', 'integer', 'exists:events,id'],
+                'from' => ['nullable', 'date_format:Y-m-d'],
+                'to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:from'],
+            ]);
+
+            $attendanceStats = Attendance::query()
+                ->join('members', 'members.id', '=', 'attendances.member_id')
+                ->join('events', 'events.id', '=', 'attendances.event_id')
+                ->where('events.portal', 'church')
+                ->select('members.dept')
+                ->selectRaw('COUNT(attendances.id) as total,
+                    SUM(CASE WHEN attendances.status = \'present\' THEN 1 ELSE 0 END) as present,
+                    SUM(CASE WHEN attendances.status = \'late\' THEN 1 ELSE 0 END) as late,
+                    SUM(CASE WHEN attendances.status = \'excused\' THEN 1 ELSE 0 END) as excused,
+                    SUM(CASE WHEN attendances.status = \'absent\' THEN 1 ELSE 0 END) as absent');
+
+            if (filled($filters['event_id'] ?? null)) {
+                $attendanceStats->where('attendances.event_id', $filters['event_id']);
+            }
+
+            if (filled($filters['from'] ?? null)) {
+                $attendanceStats->where('events.date', '>=', $filters['from'].' 00:00:00');
+            }
+
+            if (filled($filters['to'] ?? null)) {
+                $attendanceStats->where('events.date', '<=', $filters['to'].' 23:59:59');
+            }
+
+            $attendanceStats->groupBy('members.dept');
+
+            $departmentStats = Department::query()
+                ->leftJoinSub($attendanceStats, 'attendance_stats', fn ($join) => $join->on('attendance_stats.dept', '=', 'departments.name'))
+                ->select('departments.name as department')
+                ->selectRaw('COALESCE(attendance_stats.total, 0) as total,
+                    COALESCE(attendance_stats.present, 0) as present,
+                    COALESCE(attendance_stats.late, 0) as late,
+                    COALESCE(attendance_stats.excused, 0) as excused,
+                    COALESCE(attendance_stats.absent, 0) as absent')
+                ->orderBy('departments.name')
+                ->get()
+                ->each(fn ($department) => $department->rate = $department->total > 0
+                    ? (int) round((($department->present + $department->late) / $department->total) * 100)
+                    : 0);
+
+            $events = Event::query()
+                ->where('portal', 'church')
+                ->whereHas('attendances')
+                ->orderByDesc('date')
+                ->get(['id', 'name', 'date']);
+            $selectedEvent = $events->firstWhere('id', (int) ($filters['event_id'] ?? 0));
+
+            return view('attendances.pastor', compact('departmentStats', 'events', 'filters', 'selectedEvent'));
+        }
+
+        $canViewAllDepartments = $portal === 'church' && ($user->isAdmin() || $user->isSecretariat());
+        $departments = $canViewAllDepartments
+            ? Department::query()->orderBy('name')->get()
+            : $user->attendanceDepartments($portal);
+
+        abort_if($departments->isEmpty(), 403, 'Une affectation active au département est requise pour gérer les présences.');
+        $departmentNames = $departments->pluck('name');
 
         return view('attendances.pick', [
             'upcoming' => Event::query()
-                ->when($user->isResponsable(), fn ($query) => $query->where(fn ($query) => $query
+                ->where('portal', $portal)
+                ->when(! $canViewAllDepartments, fn ($query) => $query->where(fn ($query) => $query
                     ->whereNull('dept')
-                    ->orWhere('dept', $user->dept)))
+                    ->orWhereIn('dept', $departmentNames)))
                 ->upcoming()->take(5)->get(),
             'past' => Event::query()
-                ->when($user->isResponsable(), fn ($query) => $query->where(fn ($query) => $query
+                ->where('portal', $portal)
+                ->when(! $canViewAllDepartments, fn ($query) => $query->where(fn ($query) => $query
                     ->whereNull('dept')
-                    ->orWhere('dept', $user->dept)))
+                    ->orWhereIn('dept', $departmentNames)))
                 ->past()->take(10)->get(),
-            'dept' => $user->isResponsable() ? $user->dept : request('dept'),
-            'departments' => $user->isResponsable() ? collect() : Department::orderBy('name')->get(),
+            'dept' => $user->isResponsable() && $portal === 'church' ? $user->dept : $request->query('dept'),
+            'departments' => $departments,
+            'portal' => $portal,
+            'canViewAllDepartments' => $canViewAllDepartments,
         ]);
     }
 
@@ -48,24 +116,37 @@ class AttendanceController extends Controller
     public function sheet(Request $request, Event $event)
     {
         $user = auth()->user();
+        $portal = $request->attributes->get('portal', 'church');
 
-        abort_if($user->isResponsable() && blank($user->dept), 403, 'Votre compte responsable doit être rattaché à un département.');
+        abort_unless($event->portal === $portal, 403, 'Cet événement appartient à un autre portail.');
 
-        if ($user->isResponsable() && filled($event->dept) && $event->dept !== $user->dept) {
-            abort(403, 'Vous ne pouvez consulter les présences que de votre département.');
+        $canViewAllDepartments = $portal === 'church'
+            && ($user->isAdmin() || $user->isSecretariat() || $user->isPastorPrincipal());
+        $departments = $canViewAllDepartments
+            ? Department::query()->orderBy('name')->get()
+            : $user->attendanceDepartments($portal);
+
+        if (filled($event->dept)) {
+            $departments = $departments->where('name', $event->dept)->values();
         }
+
+        abort_if($departments->isEmpty() && ! $canViewAllDepartments, 403, 'Une affectation active au département est requise pour consulter cette feuille.');
 
         $requestedDept = $this->normalizeDepartment($request->query('dept'));
 
-        if ($user->isResponsable() && filled($request->query('dept')) && $requestedDept !== $user->dept) {
-            abort(403, 'Vous ne pouvez consulter que les membres de votre département.');
+        if ($request->missing('dept') && ! $canViewAllDepartments && $departments->count() === 1) {
+            $requestedDept = $departments->first()->name;
         }
 
-        $dept = $user->isResponsable() ? $user->dept : $requestedDept;
+        $dept = $requestedDept;
 
-        $departmentSelectionRequired = ! $user->isResponsable() && $request->missing('dept');
+        $departmentSelectionRequired = $request->missing('dept') && ($canViewAllDepartments || $departments->count() > 1);
 
-        if (! $user->isResponsable() && filled($dept)) {
+        if (! $canViewAllDepartments) {
+            abort_unless($user->canManageAttendance($portal, $dept), 403, 'Vous ne pouvez consulter que les départements qui vous sont affectés dans ce portail.');
+        }
+
+        if (filled($dept)) {
             abort_unless(Department::where('name', $dept)->exists(), 404, 'Département inconnu.');
         }
 
@@ -80,9 +161,7 @@ class AttendanceController extends Controller
             ->get()
             ->keyBy('member_id');
 
-        $departments = $user->isResponsable()
-            ? collect()
-            : Department::query()->orderBy('name')->get();
+        $readOnly = ! $user->canManageAttendance($portal, $dept);
 
         return view('attendances.sheet', compact(
             'event',
@@ -91,6 +170,9 @@ class AttendanceController extends Controller
             'existing',
             'departments',
             'departmentSelectionRequired',
+            'readOnly',
+            'canViewAllDepartments',
+            'portal',
         ));
     }
 
@@ -100,8 +182,9 @@ class AttendanceController extends Controller
     public function store(Request $request, Event $event)
     {
         $user = auth()->user();
+        $portal = $request->attributes->get('portal', 'church');
 
-        abort_unless($user->isResponsable(), 403, 'Seuls les responsables de département peuvent enregistrer les présences.');
+        abort_unless($event->portal === $portal, 403, 'Cet événement appartient à un autre portail.');
 
         $data = $request->validate([
             'dept' => ['required', 'string'],
@@ -117,13 +200,10 @@ class AttendanceController extends Controller
             abort_unless(Department::where('name', $data['dept'])->exists(), 422, 'Département inconnu.');
         }
 
-        // Un responsable ne peut faire l'appel que de son département
-        if ($user->isResponsable() && (blank($user->dept) || blank($data['dept']) || $data['dept'] !== $user->dept)) {
-            abort(403, 'Vous ne pouvez prendre les présences que pour votre département.');
-        }
+        abort_unless($user->canManageAttendance($portal, $data['dept']), 403, 'Vous ne pouvez enregistrer les présences que pour les départements qui vous sont affectés dans ce portail.');
 
-        if ($user->isResponsable() && filled($event->dept) && $event->dept !== $user->dept) {
-            abort(403, 'Vous ne pouvez enregistrer des présences que pour les événements de votre département.');
+        if (filled($event->dept) && $event->dept !== $data['dept']) {
+            abort(403, 'Cet événement est réservé à un autre département.');
         }
 
         $memberIds = Member::query()
@@ -159,20 +239,37 @@ class AttendanceController extends Controller
 
         if ($recordedCount > 0) {
             $department = $data['dept'] ?? 'Sans département';
-            $recipients = User::query()
-                ->whereIn('role', ['admin', 'secretariat'])
-                ->orWhere(fn ($query) => $query
-                    ->where('role', 'responsable')
-                    ->where('dept', $data['dept']))
-                ->get()
-                ->reject(fn (User $recipient): bool => $recipient->is($user));
+            if ($portal === 'youth') {
+                $departmentId = Department::query()->where('name', $data['dept'])->value('id');
+                $youthPortalId = Department::query()->where('code', 'youth')->value('id');
+                $scopeIds = collect([$departmentId, $youthPortalId])->filter()->unique();
+                $recipients = User::query()
+                    ->whereIn('id', MemberRoleAssignment::query()
+                        ->where('scope_type', 'youth')
+                        ->where('status', 'active')
+                        ->whereIn('scope_id', $scopeIds)
+                        ->whereHas('role', fn ($query) => $query->whereIn('slug', ['responsable_jeunesse', 'leader_youth', 'animateur_jeunesse']))
+                        ->pluck('user_id'))
+                    ->get();
+            } else {
+                $recipients = User::query()
+                    ->whereIn('role', ['admin', 'secretariat'])
+                    ->orWhere(fn ($query) => $query
+                        ->where('role', 'responsable')
+                        ->where('dept', $data['dept']))
+                    ->get();
+            }
+
+            $recipients = $recipients->reject(fn (User $recipient): bool => $recipient->is($user));
 
             foreach ($recipients as $recipient) {
                 $recipient->notify(new AttendanceBatchRecorded($event, $user, $department, $recordedCount));
             }
         }
 
-        return redirect()->route('attendances.sheet', ['event' => $event, 'dept' => $data['dept'] ?? self::UNASSIGNED_DEPARTMENT])
+        $sheetRoute = $portal === 'youth' ? 'youth.attendances.sheet' : 'attendances.sheet';
+
+        return redirect()->route($sheetRoute, ['event' => $event, 'dept' => $data['dept'] ?? self::UNASSIGNED_DEPARTMENT])
             ->with('success', 'Présences enregistrées.');
     }
 
@@ -193,6 +290,7 @@ class AttendanceController extends Controller
         $query = Attendance::query()
             ->join('members', 'members.id', '=', 'attendances.member_id')
             ->join('events', 'events.id', '=', 'attendances.event_id')
+            ->where('events.portal', 'church')
             ->select('attendances.*')
             ->with(['member', 'event']);
 
@@ -288,24 +386,44 @@ class AttendanceController extends Controller
     public function exportPdf(Request $request)
     {
         $user = auth()->user();
+        $portal = $request->attributes->get('portal', 'church');
+        abort_unless(in_array($portal, ['church', 'youth'], true), 404);
 
-        if ($user->isResponsable()) {
+        $selectedEvent = $request->filled('event_id')
+            ? Event::query()->where('portal', $portal)->findOrFail((int) $request->event_id)
+            : null;
+        $accessibleDepartmentNames = [];
+
+        if ($selectedEvent && filled($selectedEvent->dept)) {
+            abort_unless(blank($request->input('dept')) || $request->input('dept') === $selectedEvent->dept, 403, 'Le département demandé ne correspond pas à celui de l’événement.');
+            $request->merge(['dept' => $selectedEvent->dept]);
+        }
+
+        if ($portal === 'church' && $user->isResponsable()) {
             $request->merge(['dept' => $user->dept]);
 
-            if ($request->filled('event_id')) {
-                $allowedEventId = Event::query()
-                    ->where(function ($query) use ($user) {
-                        $query->whereNull('dept')
-                            ->orWhere('dept', $user->dept);
-                    })
-                    ->whereKey((int) $request->event_id)
-                    ->exists();
-
-                abort_unless($allowedEventId, 403, 'Vous ne pouvez exporter que les rapports de votre département, y compris sur les événements globaux.');
+            if ($selectedEvent) {
+                abort_unless(blank($selectedEvent->dept) || $selectedEvent->dept === $user->dept, 403, 'Vous ne pouvez exporter que les rapports de votre département, y compris sur les événements globaux.');
             }
         }
 
-        $query = $this->filteredReportQuery($request);
+        if ($portal === 'youth' && ! $user->isAdmin()) {
+            $accessibleDepartmentNames = $user->attendanceDepartments('youth')->pluck('name')->all();
+            abort_if($accessibleDepartmentNames === [], 403, 'Une affectation active au département est requise pour exporter ce rapport.');
+
+            if ($selectedEvent && filled($selectedEvent->dept)) {
+                abort_unless(in_array($selectedEvent->dept, $accessibleDepartmentNames, true), 403, 'Cet événement appartient à un département hors de votre périmètre.');
+                $request->merge(['dept' => $request->input('dept', $selectedEvent->dept)]);
+            }
+
+            if ($request->filled('dept')) {
+                abort_unless(in_array($request->input('dept'), $accessibleDepartmentNames, true), 403, 'Vous ne pouvez exporter que les rapports de vos départements.');
+            } elseif (count($accessibleDepartmentNames) === 1) {
+                $request->merge(['dept' => $accessibleDepartmentNames[0]]);
+            }
+        }
+
+        $query = $this->filteredReportQuery($request, $portal, $user, $accessibleDepartmentNames);
         $rows = $query
             ->orderByDesc('events.date')
             ->orderBy('members.dept')
@@ -313,6 +431,23 @@ class AttendanceController extends Controller
             ->orderBy('members.name')
             ->get();
         $summary = $this->reportSummary(clone $query);
+        $departmentName = $selectedEvent?->dept ?: ($request->input('dept') ?: 'Tous les départements');
+        $portalName = match ($portal) {
+            'church' => 'Église',
+            'youth' => 'Jeunesse',
+            default => 'ECODIM',
+        };
+        $portalLabel = match ($portal) {
+            'church' => 'PORTAIL ÉGLISE',
+            'youth' => 'PORTAIL JEUNESSE',
+            default => 'PORTAIL ECODIM',
+        };
+        $reportScope = $departmentName === 'Tous les départements'
+            ? $portalName.' - Tous les départements'
+            : $portalName.' - Département '.$departmentName;
+        $responsibleName = $selectedEvent
+            ? (User::query()->where('username', $selectedEvent->created_by)->value('full_name') ?: ($selectedEvent->created_by ?: 'Non renseigné'))
+            : 'Selon événement';
 
         return Pdf::setOption([
             'tempDir' => sys_get_temp_dir(),
@@ -324,22 +459,43 @@ class AttendanceController extends Controller
             'summary' => $summary,
             'filters' => $request->only(['event_id', 'dept', 'status', 'from', 'to']),
             'generatedAt' => now(),
+            'portal' => $portal,
+            'portalLabel' => $portalLabel,
+            'portalColor' => match ($portal) {
+                'church' => 'church',
+                'youth' => 'youth',
+                default => 'ecodim',
+            },
+            'reportScope' => $reportScope,
+            'eventName' => $selectedEvent?->name ?? 'Tous les événements',
+            'eventDate' => $selectedEvent?->date?->translatedFormat('d F Y') ?? 'Selon période sélectionnée',
+            'departmentName' => $departmentName,
+            'responsibleName' => $responsibleName,
         ])->setPaper('a4', 'landscape')->download('rapport-presences-'.now()->format('Y-m-d').'.pdf');
     }
 
-    protected function filteredReportQuery(Request $request)
+    protected function filteredReportQuery(Request $request, string $portal, User $user, array $accessibleDepartmentNames = [])
     {
         $query = Attendance::query()
             ->join('members', 'members.id', '=', 'attendances.member_id')
             ->join('events', 'events.id', '=', 'attendances.event_id')
+            ->where('events.portal', $portal)
             ->select('attendances.*')
             ->with(['member', 'event']);
 
-        if (auth()->user()->isResponsable()) {
-            $query->where('members.dept', auth()->user()->dept)
-                ->where(function ($query) {
+        if ($portal === 'church' && $user->isResponsable()) {
+            $query->where('members.dept', $user->dept)
+                ->where(function ($query) use ($user) {
                     $query->whereNull('events.dept')
-                        ->orWhere('events.dept', auth()->user()->dept);
+                        ->orWhere('events.dept', $user->dept);
+                });
+        }
+
+        if ($portal === 'youth' && ! $user->isAdmin()) {
+            $query->whereIn('members.dept', $accessibleDepartmentNames)
+                ->where(function ($eventQuery) use ($accessibleDepartmentNames) {
+                    $eventQuery->whereNull('events.dept')
+                        ->orWhereIn('events.dept', $accessibleDepartmentNames);
                 });
         }
 

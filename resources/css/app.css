@@ -3190,8 +3190,8 @@ html[data-theme='light'] .theme-toggle {
     }
 
     .app-sidebar-heading > div > img {
-        height: 1.75rem;
-        width: 1.75rem;
+        height: 1.5rem;
+        width: 1.5rem;
     }
 
     .app-sidebar-heading > div > div {
@@ -3202,6 +3202,8 @@ html[data-theme='light'] .theme-toggle {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        font-size: 0.72rem;
+        line-height: 1.1;
     }
 
     .app-sidebar-heading > div > div > p:nth-child(2) {
@@ -3209,14 +3211,21 @@ html[data-theme='light'] .theme-toggle {
     }
 
     .app-sidebar-heading > div > div > span {
-        font-size: 0.48rem;
-        letter-spacing: 0.05em;
-        line-height: 1.15;
+        display: inline-flex;
+        max-width: 100%;
+        padding: 0.1rem 0.3rem;
+        font-size: 0.42rem;
+        letter-spacing: 0.04em;
+        line-height: 1.1;
+        white-space: nowrap;
     }
 
     .app-sidebar-heading > button {
-        flex: 0 0 2rem;
-        padding: 0.25rem;
+        flex: 0 0 1.75rem;
+        height: 1.75rem;
+        min-height: 1.75rem;
+        padding: 0.2rem;
+        font-size: 0.9rem;
     }
 
     .app-mobile-topbar {

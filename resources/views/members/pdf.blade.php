@@ -8,6 +8,7 @@
         body { background: #f4f7fb; color: #172033; font-family: DejaVu Sans, sans-serif; font-size: 10px; margin: 0; }
         .topbar { background: #0b1630; color: #fff; padding: 18px 22px; }
         .brand { color: #69e2f5; font-size: 9px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; }
+        .portal-label { background: #fffbeb; border: 1px solid #f59e0b; color: #92400e; display: inline-block; font-size: 9px; font-weight: bold; margin-top: 8px; padding: 5px 8px; }
         .header { background: #fff; border-bottom: 1px solid #dbe5f0; padding: 20px 22px 18px; }
         h1 { color: #0b1630; font-size: 24px; margin: 0 0 5px; }
         h2 { color: #0b1630; font-size: 14px; margin: 24px 0 10px; }
@@ -27,6 +28,9 @@
         .summary strong { color: #69e2f5; font-size: 15px; }
         .summary .muted { color: #cbd5e1; margin-top: 4px; }
         table.history { border-collapse: collapse; width: 100%; }
+        .history thead { display: table-header-group; }
+        .history tr { page-break-inside: avoid; }
+        .history .scope-row td { background: #fffbeb; color: #92400e; font-weight: bold; }
         .history th { background: #dbeafe; color: #1e3a8a; font-size: 8px; padding: 10px 8px; text-align: left; text-transform: uppercase; }
         .history td { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 9px 8px; }
         .status { color: #08798a; font-weight: bold; }
@@ -36,6 +40,8 @@
 <body>
     <div class="topbar">
         <span class="brand">Appjeunesse · La Parole Éternelle Kolwezi</span>
+        <br><span class="portal-label">{{ $portalLabel }}</span>
+        <div class="portal-label">Périmètre des présences : {{ $reportScope }}</div>
     </div>
     <div class="header">
         <h1>Fiche individuelle du membre</h1>
@@ -96,6 +102,7 @@
     @if ($attendances->isNotEmpty())
         <table class="history">
             <thead>
+                <tr class="scope-row"><td colspan="3">{{ $portalLabel }} · Périmètre : {{ $reportScope }}</td></tr>
                 <tr><th>Événement</th><th>Date</th><th>Statut</th></tr>
             </thead>
             <tbody>

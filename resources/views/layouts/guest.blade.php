@@ -27,7 +27,7 @@
     <div class="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.18),transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(168,85,247,0.18),transparent_28%)]"></div>
     <div id="app-toast-stack" class="pointer-events-none fixed right-4 top-4 z-50 flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-3"></div>
 
-    <header class="relative z-10 border-b border-white/10 bg-slate-950/70 backdrop-blur-xl">
+    <header class="guest-topbar border-b border-white/10">
         <div class="guest-header-inner mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:flex-nowrap sm:py-4">
             <a href="{{ route('home') }}" class="guest-brand flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
                 <img src="{{ $appSettings->logo_url ?: asset('logoEglise.jpg') }}" class="floaty h-10 w-10 shrink-0 rounded-2xl object-cover object-center ring-2 ring-cyan-400/60 shadow-lg shadow-indigo-500/30 sm:h-11 sm:w-11" alt="Logo {{ $appSettings->church_name }}">

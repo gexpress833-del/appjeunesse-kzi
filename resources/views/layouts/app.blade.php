@@ -24,7 +24,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="app-page min-h-screen bg-slate-950 font-sans text-slate-100 antialiased">
-<div class="relative flex min-h-screen overflow-x-hidden">
+<div class="relative flex min-h-screen overflow-x-clip">
     @php($appSettings = \App\Models\AppSetting::current())
     @php($u = auth()->user())
     @php($portalDashboardRoute = $u->dashboardRouteName())
@@ -37,7 +37,7 @@
 
     {{-- Barre latérale --}}
     <aside id="sidebar" class="sidebar-closed fixed inset-y-0 left-0 z-40 flex min-h-0 w-64 flex-col overflow-y-auto border-r border-white/10 bg-slate-950/80 text-slate-300 shadow-2xl shadow-indigo-950/20 backdrop-blur-xl transition-transform lg:static lg:flex lg:transform-none">
-        <div class="flex shrink-0 items-center justify-between gap-3 border-b border-white/10 px-5 py-5">
+        <div class="app-sidebar-heading flex shrink-0 items-center justify-between gap-3 border-b border-white/10 px-5 py-5">
             <div class="flex min-w-0 items-center gap-3">
             <img src="{{ $appSettings->logo_url ?: asset('logoEglise.jpg') }}" class="h-10 w-10 rounded-2xl object-cover object-center ring-2 ring-cyan-400/60 pulse-glow" alt="Logo {{ $appSettings->church_name }}">
             <div>
@@ -121,15 +121,14 @@
                 @endif
                 <a href="{{ route('settings.index') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all {{ request()->routeIs('settings.*') ? 'bg-gradient-to-r from-indigo-600/80 to-cyan-500/70 font-semibold text-white shadow-lg shadow-indigo-500/20' : 'text-slate-300 hover:bg-white/5 hover:text-white' }}"><span>⚙️</span> Paramètres</a>
             @endif
-        </nav>
-
-        <div class="border-t border-white/10 px-4 py-4">
+            <div class="border-t border-white/10 px-4 py-4">
             <button type="button" data-theme-toggle class="theme-toggle mb-3 w-full" aria-label="Activer le mode clair">
                 <span data-theme-icon aria-hidden="true">☀</span>
                 <span data-theme-label>Clair</span>
             </button>
-            <button type="button" data-notifications-enable class="mb-3 flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-400/30 bg-cyan-500/10 px-3 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-500/20">
-                <span aria-hidden="true">🔔</span> Activer les notifications
+            <button type="button" data-notifications-enable aria-label="Activer les notifications" class="mb-3 flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-400/30 bg-cyan-500/10 px-3 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-500/20">
+                <span aria-hidden="true">🔔</span>
+                <span><span class="notification-action-prefix">Activer les </span>notifications</span>
             </button>
             <a href="{{ route('profile.edit') }}" class="mb-2 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-2 py-2.5 transition-all hover:bg-white/10">
                 @if ($u->profile_photo_url)
@@ -147,12 +146,13 @@
                 @csrf
                 <button class="w-full rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-left text-sm text-rose-200 transition-all hover:bg-rose-500/20">⏻ Déconnexion</button>
             </form>
-        </div>
+            </div>
+        </nav>
     </aside>
 
     {{-- Contenu --}}
     <div class="relative z-10 flex min-w-0 flex-1 flex-col">
-        <header class="flex items-center gap-3 border-b border-white/10 bg-slate-950/70 px-4 py-3 backdrop-blur-xl lg:hidden">
+        <header class="app-mobile-topbar sticky top-0 z-20 flex items-center gap-3 border-b border-white/10 bg-slate-950/95 px-4 py-3 shadow-[0_8px_24px_rgba(2,6,23,0.28)] backdrop-blur-xl lg:hidden">
             <button onclick="window.toggleSidebar()" class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white" aria-label="Ouvrir le menu">☰</button>
             <img src="{{ asset('logoEglise.jpg') }}" class="h-8 w-8 rounded-xl object-cover object-center ring-1 ring-cyan-400/60" alt="Logo La Parole Éternelle Kolwezi">
             <span class="min-w-0 flex-1 truncate font-bold text-white">appjeunesse-kzi</span>

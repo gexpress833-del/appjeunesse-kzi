@@ -21,7 +21,7 @@ class MemberController extends Controller
      */
     public function index(Request $request)
     {
-        $user = auth()->user();
+        $user = $request->user();
 
         abort_if($user->isResponsable() && blank($user->dept), 403, 'Votre compte responsable doit être rattaché à un département.');
 
@@ -45,9 +45,9 @@ class MemberController extends Controller
         ]);
     }
 
-    public function show(Member $member)
+    public function show(Request $request, Member $member)
     {
-        $user = auth()->user();
+        $user = $request->user();
 
         abort_if($user->isResponsable() && $member->dept !== $user->dept, 403, 'Vous ne pouvez consulter que les membres de votre département.');
 
@@ -66,11 +66,12 @@ class MemberController extends Controller
         ]);
     }
 
-    public function exportPdf(Member $member)
+    public function exportPdf(Request $request, Member $member)
     {
-        abort_unless(auth()->user()->isAdmin(), 403, 'Seul un administrateur peut exporter une fiche membre.');
+        abort_unless($request->user()->isAdmin(), 403, 'Seul un administrateur peut exporter une fiche membre.');
 
         $attendances = $member->attendances()
+            ->whereHas('event', fn ($query) => $query->where('portal', 'church'))
             ->with('event')
             ->latest('id')
             ->get();
@@ -88,6 +89,8 @@ class MemberController extends Controller
             'total' => $total,
             'rate' => $total > 0 ? (int) round(($ok / $total) * 100) : 0,
             'generatedAt' => now(),
+            'portalLabel' => 'PORTAIL ÉGLISE',
+            'reportScope' => 'Église - Département '.($member->dept ?: 'Sans département'),
         ])->setPaper('a4')->download('fiche-membre-'.$member->id.'.pdf');
     }
 
@@ -103,7 +106,7 @@ class MemberController extends Controller
     {
         $data = $this->validated($request);
 
-        $data = $this->scopeDept($data);
+        $data = $this->scopeDept($data, $request->user());
         $data = $this->handlePhoto($request, $cloudinary, $data);
 
         $member = Member::create($data);
@@ -113,9 +116,9 @@ class MemberController extends Controller
         return redirect()->route('members.index')->with('success', 'Membre ajouté au répertoire.');
     }
 
-    public function edit(Member $member)
+    public function edit(Request $request, Member $member)
     {
-        $this->authorizeManage($member);
+        $this->authorizeManage($member, $request->user());
 
         return view('members.form', [
             'member' => $member,
@@ -125,14 +128,15 @@ class MemberController extends Controller
 
     public function update(Request $request, Member $member, CloudinaryService $cloudinary)
     {
-        $this->authorizeManage($member);
+        $user = $request->user();
+        $this->authorizeManage($member, $user);
 
         $data = $this->validated($request, $member->id);
-        $data = $this->scopeDept($data);
+        $data = $this->scopeDept($data, $user);
         $data = $this->handlePhoto($request, $cloudinary, $data);
 
         // Un responsable ne peut pas déplacer un membre hors de son département
-        if (auth()->user()->isResponsable()) {
+        if ($user->isResponsable()) {
             $data['dept'] = $member->dept;
         }
 
@@ -141,9 +145,9 @@ class MemberController extends Controller
         return redirect()->route('members.show', $member)->with('success', 'Fiche mise à jour.');
     }
 
-    public function destroy(Member $member)
+    public function destroy(Request $request, Member $member)
     {
-        $this->authorizeManage($member);
+        $this->authorizeManage($member, $request->user());
         $member->delete();
 
         return redirect()->route('members.index')->with('success', 'Membre supprimé du répertoire.');
@@ -182,10 +186,8 @@ class MemberController extends Controller
     /**
      * Un responsable de département ne gère que les membres de son département.
      */
-    protected function scopeDept(array $data): array
+    protected function scopeDept(array $data, User $user): array
     {
-        $user = auth()->user();
-
         if ($user->isResponsable()) {
             $data['dept'] = $user->dept;
         } elseif ($data['dept'] === self::UNASSIGNED_DEPARTMENT) {
@@ -209,10 +211,8 @@ class MemberController extends Controller
         return $data;
     }
 
-    protected function authorizeManage(Member $member): void
+    protected function authorizeManage(Member $member, User $user): void
     {
-        $user = auth()->user();
-
         $allowed = $user->isAdmin() || $user->isSecretariat();
 
         abort_unless($allowed, 403, 'Secrétariat ou administration uniquement.');

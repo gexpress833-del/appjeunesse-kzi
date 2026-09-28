@@ -307,7 +307,8 @@
     </section>
 
     <p class="home-vision-tagline mx-auto mt-8 max-w-5xl text-center">
-        Une communauté, trois parcours, une même vision : <span>ECODIM, Jeunesse, Église.</span>
+        <span class="home-vision-intro">Une communauté, trois parcours, une même vision&nbsp;:</span>
+        <span class="home-vision-portals"><span>ECODIM</span><span aria-hidden="true">·</span><span>Jeunesse</span><span aria-hidden="true">·</span><span>Église</span></span>
     </p>
 
     <section class="youth-path mt-10" aria-labelledby="youth-path-title">

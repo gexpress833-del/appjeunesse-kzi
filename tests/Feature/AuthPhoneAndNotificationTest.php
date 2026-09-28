@@ -4,8 +4,12 @@ namespace Tests\Feature;
 
 use App\Models\Department;
 use App\Models\Event;
+use App\Models\HomeContent;
 use App\Models\Member;
 use App\Models\User;
+use App\Models\VideoArchive;
+use App\Notifications\AccountValidated;
+use App\Notifications\RoleUpdated;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -165,6 +169,7 @@ class AuthPhoneAndNotificationTest extends TestCase
 
     public function test_responsable_uses_his_department_without_choosing_a_department(): void
     {
+        Department::create(['name' => 'Médias']);
         $responsable = User::factory()->create([
             'role' => 'responsable',
             'dept' => 'Médias',
@@ -219,7 +224,7 @@ class AuthPhoneAndNotificationTest extends TestCase
     public function test_user_can_manage_own_notifications(): void
     {
         $user = User::factory()->create(['role' => 'user', 'status' => 'active']);
-        $notification = $user->notify(new \App\Notifications\AccountValidated);
+        $notification = $user->notify(new AccountValidated);
 
         $notification = $user->notifications()->latest()->first();
 
@@ -242,8 +247,8 @@ class AuthPhoneAndNotificationTest extends TestCase
     {
         $user = User::factory()->create(['role' => 'user', 'status' => 'active']);
 
-        $first = $user->notify(new \App\Notifications\AccountValidated);
-        $second = $user->notify(new \App\Notifications\RoleUpdated($user, 'user', 'Médias'));
+        $first = $user->notify(new AccountValidated);
+        $second = $user->notify(new RoleUpdated($user, 'user', 'Médias'));
 
         $notifications = $user->notifications()->latest()->take(2)->get();
 
@@ -263,7 +268,7 @@ class AuthPhoneAndNotificationTest extends TestCase
     {
         $user = User::factory()->create(['role' => 'user', 'status' => 'active']);
 
-        $live = \App\Models\HomeContent::create([
+        $live = HomeContent::create([
             'type' => 'live_stream',
             'title' => 'Culte en direct',
             'content' => 'Live de démonstration',
@@ -272,7 +277,7 @@ class AuthPhoneAndNotificationTest extends TestCase
             'is_active' => true,
         ]);
 
-        $archive = \App\Models\VideoArchive::firstOrCreate(
+        $archive = VideoArchive::firstOrCreate(
             ['media_url' => $live->media_url],
             ['title' => $live->title, 'broadcast_type' => $live->broadcast_type]
         );
@@ -288,7 +293,7 @@ class AuthPhoneAndNotificationTest extends TestCase
     {
         $publisher = User::factory()->create(['role' => 'admin', 'status' => 'active']);
 
-        \App\Models\VideoArchive::create([
+        VideoArchive::create([
             'title' => 'Culte du dimanche',
             'description' => 'Direct réservé aux fidèles.',
             'media_url' => 'https://www.youtube.com/watch?v=M7lc1UVf-VE',
@@ -297,7 +302,7 @@ class AuthPhoneAndNotificationTest extends TestCase
             'published_by' => $publisher->id,
         ]);
 
-        \App\Models\VideoArchive::create([
+        VideoArchive::create([
             'title' => 'Retransmission jeunesse',
             'description' => 'Retrouvez la retransmission complète.',
             'media_url' => 'https://www.facebook.com/watch/?v=123456789',

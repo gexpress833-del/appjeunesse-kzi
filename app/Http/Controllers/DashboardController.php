@@ -10,6 +10,7 @@ use App\Models\Member;
 use App\Models\Photo;
 use App\Models\SocialVisit;
 use App\Models\User;
+use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
@@ -19,20 +20,20 @@ class DashboardController extends Controller
      * - responsable   : progression personnelle + son département
      * - secretariat/admin : statistiques globales de la jeunesse
      */
-    public function index()
+    public function index(Request $request)
     {
-        $user = auth()->user();
+        $user = $request->user();
 
-        if ($user->portalNavigationKey() === 'church') {
+        if ($user->portalNavigationKey() === 'church' && $user->isChurchAdministrator()) {
             return $this->global();
         }
 
         return $this->personal($user);
     }
 
-    public function bilan()
+    public function bilan(Request $request)
     {
-        $user = auth()->user();
+        $user = $request->user();
 
         if ($user->isAdmin() || $user->isSecretariat()) {
             return redirect()->route('dashboard');

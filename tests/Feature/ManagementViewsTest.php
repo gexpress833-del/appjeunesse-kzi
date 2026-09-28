@@ -88,7 +88,7 @@ class ManagementViewsTest extends TestCase
         ]);
     }
 
-    public function test_member_creation_requires_an_existing_user_account(): void
+    public function test_member_creation_does_not_require_a_user_account(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'status' => 'active']);
 
@@ -99,25 +99,28 @@ class ManagementViewsTest extends TestCase
                 'dept' => '__none__',
                 'email' => 'missing.account@example.com',
             ])
-            ->assertSessionHasErrors(['email']);
+            ->assertRedirect(route('members.index'))
+            ->assertSessionHas('success');
 
-        $this->assertDatabaseMissing('members', ['email' => 'missing.account@example.com']);
+        $this->assertDatabaseHas('members', ['email' => 'missing.account@example.com']);
+        $this->assertDatabaseMissing('users', ['email' => 'missing.account@example.com']);
     }
 
-    public function test_directory_hides_members_without_user_accounts(): void
+    public function test_directory_includes_members_without_user_accounts(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'status' => 'active']);
+        $linkedMember = Member::create([
+            'name' => 'Membre visible',
+            'sex' => 'female',
+            'email' => 'linked.member@example.com',
+            'dept' => null,
+            'role' => 'Fidèle',
+        ]);
         $linkedUser = User::factory()->create([
             'email' => 'linked.member@example.com',
             'role' => 'user',
             'status' => 'active',
-        ]);
-        Member::create([
-            'name' => 'Membre visible',
-            'sex' => 'female',
-            'email' => $linkedUser->email,
-            'dept' => null,
-            'role' => 'Fidèle',
+            'member_id' => $linkedMember->id,
         ]);
         Member::create([
             'name' => 'Membre orphelin',
@@ -131,7 +134,7 @@ class ManagementViewsTest extends TestCase
             ->get(route('members.index'))
             ->assertOk()
             ->assertSee('Membre visible')
-            ->assertDontSee('Membre orphelin');
+            ->assertSee('Membre orphelin');
     }
 
     public function test_only_admin_can_export_an_individual_member_pdf(): void

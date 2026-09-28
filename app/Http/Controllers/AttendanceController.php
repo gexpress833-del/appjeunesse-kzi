@@ -23,7 +23,7 @@ class AttendanceController extends Controller
      */
     public function pick(Request $request)
     {
-        $user = auth()->user();
+        $user = $request->user();
         $portal = $request->attributes->get('portal', 'church');
 
         if ($portal === 'church' && $user->isPastorPrincipal()) {
@@ -115,7 +115,7 @@ class AttendanceController extends Controller
      */
     public function sheet(Request $request, Event $event)
     {
-        $user = auth()->user();
+        $user = $request->user();
         $portal = $request->attributes->get('portal', 'church');
 
         abort_unless($event->portal === $portal, 403, 'Cet événement appartient à un autre portail.');
@@ -181,10 +181,18 @@ class AttendanceController extends Controller
      */
     public function store(Request $request, Event $event)
     {
-        $user = auth()->user();
+        $user = $request->user();
         $portal = $request->attributes->get('portal', 'church');
 
         abort_unless($event->portal === $portal, 403, 'Cet événement appartient à un autre portail.');
+
+        $requestedDepartment = $request->input('dept');
+        abort_unless(
+            is_string($requestedDepartment)
+                && $user->canManageAttendance($portal, $this->normalizeDepartment($requestedDepartment)),
+            403,
+            'Vous ne pouvez enregistrer les présences que pour les départements qui vous sont affectés dans ce portail.'
+        );
 
         $data = $request->validate([
             'dept' => ['required', 'string'],
@@ -283,7 +291,7 @@ class AttendanceController extends Controller
      */
     public function report(Request $request)
     {
-        $user = auth()->user();
+        $user = $request->user();
 
         abort_if($user->isResponsable(), 403, 'Le rapport global est réservé à l\'administration et au secrétariat.');
 
@@ -385,7 +393,7 @@ class AttendanceController extends Controller
      */
     public function exportPdf(Request $request)
     {
-        $user = auth()->user();
+        $user = $request->user();
         $portal = $request->attributes->get('portal', 'church');
         abort_unless(in_array($portal, ['church', 'youth'], true), 404);
 

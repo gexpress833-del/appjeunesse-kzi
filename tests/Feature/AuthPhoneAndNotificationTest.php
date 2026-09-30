@@ -18,6 +18,15 @@ class AuthPhoneAndNotificationTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_guest_is_redirected_to_login_when_opening_notifications(): void
+    {
+        $response = $this->get(route('notifications.index'));
+
+        $response
+            ->assertRedirect(route('login'));
+        $response->assertSessionHas('url.intended', route('notifications.index'));
+    }
+
     public function test_user_can_login_with_phone_number(): void
     {
         $user = User::factory()->create([
@@ -241,6 +250,17 @@ class AuthPhoneAndNotificationTest extends TestCase
         $this->assertDatabaseMissing('notifications', [
             'id' => $notification->id,
         ]);
+    }
+
+    public function test_admin_can_open_notifications_page_from_the_header(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'status' => 'active']);
+
+        $this->actingAs($admin)
+            ->get(route('notifications.index'))
+            ->assertOk()
+            ->assertSee('Centre d’alertes')
+            ->assertSee('Tout est calme');
     }
 
     public function test_user_can_delete_multiple_notifications_at_once(): void

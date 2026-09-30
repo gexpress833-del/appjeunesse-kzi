@@ -2035,23 +2035,18 @@ html[data-theme='light'] .theme-toggle:hover {
 
     .guest-header-actions nav {
         display: flex;
-        flex-wrap: nowrap;
+        flex-wrap: wrap;
         gap: 0.35rem;
         justify-content: flex-start;
-        overflow-x: auto;
+        overflow: visible;
         padding-bottom: 0.1rem;
-        scrollbar-width: none;
-    }
-
-    .guest-header-actions nav::-webkit-scrollbar {
-        display: none;
     }
 
 
     .guest-header-actions nav a {
         overflow: hidden;
         text-overflow: ellipsis;
-        flex: 0 0 auto;
+        flex: 1 1 calc(33.333% - 0.35rem);
         max-width: 9rem;
         text-align: center;
     }
@@ -2088,6 +2083,13 @@ html[data-theme='light'] .theme-toggle:hover {
         width: auto !important;
         justify-self: end;
     }
+
+    .guest-page:not(.home-page) .guest-header-actions nav a {
+        max-width: none;
+        min-width: 0;
+        overflow-wrap: anywhere;
+        white-space: normal;
+    }
 }
 
 @media (max-width: 320px) {
@@ -2101,30 +2103,24 @@ html[data-theme='light'] .theme-toggle:hover {
         padding: 0.75rem 0.5rem;
     }
 
-    .guest-page:not(.home-page) main h1,
     .app-page main h1 {
         font-size: 1.1rem;
         line-height: 1.2;
         overflow-wrap: anywhere;
     }
 
-    .guest-page:not(.home-page) main h2,
     .app-page main h2 {
         font-size: 0.9rem;
         line-height: 1.25;
         overflow-wrap: anywhere;
     }
 
-    .guest-page:not(.home-page) main h3,
     .app-page main h3 {
         font-size: 0.75rem;
         line-height: 1.25;
         overflow-wrap: anywhere;
     }
 
-    .guest-page:not(.home-page) main p,
-    .guest-page:not(.home-page) main label,
-    .guest-page:not(.home-page) main li,
     .app-page main p,
     .app-page main label,
     .app-page main li {
@@ -2133,42 +2129,33 @@ html[data-theme='light'] .theme-toggle:hover {
         overflow-wrap: anywhere;
     }
 
-    .guest-page:not(.home-page) main .text-sm,
     .app-page main .text-sm {
         font-size: 0.62rem;
     }
 
-    .guest-page:not(.home-page) main .text-xs,
     .app-page main .text-xs {
         font-size: 0.52rem;
     }
 
-    .guest-page:not(.home-page) main .text-2xl,
     .app-page main .text-2xl {
         font-size: 1rem;
         line-height: 1.2;
     }
 
-    .guest-page:not(.home-page) main .p-8,
-    .guest-page:not(.home-page) main .p-6,
     .app-page main .p-8,
     .app-page main .p-6 {
         padding: 0.75rem;
     }
 
-    .guest-page:not(.home-page) main .p-5,
     .app-page main .p-5 {
         padding: 0.6rem;
     }
 
-    .guest-page:not(.home-page) main .mt-6,
     .app-page main .mt-6 {
         margin-top: 0.75rem;
     }
 
-    .guest-page:not(.home-page) main form,
     .app-page main form,
-    .guest-page:not(.home-page) main section,
     .app-page main section,
     .app-page main article,
     .app-page main aside {
@@ -2176,9 +2163,6 @@ html[data-theme='light'] .theme-toggle:hover {
         max-width: 100%;
     }
 
-    .guest-page:not(.home-page) main input,
-    .guest-page:not(.home-page) main select,
-    .guest-page:not(.home-page) main textarea,
     .app-page main input,
     .app-page main select,
     .app-page main textarea {
@@ -2187,9 +2171,27 @@ html[data-theme='light'] .theme-toggle:hover {
         font-size: 0.65rem;
     }
 
-    .guest-page:not(.home-page) main img,
     .app-page main img {
         max-width: 100%;
+    }
+
+    .guest-page:not(.home-page) main input,
+    .guest-page:not(.home-page) main select,
+    .guest-page:not(.home-page) main textarea {
+        min-width: 0;
+        max-width: 100%;
+        font-size: 1rem;
+    }
+
+    .guest-page:not(.home-page) main img {
+        max-width: 100%;
+    }
+
+    .guest-page:not(.home-page) .guest-header-actions nav a {
+        flex-basis: calc(50% - 0.35rem);
+        font-size: 0.58rem;
+        line-height: 1.2;
+        padding-inline: 0.3rem;
     }
 
     .app-page main .grid,

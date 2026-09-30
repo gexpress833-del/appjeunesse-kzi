@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Department;
+use App\Models\EcodimClassMember;
 use App\Models\Event;
 use App\Models\MemberRoleAssignment;
 use App\Models\User;
@@ -19,11 +21,14 @@ class EventController extends Controller
     {
         $user = auth()->user();
         $portal = $user->currentPortal();
+        $ecodimClasses = $portal === 'ecodim' ? $user->ecodimAttendanceClasses() : collect();
 
         return view('events.index', [
             'portal' => $portal,
+            'ecodimClasses' => $ecodimClasses,
             'upcoming' => Event::query()
                 ->where('portal', $portal)
+                ->when($portal === 'ecodim', fn ($query) => $query->whereIn('dept', $ecodimClasses->pluck('name')))
                 ->when($user->isResponsable(), fn ($query) => $query->where(fn ($query) => $query
                     ->whereNull('dept')
                     ->orWhere('dept', $user->dept)))
@@ -33,6 +38,7 @@ class EventController extends Controller
                 ->withQueryString(),
             'past' => Event::query()
                 ->where('portal', $portal)
+                ->when($portal === 'ecodim', fn ($query) => $query->whereIn('dept', $ecodimClasses->pluck('name')))
                 ->when($user->isResponsable(), fn ($query) => $query->where(fn ($query) => $query
                     ->whereNull('dept')
                     ->orWhere('dept', $user->dept)))
@@ -47,6 +53,7 @@ class EventController extends Controller
     {
         $user = auth()->user();
         $portal = $user->currentPortal();
+        $ecodimClasses = collect();
 
         if ($portal === 'youth') {
             $departments = $user->attendanceDepartments('youth');
@@ -56,6 +63,10 @@ class EventController extends Controller
 
             abort_unless($department && $user->canManageAttendance('youth', $department->name), 403, 'Une affectation active de responsable jeunesse est requise.');
             $departmentName = $department->name;
+        } elseif ($portal === 'ecodim') {
+            $ecodimClasses = $user->ecodimAttendanceClasses();
+            abort_if($ecodimClasses->isEmpty(), 403, 'Une affectation active à une classe ECODIM est requise.');
+            $departmentName = $ecodimClasses->count() === 1 ? $ecodimClasses->first()->name : null;
         } else {
             abort_if($user->isResponsable() && blank($user->dept), 403, 'Votre compte responsable doit être rattaché à un département.');
             $departmentName = $user->isResponsable() ? $user->dept : null;
@@ -67,14 +78,15 @@ class EventController extends Controller
                 'dept' => $departmentName,
                 'portal' => $portal,
             ]),
+            'ecodimClasses' => $ecodimClasses,
         ]);
     }
 
     public function store(Request $request, CloudinaryService $cloudinary)
     {
-        $data = $this->validated($request);
         $user = auth()->user();
         $portal = $request->attributes->get('portal', 'church');
+        $data = $this->validated($request, $portal);
 
         if ($portal === 'youth') {
             $departments = $user->attendanceDepartments('youth');
@@ -84,6 +96,13 @@ class EventController extends Controller
 
             abort_unless($department && $user->canManageAttendance('youth', $department->name), 403, 'Une affectation active de responsable jeunesse est requise.');
             $data['dept'] = $department->name;
+        } elseif ($portal === 'ecodim') {
+            $ecodimClasses = $user->ecodimAttendanceClasses();
+            $class = $ecodimClasses->firstWhere('name', $data['dept'])
+                ?? ($ecodimClasses->count() === 1 ? $ecodimClasses->first() : null);
+
+            abort_unless($class, 403, 'Vous ne pouvez créer un événement que pour une classe ECODIM qui vous est affectée.');
+            $data['dept'] = $class->name;
         } elseif ($user->isResponsable()) {
             abort_if(blank($user->dept), 403, 'Votre compte responsable doit être rattaché à un département.');
             $data['dept'] = $user->dept;
@@ -96,7 +115,40 @@ class EventController extends Controller
 
         $event = Event::create($data);
 
-        $eventOwners = $portal === 'youth'
+        if ($portal === 'ecodim') {
+            $ecodimDepartmentId = Department::query()->where('code', 'ecodim')->value('id');
+            $globalResponsibleIds = MemberRoleAssignment::query()
+                ->where('scope_type', 'ecodim')
+                ->where('scope_id', $ecodimDepartmentId)
+                ->where('status', 'active')
+                ->whereHas('role', fn ($query) => $query->whereIn('slug', ['responsable_ecodim', 'animateur_ecodim', 'enseignant_ecodim', 'leader_ecodim']))
+                ->pluck('user_id');
+            $classResponsibleId = $class->responsible_member_id;
+            $eventOwners = User::query()
+                ->whereIn('id', $globalResponsibleIds->push($classResponsibleId)->filter()->unique())
+                ->where('status', 'active')
+                ->get()
+                ->reject(fn (User $owner): bool => $owner->is($user));
+
+            foreach ($eventOwners as $owner) {
+                $owner->notify(new EventCreated($event, $user));
+            }
+
+            $classMemberIds = EcodimClassMember::query()
+                ->where('class_id', $class->id)
+                ->where('status', 'active')
+                ->where(fn ($query) => $query->whereNull('starts_at')->orWhere('starts_at', '<=', now()))
+                ->where(fn ($query) => $query->whereNull('ends_at')->orWhere('ends_at', '>=', now()))
+                ->pluck('member_id');
+
+            User::query()
+                ->whereIn('member_id', $classMemberIds)
+                ->where('status', 'active')
+                ->whereKeyNot($user->id)
+                ->get()
+                ->each(fn (User $recipient) => $recipient->notify(new EventCreated($event, $user)));
+        } else {
+            $eventOwners = $portal === 'youth'
             ? User::query()->whereIn('id', MemberRoleAssignment::query()
                 ->where('scope_type', 'youth')
                 ->where('status', 'active')
@@ -112,17 +164,24 @@ class EventController extends Controller
                 }))
                 ->get();
 
-        foreach ($eventOwners as $owner) {
-            $owner->notify(new EventCreated($event, $user));
+            foreach ($eventOwners as $owner) {
+                $owner->notify(new EventCreated($event, $user));
+            }
+
+            User::query()
+                ->where('role', 'user')
+                ->where('status', 'active')
+                ->get()
+                ->each(fn (User $recipient) => $recipient->notify(new EventCreated($event, $user)));
         }
 
-        User::query()
-            ->where('role', 'user')
-            ->where('status', 'active')
-            ->get()
-            ->each(fn (User $recipient) => $recipient->notify(new EventCreated($event, $user)));
+        $indexRoute = match ($portal) {
+            'youth' => 'youth.events.index',
+            'ecodim' => 'ecodim.events.index',
+            default => 'events.index',
+        };
 
-        return redirect()->route($portal === 'youth' ? 'youth.events.index' : 'events.index')->with('success', 'Événement créé.');
+        return redirect()->route($indexRoute)->with('success', 'Événement créé.');
     }
 
     public function edit(Event $event)
@@ -166,13 +225,17 @@ class EventController extends Controller
         return redirect()->route('events.index')->with('success', 'Événement supprimé.');
     }
 
-    protected function validated(Request $request): array
+    protected function validated(Request $request, ?string $portal = null): array
     {
+        $departmentRule = $portal === 'ecodim'
+            ? ['nullable', 'string', 'exists:ecodim_classes,name']
+            : ['nullable', 'string', 'exists:departments,name'];
+
         return $request->validate([
             'name' => ['required', 'string', 'max:150'],
             'date' => ['required', 'date'],
             'description' => ['nullable', 'string', 'max:5000'],
-            'dept' => ['nullable', 'string', 'exists:departments,name'],
+            'dept' => $departmentRule,
             'photo' => ['nullable', 'image', 'max:8192'],
         ]);
     }
@@ -202,6 +265,12 @@ class EventController extends Controller
         $user = auth()->user();
 
         abort_unless($event->portal === $user->currentPortal(), 403, 'Cet événement appartient à un autre portail.');
+
+        if ($event->portal === 'ecodim') {
+            abort_unless($user->canManageAttendance('ecodim', $event->dept), 403, 'Cette classe ECODIM ne vous est pas affectée.');
+
+            return;
+        }
 
         if ($user->isResponsable() && $event->dept !== $user->dept) {
             abort(403, 'Vous ne pouvez gérer que les événements de votre département.');

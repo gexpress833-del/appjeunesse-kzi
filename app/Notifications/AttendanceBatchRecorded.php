@@ -17,6 +17,7 @@ class AttendanceBatchRecorded extends Notification
         public User $recordedBy,
         public string $department,
         public int $memberCount,
+        public string $portal,
     ) {}
 
     public function via(object $notifiable): array
@@ -32,6 +33,7 @@ class AttendanceBatchRecorded extends Notification
             'type' => 'attendance_batch_recorded',
             'event_id' => $this->event->id,
             'department' => $this->department,
+            'portal' => $this->portal,
             'member_count' => $this->memberCount,
         ];
     }

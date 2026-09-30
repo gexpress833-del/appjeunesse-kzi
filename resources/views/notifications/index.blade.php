@@ -3,7 +3,9 @@
 @section('title', 'Notifications')
 
 @section('content')
-@php($unreadCount = auth()->user()->unreadNotifications()->count())
+@php
+    $unreadCount = auth()->user()->unreadNotifications()->count();
+@endphp
 <div class="flex flex-wrap items-end justify-between gap-4">
     <div>
         <p class="text-xs font-bold uppercase tracking-[0.22em] text-cyan-500">Centre d’alertes</p>

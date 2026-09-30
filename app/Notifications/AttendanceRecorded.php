@@ -13,10 +13,13 @@ class AttendanceRecorded extends Notification
 {
     use Queueable;
 
-    public function __construct(public Attendance $attendance, public Event $event, public User $recordedBy)
-    {
-        //
-    }
+    public function __construct(
+        public Attendance $attendance,
+        public Event $event,
+        public User $recordedBy,
+        public string $portal,
+        public ?string $department = null,
+    ) {}
 
     public function via(object $notifiable): array
     {
@@ -31,6 +34,8 @@ class AttendanceRecorded extends Notification
             'type' => 'attendance_recorded',
             'event_id' => $this->event->id,
             'member_id' => $this->attendance->member_id,
+            'portal' => $this->portal,
+            'department' => $this->department,
             'status' => $this->attendance->status,
         ];
     }

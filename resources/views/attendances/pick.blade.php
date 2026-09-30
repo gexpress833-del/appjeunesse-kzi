@@ -4,8 +4,9 @@
 
 @section('content')
 @php($isYouthPortal = ($portal ?? 'church') === 'youth')
+@php($isEcodimPortal = ($portal ?? 'church') === 'ecodim')
 <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-    <h1 class="text-2xl font-bold text-slate-900">{{ $isYouthPortal ? 'Présences jeunesse' : 'Prise de présence' }}</h1>
+    <h1 class="text-2xl font-bold text-slate-900">{{ $isYouthPortal ? 'Présences jeunesse' : ($isEcodimPortal ? 'Présences ECODIM' : 'Prise de présence') }}</h1>
     @if (auth()->user()->isResponsable() && ! $isYouthPortal)
         <a href="{{ route('attendances.pdf') }}" class="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:from-emerald-500 hover:to-teal-400">
             <span aria-hidden="true">📄</span>
@@ -41,7 +42,7 @@
                                 <p class="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">Département</p>
                                 <div class="flex flex-wrap justify-end gap-2">
                                     @foreach ($departments->when($event->dept, fn ($items) => $items->where('name', $event->dept)) as $department)
-                                        <a href="{{ route($isYouthPortal ? 'youth.attendances.sheet' : 'attendances.sheet', ['event' => $event, 'dept' => $department->name]) }}" class="action-link rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-500">{{ $department->name }}</a>
+                                        <a href="{{ route($isEcodimPortal ? 'ecodim.attendances.sheet' : ($isYouthPortal ? 'youth.attendances.sheet' : 'attendances.sheet'), ['event' => $event, 'dept' => $department->name]) }}" class="action-link rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-500">{{ $department->name }}</a>
                                         @if ($isYouthPortal)
                                             <a href="{{ route('youth.attendances.pdf', ['event_id' => $event->id, 'dept' => $department->name]) }}" class="action-link rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-500">PDF</a>
                                         @endif
@@ -76,7 +77,7 @@
                                 @else
                                     <div class="flex max-w-2xl flex-wrap justify-end gap-2">
                                         @foreach ($departments->when($event->dept, fn ($items) => $items->where('name', $event->dept)) as $department)
-                                            <a href="{{ route($isYouthPortal ? 'youth.attendances.sheet' : 'attendances.sheet', ['event' => $event, 'dept' => $department->name]) }}" class="action-link rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-500">{{ $department->name }}</a>
+                                            <a href="{{ route($isEcodimPortal ? 'ecodim.attendances.sheet' : ($isYouthPortal ? 'youth.attendances.sheet' : 'attendances.sheet'), ['event' => $event, 'dept' => $department->name]) }}" class="action-link rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-500">{{ $department->name }}</a>
                                             @if ($isYouthPortal)
                                                 <a href="{{ route('youth.attendances.pdf', ['event_id' => $event->id, 'dept' => $department->name]) }}" class="action-link rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-500">PDF</a>
                                             @endif

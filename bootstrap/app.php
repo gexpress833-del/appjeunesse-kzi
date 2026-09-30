@@ -50,7 +50,7 @@ return Application::configure(basePath: dirname(__DIR__))
         );
 
         $exceptions->render(function (Throwable $exception, Request $request) {
-            if ($exception instanceof ValidationException) {
+            if ($exception instanceof ValidationException || $exception instanceof AuthenticationException) {
                 return null;
             }
 

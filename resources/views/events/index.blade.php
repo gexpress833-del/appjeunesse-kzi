@@ -7,6 +7,8 @@
     <h1 class="text-2xl font-bold text-slate-900">Événements</h1>
     @if ($portal === 'youth' && auth()->user()->canManageAttendance('youth', auth()->user()->dept))
         <a href="{{ route('youth.events.create') }}" class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">➕ Créer un événement jeunesse</a>
+    @elseif ($portal === 'ecodim' && $ecodimClasses->isNotEmpty())
+        <a href="{{ route('ecodim.events.create') }}" class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">➕ Créer une activité ECODIM</a>
     @elseif (auth()->user()->isChurchAdministrator() && $portal === 'church')
         <a href="{{ route('events.create') }}" class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">➕ Créer un événement</a>
     @endif
@@ -25,7 +27,7 @@
                     <p class="font-semibold text-slate-900">{{ $event->name }}</p>
                     <p class="text-sm text-slate-500">{{ $event->date->translatedFormat('l d F Y') }} · {{ $event->date->format('H\hi') }} · {{ $event->members_count }} présence(s)</p>
                     <p class="mt-1 text-xs font-semibold uppercase tracking-wide {{ $event->dept ? 'text-indigo-600' : 'text-emerald-600' }}">
-                        {{ $event->dept ? 'Département : '.$event->dept : 'Événement global' }}
+                        {{ $event->dept ? (($portal === 'ecodim' ? 'Classe : ' : 'Département : ').$event->dept) : 'Événement global' }}
                     </p>
                 </div>
             </div>
@@ -38,6 +40,8 @@
                 </div>
             @elseif ($portal === 'youth' && auth()->user()->canManageAttendance('youth', $event->dept))
                 <a href="{{ route('youth.attendances.sheet', ['event' => $event, 'dept' => $event->dept]) }}" class="rounded-lg bg-emerald-50 px-3 py-2 font-semibold text-emerald-700 hover:bg-emerald-100">✅ Faire l'appel jeunesse</a>
+            @elseif ($portal === 'ecodim' && auth()->user()->canManageAttendance('ecodim', $event->dept))
+                <a href="{{ route('ecodim.attendances.sheet', ['event' => $event, 'dept' => $event->dept]) }}" class="rounded-lg bg-emerald-50 px-3 py-2 font-semibold text-emerald-700 hover:bg-emerald-100">✅ Faire l’appel ECODIM</a>
             @endif
         </div>
     @empty
@@ -64,6 +68,8 @@
                 <a href="{{ auth()->user()->isResponsable() ? route('attendances.sheet', ['event' => $event, 'dept' => auth()->user()->dept]) : route('attendances.sheet', $event) }}" class="text-sm text-slate-500 hover:underline">Voir l'appel</a>
             @elseif ($portal === 'youth' && auth()->user()->canManageAttendance('youth', $event->dept))
                 <a href="{{ route('youth.attendances.sheet', ['event' => $event, 'dept' => $event->dept]) }}" class="text-sm text-slate-500 hover:underline">Voir l'appel jeunesse</a>
+            @elseif ($portal === 'ecodim' && auth()->user()->canManageAttendance('ecodim', $event->dept))
+                <a href="{{ route('ecodim.attendances.sheet', ['event' => $event, 'dept' => $event->dept]) }}" class="text-sm text-slate-500 hover:underline">Voir l’appel ECODIM</a>
             @endif
         </div>
     @empty

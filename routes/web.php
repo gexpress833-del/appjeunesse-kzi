@@ -87,6 +87,12 @@ Route::middleware(['auth', 'active', 'maintenance'])->group(function () {
 
     Route::middleware('portal:ecodim')->group(function () {
         Route::get('/portail-ecodim', [DashboardController::class, 'index'])->name('dashboard.ecodim');
+        Route::get('/portail-ecodim/evenements', [EventController::class, 'index'])->name('ecodim.events.index');
+        Route::get('/portail-ecodim/evenements/creer', [EventController::class, 'create'])->name('ecodim.events.create');
+        Route::post('/portail-ecodim/evenements', [EventController::class, 'store'])->name('ecodim.events.store');
+        Route::get('/portail-ecodim/presences', [AttendanceController::class, 'pick'])->name('ecodim.attendances.pick');
+        Route::get('/portail-ecodim/presences/{event}', [AttendanceController::class, 'sheet'])->name('ecodim.attendances.sheet');
+        Route::post('/portail-ecodim/presences/{event}', [AttendanceController::class, 'store'])->name('ecodim.attendances.store');
     });
 
     Route::middleware('auth')->group(function () {

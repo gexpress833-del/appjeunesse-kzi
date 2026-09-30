@@ -435,8 +435,41 @@ class User extends Authenticatable implements CanResetPasswordContract
             ->get();
     }
 
+    /** @return Collection<int, EcodimClass> */
+    public function ecodimAttendanceClasses(): Collection
+    {
+        $classes = EcodimClass::query()->where('status', 'active');
+
+        if ($this->isAdmin()) {
+            return $classes->orderBy('name')->get();
+        }
+
+        $ecodimDepartmentId = Department::query()->where('code', 'ecodim')->value('id');
+        $hasPortalWideAssignment = $ecodimDepartmentId && MemberRoleAssignment::query()
+            ->where('user_id', $this->id)
+            ->where('scope_type', 'ecodim')
+            ->where('scope_id', $ecodimDepartmentId)
+            ->where('status', 'active')
+            ->whereHas('role', fn ($query) => $query->whereIn('slug', [
+                'responsable_ecodim',
+                'animateur_ecodim',
+                'enseignant_ecodim',
+                'leader_ecodim',
+            ]))
+            ->exists();
+
+        return $classes
+            ->when(! $hasPortalWideAssignment, fn ($query) => $query->where('responsible_member_id', $this->id))
+            ->orderBy('name')
+            ->get();
+    }
+
     public function canManageAttendance(string $portal, ?string $department): bool
     {
+        if ($portal === 'ecodim') {
+            return filled($department) && $this->ecodimAttendanceClasses()->contains('name', $department);
+        }
+
         return filled($department)
             && $this->attendanceDepartments($portal)->contains('name', $department);
     }

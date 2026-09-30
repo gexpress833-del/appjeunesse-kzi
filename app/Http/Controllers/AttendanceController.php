@@ -5,11 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\AppSetting;
 use App\Models\Attendance;
 use App\Models\Department;
+use App\Models\EcodimClass;
+use App\Models\EcodimClassMember;
 use App\Models\Event;
 use App\Models\Member;
 use App\Models\MemberRoleAssignment;
 use App\Models\User;
 use App\Notifications\AttendanceBatchRecorded;
+use App\Notifications\AttendanceRecorded;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
@@ -83,9 +86,12 @@ class AttendanceController extends Controller
         }
 
         $canViewAllDepartments = $portal === 'church' && ($user->isAdmin() || $user->isSecretariat());
-        $departments = $canViewAllDepartments
-            ? Department::query()->orderBy('name')->get()
-            : $user->attendanceDepartments($portal);
+        $departments = match ($portal) {
+            'ecodim' => $user->ecodimAttendanceClasses(),
+            default => $canViewAllDepartments
+                ? Department::query()->orderBy('name')->get()
+                : $user->attendanceDepartments($portal),
+        };
 
         abort_if($departments->isEmpty(), 403, 'Une affectation active au département est requise pour gérer les présences.');
         $departmentNames = $departments->pluck('name');
@@ -122,9 +128,12 @@ class AttendanceController extends Controller
 
         $canViewAllDepartments = $portal === 'church'
             && ($user->isAdmin() || $user->isSecretariat() || $user->isPastorPrincipal());
-        $departments = $canViewAllDepartments
-            ? Department::query()->orderBy('name')->get()
-            : $user->attendanceDepartments($portal);
+        $departments = match ($portal) {
+            'ecodim' => $user->ecodimAttendanceClasses(),
+            default => $canViewAllDepartments
+                ? Department::query()->orderBy('name')->get()
+                : $user->attendanceDepartments($portal),
+        };
 
         if (filled($event->dept)) {
             $departments = $departments->where('name', $event->dept)->values();
@@ -142,19 +151,39 @@ class AttendanceController extends Controller
 
         $departmentSelectionRequired = $request->missing('dept') && ($canViewAllDepartments || $departments->count() > 1);
 
-        if (! $canViewAllDepartments) {
+        if (! $canViewAllDepartments && ! $departmentSelectionRequired) {
             abort_unless($user->canManageAttendance($portal, $dept), 403, 'Vous ne pouvez consulter que les départements qui vous sont affectés dans ce portail.');
         }
 
         if (filled($dept)) {
-            abort_unless(Department::where('name', $dept)->exists(), 404, 'Département inconnu.');
+            $scopeExists = $portal === 'ecodim'
+                ? EcodimClass::query()->where('name', $dept)->where('status', 'active')->exists()
+                : Department::query()->where('name', $dept)->exists();
+            abort_unless($scopeExists, 404, $portal === 'ecodim' ? 'Classe ECODIM inconnue.' : 'Département inconnu.');
         }
 
-        $members = Member::query()
-            ->when($dept === null, fn ($query) => $query->whereNull('dept'))
-            ->when(filled($dept), fn ($query) => $query->where('dept', $dept))
-            ->orderBy('name')
-            ->get();
+        if ($portal === 'ecodim' && filled($dept)) {
+            $class = $departments->firstWhere('name', $dept);
+            abort_unless($class instanceof EcodimClass, 403, 'Cette classe ECODIM ne vous est pas affectée.');
+
+            $members = EcodimClassMember::query()
+                ->where('class_id', $class->id)
+                ->where('status', 'active')
+                ->where(fn ($query) => $query->whereNull('starts_at')->orWhere('starts_at', '<=', now()))
+                ->where(fn ($query) => $query->whereNull('ends_at')->orWhere('ends_at', '>=', now()))
+                ->with('member')
+                ->get()
+                ->pluck('member')
+                ->filter()
+                ->sortBy('name')
+                ->values();
+        } else {
+            $members = Member::query()
+                ->when($dept === null, fn ($query) => $query->whereNull('dept'))
+                ->when(filled($dept), fn ($query) => $query->where('dept', $dept))
+                ->orderBy('name')
+                ->get();
+        }
 
         $existing = Attendance::where('event_id', $event->id)
             ->whereIn('member_id', $members->pluck('id'))
@@ -204,7 +233,9 @@ class AttendanceController extends Controller
 
         $data['dept'] = $this->normalizeDepartment($data['dept']);
 
-        if (filled($data['dept'])) {
+        if ($portal === 'ecodim') {
+            abort_unless(EcodimClass::query()->where('name', $data['dept'])->where('status', 'active')->exists(), 422, 'Classe ECODIM inconnue.');
+        } elseif (filled($data['dept'])) {
             abort_unless(Department::where('name', $data['dept'])->exists(), 422, 'Département inconnu.');
         }
 
@@ -214,12 +245,24 @@ class AttendanceController extends Controller
             abort(403, 'Cet événement est réservé à un autre département.');
         }
 
-        $memberIds = Member::query()
-            ->when($data['dept'] === null, fn ($query) => $query->whereNull('dept'))
-            ->when(filled($data['dept']), fn ($query) => $query->where('dept', $data['dept']))
-            ->pluck('id');
+        if ($portal === 'ecodim') {
+            $class = EcodimClass::query()->where('name', $data['dept'])->where('status', 'active')->firstOrFail();
+            $activeClassMembers = EcodimClassMember::query()
+                ->where('class_id', $class->id)
+                ->where('status', 'active')
+                ->where(fn ($query) => $query->whereNull('starts_at')->orWhere('starts_at', '<=', now()))
+                ->where(fn ($query) => $query->whereNull('ends_at')->orWhere('ends_at', '>=', now()))
+                ->pluck('member_id');
+            $memberIds = $activeClassMembers;
+        } else {
+            $memberIds = Member::query()
+                ->when($data['dept'] === null, fn ($query) => $query->whereNull('dept'))
+                ->when(filled($data['dept']), fn ($query) => $query->where('dept', $data['dept']))
+                ->pluck('id');
+        }
 
         $recordedCount = 0;
+        $recordedAttendances = collect();
 
         foreach ($data['statuses'] as $memberId => $status) {
             $memberId = (int) $memberId;
@@ -243,11 +286,28 @@ class AttendanceController extends Controller
             );
 
             $recordedCount++;
+            $recordedAttendances->push($attendance);
         }
 
-        if ($recordedCount > 0) {
+        if ($recordedCount > 0 && (AppSetting::current()->notification_settings['attendance_recorded'] ?? true)) {
             $department = $data['dept'] ?? 'Sans département';
-            if ($portal === 'youth') {
+            if ($portal === 'ecodim') {
+                $ecodimDepartmentId = Department::query()->where('code', 'ecodim')->value('id');
+                $classResponsibleId = $class->responsible_member_id;
+                $globalResponsibleIds = MemberRoleAssignment::query()
+                    ->where('scope_type', 'ecodim')
+                    ->where('scope_id', $ecodimDepartmentId)
+                    ->where('status', 'active')
+                    ->whereHas('role', fn ($query) => $query->whereIn('slug', [
+                        'responsable_ecodim',
+                        'animateur_ecodim',
+                        'enseignant_ecodim',
+                        'leader_ecodim',
+                    ]))
+                    ->pluck('user_id');
+                $recipientIds = $globalResponsibleIds->push($classResponsibleId)->filter()->unique();
+                $recipients = User::query()->whereIn('id', $recipientIds)->where('status', 'active')->get();
+            } elseif ($portal === 'youth') {
                 $departmentId = Department::query()->where('name', $data['dept'])->value('id');
                 $youthPortalId = Department::query()->where('code', 'youth')->value('id');
                 $scopeIds = collect([$departmentId, $youthPortalId])->filter()->unique();
@@ -271,11 +331,31 @@ class AttendanceController extends Controller
             $recipients = $recipients->reject(fn (User $recipient): bool => $recipient->is($user));
 
             foreach ($recipients as $recipient) {
-                $recipient->notify(new AttendanceBatchRecorded($event, $user, $department, $recordedCount));
+                if (! $recipient->is($user)) {
+                    $recipient->notify(new AttendanceBatchRecorded($event, $user, $department, $recordedCount, $portal));
+                }
+            }
+
+            if ($portal === 'ecodim') {
+                $childAccounts = User::query()
+                    ->whereIn('member_id', $recordedAttendances->pluck('member_id'))
+                    ->where('status', 'active')
+                    ->get()
+                    ->reject(fn (User $recipient): bool => $recipient->is($user));
+
+                foreach ($recordedAttendances as $attendance) {
+                    $childAccounts
+                        ->firstWhere('member_id', $attendance->member_id)
+                        ?->notify(new AttendanceRecorded($attendance, $event, $user, $portal, $department));
+                }
             }
         }
 
-        $sheetRoute = $portal === 'youth' ? 'youth.attendances.sheet' : 'attendances.sheet';
+        $sheetRoute = match ($portal) {
+            'youth' => 'youth.attendances.sheet',
+            'ecodim' => 'ecodim.attendances.sheet',
+            default => 'attendances.sheet',
+        };
 
         return redirect()->route($sheetRoute, ['event' => $event, 'dept' => $data['dept'] ?? self::UNASSIGNED_DEPARTMENT])
             ->with('success', 'Présences enregistrées.');

@@ -22,7 +22,7 @@
             @csrf
             <div>
                 <label for="login" class="auth-card-label block text-sm font-medium text-slate-700">Email, nom d'utilisateur ou téléphone</label>
-                <input id="login" name="login" type="text" value="{{ old('login') }}" required autofocus
+                <input id="login" name="login" type="text" value="{{ old('login') }}" required
                        placeholder="ex. exemple@gmail.com, nom.postnom ou 0812345678"
                        class="mt-1 w-full rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
             </div>

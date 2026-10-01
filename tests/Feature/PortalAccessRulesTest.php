@@ -73,9 +73,31 @@ class PortalAccessRulesTest extends TestCase
         $this->assertSame('church', $pastor->primaryPortal());
     }
 
+    public function test_church_administrator_keeps_church_priority_with_ecodim_role(): void
+    {
+        $department = Department::query()->firstOrCreate(['code' => 'ecodim'], ['name' => 'ECODIM']);
+        $admin = User::factory()->create(['role' => 'admin', 'status' => 'active']);
+        $ecodimRole = Role::query()->firstOrCreate(
+            ['slug' => 'responsable_ecodim'],
+            ['name' => 'Responsable ECODIM', 'status' => 'active'],
+        );
+        MemberRoleAssignment::create([
+            'user_id' => $admin->id,
+            'role_id' => $ecodimRole->id,
+            'scope_type' => 'ecodim',
+            'scope_id' => $department->id,
+            'status' => 'active',
+        ]);
+
+        $this->assertTrue($admin->canAccessPortal('ecodim'));
+        $this->assertSame('church', $admin->primaryPortal());
+        $this->assertSame('dashboard', $admin->dashboardRouteName());
+    }
+
     public function test_ecodim_responsible_defaults_to_the_ecodim_dashboard(): void
     {
         $department = Department::query()->firstOrCreate(['code' => 'ecodim'], ['name' => 'ECODIM']);
+        $youthDepartment = Department::query()->firstOrCreate(['code' => 'youth'], ['name' => 'Portail jeunesse']);
         $responsible = User::factory()->create(['role' => 'user', 'status' => 'active']);
         $role = Role::query()->firstOrCreate(
             ['slug' => 'responsable_ecodim'],
@@ -88,9 +110,35 @@ class PortalAccessRulesTest extends TestCase
             'scope_id' => $department->id,
             'status' => 'active',
         ]);
+        Membership::create([
+            'user_id' => $responsible->id,
+            'type' => 'youth',
+            'entity_id' => $youthDepartment->id,
+            'status' => 'active',
+        ]);
 
+        $this->assertTrue($responsible->canAccessPortal('youth'));
         $this->assertSame('ecodim', $responsible->primaryPortal());
         $this->assertSame('dashboard.ecodim', $responsible->dashboardRouteName());
+    }
+
+    public function test_pending_youth_portal_account_defaults_to_the_youth_dashboard(): void
+    {
+        $department = Department::query()->firstOrCreate(['code' => 'youth'], ['name' => 'Portail jeunesse']);
+        $user = User::factory()->create([
+            'role' => 'user',
+            'status' => 'pending',
+            'dept' => $department->name,
+        ]);
+        Membership::create([
+            'user_id' => $user->id,
+            'type' => 'youth',
+            'entity_id' => $department->id,
+            'status' => 'active',
+        ]);
+
+        $this->assertSame('youth', $user->primaryPortal());
+        $this->assertSame('dashboard.youth', $user->dashboardRouteName());
     }
 
     public function test_portal_navigation_key_separates_youth_and_church_modules(): void

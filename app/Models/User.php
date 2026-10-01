@@ -188,6 +188,14 @@ class User extends Authenticatable implements CanResetPasswordContract
             return 'ecodim';
         }
 
+        if ($this->hasPortalRole('youth', [
+            'responsable_jeunesse',
+            'animateur_jeunesse',
+            'leader_youth',
+        ]) || $this->belongsToPortal('youth')) {
+            return 'youth';
+        }
+
         return $this->isChurchMember() ? 'youth' : 'church';
     }
 

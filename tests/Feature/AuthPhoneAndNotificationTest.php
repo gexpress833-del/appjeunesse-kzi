@@ -48,6 +48,68 @@ class AuthPhoneAndNotificationTest extends TestCase
         $this->assertAuthenticatedAs($user);
     }
 
+    public function test_existing_youth_responsible_is_redirected_to_youth_dashboard_from_login_page(): void
+    {
+        $department = Department::query()->firstOrCreate(['code' => 'youth'], ['name' => 'Portail jeunesse']);
+        $user = User::factory()->create([
+            'role' => 'user',
+            'status' => 'active',
+            'password' => bcrypt('password123'),
+        ]);
+        $role = Role::query()->firstOrCreate(
+            ['slug' => 'responsable_jeunesse'],
+            ['name' => 'Responsable jeunesse', 'status' => 'active'],
+        );
+        MemberRoleAssignment::create([
+            'user_id' => $user->id,
+            'role_id' => $role->id,
+            'scope_type' => 'youth',
+            'scope_id' => $department->id,
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('login'))
+            ->assertRedirect(route('dashboard.youth'));
+
+        $this->post(route('logout'))->assertRedirect(route('home'));
+        $this->post(route('login.attempt'), [
+            'login' => $user->username,
+            'password' => 'password123',
+        ])->assertRedirect(route('dashboard.youth'));
+    }
+
+    public function test_existing_ecodim_responsible_is_redirected_to_ecodim_dashboard_from_login_page(): void
+    {
+        $department = Department::query()->firstOrCreate(['code' => 'ecodim'], ['name' => 'ECODIM']);
+        $user = User::factory()->create([
+            'role' => 'user',
+            'status' => 'active',
+            'password' => bcrypt('password123'),
+        ]);
+        $role = Role::query()->firstOrCreate(
+            ['slug' => 'responsable_ecodim'],
+            ['name' => 'Responsable ECODIM', 'status' => 'active'],
+        );
+        MemberRoleAssignment::create([
+            'user_id' => $user->id,
+            'role_id' => $role->id,
+            'scope_type' => 'ecodim',
+            'scope_id' => $department->id,
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('login'))
+            ->assertRedirect(route('dashboard.ecodim'));
+
+        $this->post(route('logout'))->assertRedirect(route('home'));
+        $this->post(route('login.attempt'), [
+            'login' => $user->username,
+            'password' => 'password123',
+        ])->assertRedirect(route('dashboard.ecodim'));
+    }
+
     public function test_validated_ecodim_responsible_login_redirects_to_ecodim_dashboard(): void
     {
         $department = Department::query()->firstOrCreate(['code' => 'ecodim'], ['name' => 'ECODIM']);

@@ -18,7 +18,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="{{ asset('logoEglise.jpg') }}">
     <script>
-        document.documentElement.dataset.theme = localStorage.getItem('appjeunesse-theme') || 'dark';
+        document.documentElement.dataset.theme = 'dark';
     </script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -37,10 +37,6 @@
                 </span>
             </a>
             <div class="guest-header-actions flex shrink-0 items-center gap-2">
-                <button type="button" data-theme-toggle class="theme-toggle px-2 py-2 text-xs sm:px-3 sm:text-sm" aria-label="Activer le mode clair">
-                    <span data-theme-icon aria-hidden="true">☀</span>
-                    <span data-theme-label>Clair</span>
-                </button>
                 <button type="button" data-app-install class="app-install-button px-2.5 py-2 sm:px-3" aria-label="Installer l’application">
                     <span aria-hidden="true">＋</span>
                     <span>Installer l’app</span>

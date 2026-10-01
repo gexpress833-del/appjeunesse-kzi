@@ -24,11 +24,11 @@
 
 <form id="bulk-notifications-form" method="POST" action="{{ route('notifications.bulk.destroy') }}" class="mt-6">
     @csrf
-    <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-        <button type="button" id="toggle-notifications-selection" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-100">
+    <div class="notification-toolbar flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+        <button type="button" id="toggle-notifications-selection" class="notification-select-button inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-100">
             <span aria-hidden="true">☷</span><span class="toggle-label">Tout sélectionner</span>
         </button>
-        <button type="submit" class="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700 transition hover:bg-rose-100">
+        <button type="submit" class="notification-delete-selected inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700 transition hover:bg-rose-100">
             <span aria-hidden="true">⌫</span> Supprimer la sélection
         </button>
     </div>
@@ -75,19 +75,19 @@
                     @if (! $notification->read_at)
                         <form method="POST" action="{{ route('notifications.read', $notification) }}">
                             @csrf
-                            <button title="Marquer comme lu" aria-label="Marquer comme lu" class="flex h-9 w-9 items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 font-bold text-emerald-700 transition hover:bg-emerald-100">✓</button>
+                            <button title="Marquer comme lu" aria-label="Marquer comme lu" class="notification-read-button flex h-9 w-9 items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 font-bold text-emerald-700 transition hover:bg-emerald-100">✓</button>
                         </form>
                     @endif
                     <form method="POST" action="{{ route('notifications.destroy', $notification) }}" onsubmit="return confirm('Supprimer cette notification ?');">
                         @csrf
                         @method('DELETE')
-                        <button title="Supprimer" aria-label="Supprimer" class="flex h-9 w-9 items-center justify-center rounded-xl border border-rose-200 bg-rose-50 font-bold text-rose-700 transition hover:bg-rose-100">×</button>
+                        <button title="Supprimer" aria-label="Supprimer" class="notification-delete-button flex h-9 w-9 items-center justify-center rounded-xl border border-rose-200 bg-rose-50 font-bold text-rose-700 transition hover:bg-rose-100">×</button>
                     </form>
                 </div>
             </div>
         </article>
     @empty
-        <div class="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
+        <div class="notification-empty-state rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
             <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-xl text-slate-400">✓</div>
             <p class="mt-3 text-base font-bold text-slate-700">Tout est calme</p>
             <p class="mt-1 text-sm text-slate-500">Aucune notification pour le moment.</p>

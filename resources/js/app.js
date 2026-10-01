@@ -1,6 +1,4 @@
-const themeStorageKey = 'appjeunesse-theme';
-const storedTheme = window.localStorage.getItem(themeStorageKey);
-const preferredTheme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+document.documentElement.dataset.theme = 'dark';
 const FCM_TOKEN_STORAGE_KEY = 'appjeunesse-fcm-token';
 let fcmMessageHandlerBound = false;
 
@@ -194,8 +192,6 @@ const bindNotificationButtons = () => {
 	updateNotificationButtons();
 };
 
-document.documentElement.dataset.theme = storedTheme || preferredTheme;
-
 let deferredInstallPrompt;
 
 const isInstalledApp = () => window.matchMedia('(display-mode: standalone)').matches
@@ -266,36 +262,20 @@ window.addEventListener('appinstalled', () => {
 	hideInstallButtons();
 });
 
-document.querySelectorAll('[data-theme-toggle]').forEach((toggle) => {
-	const updateLabel = () => {
-		const isLight = document.documentElement.dataset.theme === 'light';
-		toggle.setAttribute('aria-label', isLight ? 'Activer le mode sombre' : 'Activer le mode clair');
-		toggle.querySelector('[data-theme-icon]').textContent = isLight ? '☾' : '☀';
-		toggle.querySelector('[data-theme-label]').textContent = isLight ? 'Sombre' : 'Clair';
-	};
+window.toggleSidebar = () => {
 
-	toggle.addEventListener('click', () => {
-		const nextTheme = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+	const sidebar = document.getElementById('sidebar');
+	const backdrop = document.getElementById('sidebar-backdrop');
 
-		document.documentElement.dataset.theme = nextTheme;
-		window.localStorage.setItem(themeStorageKey, nextTheme);
-		updateLabel();
-	});
+	if (!sidebar || !backdrop) {
+		return;
+	}
 
-	window.toggleSidebar = () => {
+	const isClosed = sidebar.classList.toggle('sidebar-closed');
 
-		const sidebar = document.getElementById('sidebar');
-		const backdrop = document.getElementById('sidebar-backdrop');
-
-		if (!sidebar || !backdrop) {
-			return;
-		}
-
-		const isClosed = sidebar.classList.toggle('sidebar-closed');
-
-		sidebar.classList.toggle('sidebar-open', !isClosed);
-		backdrop.classList.toggle('hidden', isClosed);
-	};
+	sidebar.classList.toggle('sidebar-open', !isClosed);
+	backdrop.classList.toggle('hidden', isClosed);
+};
 
 	window.closeSidebar = () => {
 		const sidebar = document.getElementById('sidebar');
@@ -309,9 +289,6 @@ document.querySelectorAll('[data-theme-toggle]').forEach((toggle) => {
 		sidebar.classList.remove('sidebar-open');
 		backdrop.classList.add('hidden');
 	};
-
-	updateLabel();
-});
 
 showInstallPrompt();
 

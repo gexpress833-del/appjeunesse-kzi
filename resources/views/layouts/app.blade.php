@@ -19,7 +19,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="{{ asset('logoEglise.jpg') }}">
     <script>
-        document.documentElement.dataset.theme = localStorage.getItem('appjeunesse-theme') || 'dark';
+        document.documentElement.dataset.theme = 'dark';
     </script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -122,10 +122,6 @@
                 <a href="{{ route('settings.index') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all {{ request()->routeIs('settings.*') ? 'bg-gradient-to-r from-indigo-600/80 to-cyan-500/70 font-semibold text-white shadow-lg shadow-indigo-500/20' : 'text-slate-300 hover:bg-white/5 hover:text-white' }}"><span>⚙️</span> Paramètres</a>
             @endif
             <div class="border-t border-white/10 px-4 py-4">
-            <button type="button" data-theme-toggle class="theme-toggle mb-3 w-full" aria-label="Activer le mode clair">
-                <span data-theme-icon aria-hidden="true">☀</span>
-                <span data-theme-label>Clair</span>
-            </button>
             <button type="button" data-notifications-enable aria-label="Activer les notifications" class="mb-3 flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-400/30 bg-cyan-500/10 px-3 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-500/20">
                 <span aria-hidden="true">🔔</span>
                 <span><span class="notification-action-prefix">Activer les </span>notifications</span>

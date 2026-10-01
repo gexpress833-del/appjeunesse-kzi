@@ -12,10 +12,6 @@
     color-scheme: dark;
 }
 
-html[data-theme='light'] {
-    color-scheme: light;
-}
-
 html {
     scroll-behavior: smooth;
 }
@@ -84,14 +80,6 @@ body {
         radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.18), transparent 30%),
         linear-gradient(135deg, #020817 0%, #0f172a 32%, #111827 100%);
     color: #e2e8f0;
-}
-
-html[data-theme='light'] body {
-    background:
-        radial-gradient(circle at top left, rgba(14, 165, 233, 0.14), transparent 28%),
-        radial-gradient(circle at bottom right, rgba(245, 158, 11, 0.12), transparent 30%),
-        linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-    color: #0f172a;
 }
 
 input:not([type='file']):not([type='checkbox']):not([type='radio']),
@@ -602,8 +590,8 @@ body::before {
 .notification-card {
     --notification-accent: #0891b2;
     --notification-soft: #ecfeff;
-    border-color: color-mix(in srgb, var(--notification-accent) 28%, #e2e8f0);
-    background: linear-gradient(135deg, color-mix(in srgb, var(--notification-soft) 68%, white), white);
+    border-color: color-mix(in srgb, var(--notification-accent) 42%, #334155);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--notification-accent) 12%, #0f172a), #0b1220);
 }
 
 .notification-card.is-unread {
@@ -620,9 +608,9 @@ body::before {
 .notification-default { --notification-accent: #64748b; --notification-soft: #f8fafc; }
 
 .notification-icon {
-    background: color-mix(in srgb, var(--notification-accent) 14%, white);
-    color: var(--notification-accent);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    background: color-mix(in srgb, var(--notification-accent) 18%, #0f172a);
+    color: color-mix(in srgb, var(--notification-accent) 72%, white);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .notification-kicker,
@@ -631,8 +619,46 @@ body::before {
 }
 
 .notification-status {
-    background: color-mix(in srgb, var(--notification-accent) 14%, white);
-    color: var(--notification-accent);
+    background: color-mix(in srgb, var(--notification-accent) 20%, #0f172a);
+    color: color-mix(in srgb, var(--notification-accent) 72%, white);
+}
+
+.notification-toolbar,
+.notification-empty-state {
+    border-color: rgba(148, 163, 184, 0.25);
+    background-color: rgba(15, 23, 42, 0.78);
+}
+
+.notification-select-button {
+    border-color: rgba(34, 211, 238, 0.28);
+    background-color: rgba(8, 145, 178, 0.12);
+    color: #a5f3fc;
+}
+
+.notification-select-button:hover {
+    background-color: rgba(8, 145, 178, 0.22);
+}
+
+.notification-delete-selected,
+.notification-delete-button {
+    border-color: rgba(251, 113, 133, 0.3);
+    background-color: rgba(159, 18, 57, 0.18);
+    color: #fda4af;
+}
+
+.notification-delete-selected:hover,
+.notification-delete-button:hover {
+    background-color: rgba(159, 18, 57, 0.3);
+}
+
+.notification-read-button {
+    border-color: rgba(52, 211, 153, 0.3);
+    background-color: rgba(6, 95, 70, 0.2);
+    color: #6ee7b7;
+}
+
+.notification-read-button:hover {
+    background-color: rgba(6, 95, 70, 0.34);
 }
 
 .notification-card.is-read {
@@ -1537,72 +1563,55 @@ body::before {
     border-radius: 9999px;
 }
 
-html[data-theme='dark'] input,
-html[data-theme='dark'] select,
-html[data-theme='dark'] textarea {
+input,
+select,
+textarea {
     border-color: rgba(148, 163, 184, 0.32) !important;
     background-color: rgba(15, 23, 42, 0.92) !important;
     color: #f8fafc !important;
 }
 
-html[data-theme='dark'] input::placeholder,
-html[data-theme='dark'] textarea::placeholder {
+input::placeholder,
+textarea::placeholder {
     color: #94a3b8 !important;
 }
 
-html[data-theme='dark'] .bg-white {
+.bg-white {
     background-color: rgba(15, 23, 42, 0.78) !important;
 }
 
-html[data-theme='dark'] .bg-slate-50,
-html[data-theme='dark'] .bg-slate-100 {
+.bg-slate-50,
+.bg-slate-100 {
     background-color: rgba(30, 41, 59, 0.72) !important;
 }
 
-html[data-theme='dark'] .text-slate-900,
-html[data-theme='dark'] .text-slate-800,
-html[data-theme='dark'] .text-slate-700 {
+.text-slate-900,
+.text-slate-800,
+.text-slate-700 {
     color: #f1f5f9 !important;
 }
 
-html[data-theme='dark'] .text-slate-600,
-html[data-theme='dark'] .text-slate-500 {
+.text-slate-600,
+.text-slate-500 {
     color: #cbd5e1 !important;
 }
 
-html[data-theme='dark'] .border-slate-200,
-html[data-theme='dark'] .border-slate-300 {
+.border-slate-200,
+.border-slate-300 {
     border-color: rgba(148, 163, 184, 0.25) !important;
 }
 
-html[data-theme='dark'] .divide-slate-100 > :not(:last-child) {
+.divide-slate-100 > :not(:last-child) {
     border-color: rgba(148, 163, 184, 0.18) !important;
 }
 
-html[data-theme='dark'] .hover\:bg-slate-50:hover {
+.hover\:bg-slate-50:hover {
     background-color: rgba(51, 65, 85, 0.5) !important;
 }
 
-html[data-theme='light'] .bg-slate-950 {
-    background-color: rgba(255, 255, 255, 0.82) !important;
-}
-
-html[data-theme='light'] [class~='bg-slate-950/80'] {
-    background-color: rgba(255, 255, 255, 0.86) !important;
-}
-
-html[data-theme='light'] input,
-html[data-theme='light'] select,
-html[data-theme='light'] textarea {
-    border-color: #cbd5e1 !important;
-    background-color: #ffffff !important;
-    color: #0f172a !important;
-}
-
-html[data-theme='light'] .text-slate-100,
-html[data-theme='light'] .text-slate-200,
-html[data-theme='light'] .text-slate-300 {
-    color: #334155 !important;
+[class~='bg-white/60'],
+[class~='bg-slate-50/60'] {
+    background-color: rgba(15, 23, 42, 0.78) !important;
 }
 
 .theme-toggle {
@@ -1646,53 +1655,29 @@ html[data-theme='light'] .text-slate-300 {
 }
 
 .auth-card {
-    color: #0f172a;
-}
-
-.auth-card-muted {
-    color: #475569 !important;
-}
-
-.auth-card-label {
-    color: #334155 !important;
-}
-
-.auth-help {
-    background: rgba(238, 242, 255, 0.96);
-}
-
-.auth-help-text {
-    color: #475569 !important;
-}
-
-.auth-help-link {
-    color: #4338ca !important;
-}
-
-html[data-theme='dark'] .auth-card {
     border-color: rgba(148, 163, 184, 0.28);
     background: rgba(15, 23, 42, 0.88) !important;
     color: #f8fafc;
 }
 
-html[data-theme='dark'] .auth-card-muted {
+.auth-card-muted {
     color: #cbd5e1 !important;
 }
 
-html[data-theme='dark'] .auth-card-label {
+.auth-card-label {
     color: #e2e8f0 !important;
 }
 
-html[data-theme='dark'] .auth-help {
+.auth-help {
     border-color: rgba(129, 140, 248, 0.35);
     background: rgba(49, 46, 129, 0.32) !important;
 }
 
-html[data-theme='dark'] .auth-help-text {
+.auth-help-text {
     color: #cbd5e1 !important;
 }
 
-html[data-theme='dark'] .auth-help-link {
+.auth-help-link {
     color: #a5b4fc !important;
 }
 
@@ -1785,10 +1770,6 @@ a,
     .app-install-button {
         min-height: 2.75rem;
     }
-}
-
-html[data-theme='light'] .theme-toggle:hover {
-    background: rgba(226, 232, 240, 0.9);
 }
 
 @media (max-width: 1050px) {
@@ -2589,11 +2570,6 @@ button[aria-busy='true'] {
     .sidebar-closed {
         transform: translateX(0);
     }
-}
-
-html[data-theme='light'] .theme-toggle {
-    color: #334155;
-    background: rgba(255, 255, 255, 0.75);
 }
 
 @media (max-width: 639px) {

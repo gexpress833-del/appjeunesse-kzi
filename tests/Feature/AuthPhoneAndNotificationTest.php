@@ -263,6 +263,20 @@ class AuthPhoneAndNotificationTest extends TestCase
             ->assertSee('Tout est calme');
     }
 
+    public function test_notification_page_renders_dark_card_and_actions_for_unread_notification(): void
+    {
+        $user = User::factory()->create(['role' => 'user', 'status' => 'active']);
+        $user->notify(new AccountValidated);
+
+        $this->actingAs($user)
+            ->get(route('notifications.index'))
+            ->assertOk()
+            ->assertSee('Compte validé')
+            ->assertSee('notification-card', false)
+            ->assertSee('notification-read-button', false)
+            ->assertSee('notification-delete-button', false);
+    }
+
     public function test_user_can_delete_multiple_notifications_at_once(): void
     {
         $user = User::factory()->create(['role' => 'user', 'status' => 'active']);

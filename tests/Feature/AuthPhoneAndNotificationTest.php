@@ -110,6 +110,35 @@ class AuthPhoneAndNotificationTest extends TestCase
         ])->assertRedirect(route('dashboard.ecodim'));
     }
 
+    public function test_existing_ecodim_responsible_login_clears_stale_youth_portal_session(): void
+    {
+        $department = Department::query()->firstOrCreate(['code' => 'ecodim'], ['name' => 'ECODIM']);
+        $user = User::factory()->create([
+            'role' => 'user',
+            'status' => 'active',
+            'password' => bcrypt('password123'),
+        ]);
+        $role = Role::query()->firstOrCreate(
+            ['slug' => 'responsable_ecodim'],
+            ['name' => 'Responsable ECODIM', 'status' => 'active'],
+        );
+        MemberRoleAssignment::create([
+            'user_id' => $user->id,
+            'role_id' => $role->id,
+            'scope_type' => 'ecodim',
+            'scope_id' => $department->id,
+            'status' => 'active',
+        ]);
+
+        $this->withSession(['active_portal' => 'youth'])
+            ->post(route('login.attempt'), [
+                'login' => $user->username,
+                'password' => 'password123',
+            ])
+            ->assertRedirect(route('dashboard.ecodim'))
+            ->assertSessionHas('active_portal', 'ecodim');
+    }
+
     public function test_validated_ecodim_responsible_login_redirects_to_ecodim_dashboard(): void
     {
         $department = Department::query()->firstOrCreate(['code' => 'ecodim'], ['name' => 'ECODIM']);

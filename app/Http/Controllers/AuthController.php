@@ -36,6 +36,7 @@ class AuthController extends Controller
 
         Auth::login($user, $request->boolean('remember'));
         $request->session()->regenerate();
+        $request->session()->put('active_portal', $user->primaryPortal());
 
         return redirect()->intended(route($user->dashboardRouteName()));
     }

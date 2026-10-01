@@ -122,6 +122,36 @@ class PortalAccessRulesTest extends TestCase
         $this->assertSame('dashboard.ecodim', $responsible->dashboardRouteName());
     }
 
+    public function test_ecodim_role_label_takes_precedence_over_a_stale_youth_role(): void
+    {
+        $youthDepartment = Department::query()->firstOrCreate(['code' => 'youth'], ['name' => 'Portail jeunesse']);
+        $ecodimDepartment = Department::query()->firstOrCreate(['code' => 'ecodim'], ['name' => 'ECODIM']);
+        $user = User::factory()->create(['role' => 'responsable', 'status' => 'active']);
+        $youthRole = Role::query()->firstOrCreate(
+            ['slug' => 'responsable_jeunesse'],
+            ['name' => 'Responsable jeunesse', 'status' => 'active'],
+        );
+        $ecodimRole = Role::query()->firstOrCreate(
+            ['slug' => 'responsable_ecodim'],
+            ['name' => 'Responsable ECODIM', 'status' => 'active'],
+        );
+
+        foreach ([[$youthRole, $youthDepartment], [$ecodimRole, $ecodimDepartment]] as [$role, $department]) {
+            MemberRoleAssignment::create([
+                'user_id' => $user->id,
+                'role_id' => $role->id,
+                'scope_type' => $department->code,
+                'scope_id' => $department->id,
+                'status' => 'active',
+            ]);
+        }
+
+        $user->update(['dept' => $ecodimDepartment->name]);
+
+        $this->assertSame('ecodim', $user->primaryPortal());
+        $this->assertSame('Responsable ECODIM', $user->roleLabel());
+    }
+
     public function test_pending_youth_portal_account_defaults_to_the_youth_dashboard(): void
     {
         $department = Department::query()->firstOrCreate(['code' => 'youth'], ['name' => 'Portail jeunesse']);

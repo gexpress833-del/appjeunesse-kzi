@@ -7,6 +7,7 @@ use App\Models\Department;
 use App\Models\Event;
 use App\Models\Member;
 use App\Models\MemberRoleAssignment;
+use App\Models\Membership;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -86,6 +87,70 @@ class ManagementViewsTest extends TestCase
             'role' => 'responsable',
             'dept' => 'Social',
         ]);
+    }
+
+    public function test_changing_existing_responsible_department_to_ecodim_synchronizes_portal_assignment(): void
+    {
+        $youthDepartment = Department::query()->firstOrCreate(['code' => 'youth'], ['name' => 'Portail jeunesse']);
+        $ecodimDepartment = Department::query()->firstOrCreate(['code' => 'ecodim'], ['name' => 'ECODIM']);
+        $admin = User::factory()->create(['role' => 'admin', 'status' => 'active']);
+        $user = User::factory()->create([
+            'role' => 'responsable',
+            'status' => 'active',
+            'dept' => $youthDepartment->name,
+        ]);
+        Membership::create([
+            'user_id' => $user->id,
+            'type' => 'youth',
+            'entity_id' => $youthDepartment->id,
+            'status' => 'active',
+        ]);
+        $youthRole = Role::query()->firstOrCreate(
+            ['slug' => 'responsable_jeunesse'],
+            ['name' => 'Responsable jeunesse', 'status' => 'active'],
+        );
+        MemberRoleAssignment::create([
+            'user_id' => $user->id,
+            'role_id' => $youthRole->id,
+            'scope_type' => 'youth',
+            'scope_id' => $youthDepartment->id,
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($admin)
+            ->patch(route('users.role', $user), [
+                'role' => 'responsable',
+                'dept' => $ecodimDepartment->name,
+            ])
+            ->assertRedirect();
+
+        $user->refresh();
+        $this->assertSame('ecodim', $user->primaryPortal());
+        $this->assertSame('dashboard.ecodim', $user->dashboardRouteName());
+        $this->assertSame('Responsable ECODIM', $user->roleLabel());
+        $this->assertDatabaseHas('member_role_assignments', [
+            'user_id' => $user->id,
+            'scope_type' => 'ecodim',
+            'scope_id' => $ecodimDepartment->id,
+            'status' => 'active',
+        ]);
+        $this->assertDatabaseHas('member_role_assignments', [
+            'user_id' => $user->id,
+            'scope_type' => 'youth',
+            'status' => 'inactive',
+        ]);
+        $this->assertDatabaseHas('memberships', [
+            'user_id' => $user->id,
+            'type' => 'youth',
+            'status' => 'inactive',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard.ecodim'))
+            ->assertOk()
+            ->assertSee('Portail ECODIM')
+            ->assertDontSee('Portail jeunesse')
+            ->assertSee('Rôle : Responsable ECODIM');
     }
 
     public function test_member_creation_does_not_require_a_user_account(): void

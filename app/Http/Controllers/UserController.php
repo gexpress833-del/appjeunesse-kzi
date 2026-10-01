@@ -193,12 +193,64 @@ class UserController extends Controller
             $this->ensureAnotherActiveAdminExists($user);
         }
 
-        $user->update([
-            'role' => $data['role'],
-            'dept' => $data['dept'] ?? $user->dept,
-            'role_assigned_by' => auth()->user()->username,
-            'role_assigned_at' => now(),
-        ]);
+        $actor = $request->user();
+        $departmentName = $data['dept'] ?? $user->dept;
+
+        DB::transaction(function () use ($actor, $data, $departmentName, $user): void {
+            $user->update([
+                'role' => $data['role'],
+                'dept' => $departmentName,
+                'role_assigned_by' => $actor->username,
+                'role_assigned_at' => now(),
+            ]);
+
+            $portalDepartment = filled($departmentName)
+                ? Department::query()->where('name', $departmentName)->whereIn('code', ['youth', 'ecodim'])->first()
+                : null;
+
+            MemberRoleAssignment::query()
+                ->where('user_id', $user->id)
+                ->where('status', 'active')
+                ->whereHas('role', fn ($query) => $query->whereIn('slug', ['responsable_jeunesse', 'responsable_ecodim']))
+                ->when($portalDepartment, fn ($query) => $query->where('scope_type', '!=', $portalDepartment->code))
+                ->update(['status' => 'inactive', 'ends_at' => now()]);
+
+            Membership::query()
+                ->where('user_id', $user->id)
+                ->whereIn('type', ['youth', 'ecodim'])
+                ->when($portalDepartment, fn ($query) => $query->where('type', '!=', $portalDepartment->code))
+                ->where('status', 'active')
+                ->update(['status' => 'inactive', 'ends_at' => now()]);
+
+            if ($data['role'] !== 'responsable' || ! $portalDepartment) {
+                return;
+            }
+
+            Membership::query()->updateOrCreate(
+                [
+                    'user_id' => $user->id,
+                    'type' => $portalDepartment->code,
+                    'entity_id' => $portalDepartment->id,
+                ],
+                ['status' => 'active', 'starts_at' => now(), 'ends_at' => null],
+            );
+
+            $roleSlug = $portalDepartment->code === 'youth' ? 'responsable_jeunesse' : 'responsable_ecodim';
+            $portalRole = Role::query()->firstOrCreate(
+                ['slug' => $roleSlug],
+                ['name' => $portalDepartment->code === 'youth' ? 'Responsable jeunesse' : 'Responsable ECODIM', 'status' => 'active'],
+            );
+
+            MemberRoleAssignment::query()->create([
+                'user_id' => $user->id,
+                'role_id' => $portalRole->id,
+                'scope_type' => $portalDepartment->code,
+                'scope_id' => $portalDepartment->id,
+                'status' => 'active',
+                'starts_at' => now(),
+                'assigned_by' => $actor->id,
+            ]);
+        });
 
         $user->notify(new RoleUpdated($user, $data['role'], $data['dept'] ?? $user->dept));
 

@@ -210,12 +210,18 @@ class User extends Authenticatable implements CanResetPasswordContract
 
     public function roleLabel(): string
     {
-        if ($this->hasPortalRole('youth', ['responsable_jeunesse', 'leader_youth', 'animateur_jeunesse'])) {
-            return 'Responsable jeunesse';
+        if ($this->primaryPortal() === 'ecodim' && (
+            $this->hasPortalRole('ecodim', ['responsable_ecodim', 'animateur_ecodim', 'enseignant_ecodim', 'leader_ecodim'])
+            || ($this->isResponsable() && $this->belongsToPortal('ecodim'))
+        )) {
+            return 'Responsable ECODIM';
         }
 
-        if ($this->hasPortalRole('ecodim', ['responsable_ecodim', 'animateur_ecodim', 'enseignant_ecodim'])) {
-            return 'Responsable ECODIM';
+        if ($this->primaryPortal() === 'youth' && (
+            $this->hasPortalRole('youth', ['responsable_jeunesse', 'leader_youth', 'animateur_jeunesse'])
+            || ($this->isResponsable() && $this->belongsToPortal('youth'))
+        )) {
+            return 'Responsable jeunesse';
         }
 
         return match ($this->role) {

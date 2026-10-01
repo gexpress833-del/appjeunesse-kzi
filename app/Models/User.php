@@ -179,6 +179,15 @@ class User extends Authenticatable implements CanResetPasswordContract
             return 'church';
         }
 
+        if ($this->hasPortalRole('ecodim', [
+            'responsable_ecodim',
+            'animateur_ecodim',
+            'enseignant_ecodim',
+            'leader_ecodim',
+        ]) || $this->belongsToPortal('ecodim')) {
+            return 'ecodim';
+        }
+
         return $this->isChurchMember() ? 'youth' : 'church';
     }
 
@@ -335,6 +344,25 @@ class User extends Authenticatable implements CanResetPasswordContract
                 $needed,
                 true,
             ));
+    }
+
+    public function belongsToPortal(string $portal): bool
+    {
+        $portalKey = strtolower($portal);
+        $departmentName = Department::query()->where('code', $portalKey)->value('name');
+
+        return Membership::query()
+            ->where('user_id', $this->id)
+            ->where('type', $portalKey)
+            ->where('status', 'active')
+            ->exists()
+            || $this->portalRoleAssignments($portalKey)->isNotEmpty()
+            || ($departmentName !== null && $this->dept === $departmentName);
+    }
+
+    public function canApproveYouthAccounts(): bool
+    {
+        return $this->hasPortalRole('youth', 'responsable_jeunesse');
     }
 
     public function portalPermissionsFor(string $portal): array

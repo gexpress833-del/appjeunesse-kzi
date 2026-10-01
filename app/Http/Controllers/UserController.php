@@ -2,12 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AppSetting;
 use App\Models\Department;
+use App\Models\MemberRoleAssignment;
+use App\Models\Membership;
+use App\Models\Role;
 use App\Models\User;
+use App\Notifications\AccountCreated;
 use App\Notifications\AccountValidated;
 use App\Notifications\RoleUpdated;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class UserController extends Controller
@@ -17,8 +23,41 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
+        return $this->accountIndex($request);
+    }
+
+    public function youthIndex(Request $request)
+    {
+        abort_unless($request->user()->canApproveYouthAccounts(), 403);
+
+        return $this->accountIndex($request, 'youth');
+    }
+
+    private function accountIndex(Request $request, ?string $portal = null)
+    {
         $users = User::query()
-            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
+            ->when($portal === 'youth', function ($query): void {
+                $youthDepartmentName = Department::query()->where('code', 'youth')->value('name');
+                $youthMembershipUserIds = Membership::query()
+                    ->where('type', 'youth')
+                    ->where('status', 'active')
+                    ->select('user_id');
+                $youthRoleUserIds = MemberRoleAssignment::query()
+                    ->whereIn('scope_type', ['youth', 'Youth'])
+                    ->where('status', 'active')
+                    ->select('user_id');
+
+                $query->where('status', 'pending')
+                    ->where(function ($query) use ($youthDepartmentName, $youthMembershipUserIds, $youthRoleUserIds): void {
+                        $query->whereIn('id', $youthMembershipUserIds)
+                            ->orWhereIn('id', $youthRoleUserIds);
+
+                        if ($youthDepartmentName !== null) {
+                            $query->orWhere('dept', $youthDepartmentName);
+                        }
+                    });
+            })
+            ->when($portal !== 'youth' && $request->filled('status'), fn ($q) => $q->where('status', $request->status))
             ->when($request->filled('role'), fn ($q) => $q->where('role', $request->role))
             ->orderByRaw("CASE status WHEN 'pending' THEN 0 WHEN 'active' THEN 1 ELSE 2 END")
             ->orderBy('full_name')
@@ -28,6 +67,10 @@ class UserController extends Controller
             'users' => $users,
             'departments' => Department::orderBy('name')->get(),
             'filters' => $request->only(['status', 'role']),
+            'isYouthApprovalPage' => $portal === 'youth',
+            'canCreateAccount' => $portal === null,
+            'canManageRoles' => $portal === null && ($request->user()->isAdmin() || $request->user()->isPastorPrincipal()),
+            'approvalRoute' => $portal === 'youth' ? 'youth.users.validate' : 'users.validate',
         ]);
     }
 
@@ -48,20 +91,81 @@ class UserController extends Controller
         $data['status'] = 'pending';
         $data['created_by'] = auth()->user()->username;
 
-        User::create($data);
+        $createdBy = $request->user();
+        $createdUser = DB::transaction(function () use ($data, $createdBy): User {
+            $createdUser = User::create($data);
+            $portalDepartment = filled($createdUser->dept)
+                ? Department::query()->where('name', $createdUser->dept)->whereIn('code', ['youth', 'ecodim'])->first()
+                : null;
 
-        return redirect()->route(auth()->user()->isAdmin() ? 'users.index' : 'dashboard')
+            if ($portalDepartment) {
+                Membership::query()->create([
+                    'user_id' => $createdUser->id,
+                    'type' => $portalDepartment->code,
+                    'entity_id' => $portalDepartment->id,
+                    'status' => 'active',
+                ]);
+            }
+
+            if ($createdUser->role === 'responsable' && $portalDepartment) {
+                $roleSlug = $portalDepartment->code === 'youth' ? 'responsable_jeunesse' : 'responsable_ecodim';
+                $role = Role::query()->firstOrCreate(
+                    ['slug' => $roleSlug],
+                    ['name' => $portalDepartment->code === 'youth' ? 'Responsable jeunesse' : 'Responsable ECODIM', 'status' => 'active'],
+                );
+
+                MemberRoleAssignment::query()->create([
+                    'user_id' => $createdUser->id,
+                    'role_id' => $role->id,
+                    'scope_type' => $portalDepartment->code,
+                    'scope_id' => $portalDepartment->id,
+                    'status' => 'active',
+                    'starts_at' => now(),
+                    'assigned_by' => $createdBy->id,
+                ]);
+            }
+
+            return $createdUser;
+        });
+
+        if (data_get(AppSetting::current()->notification_settings, 'new_registration', true)) {
+            User::query()
+                ->where('church_id', $createdBy->church_id)
+                ->where('status', 'active')
+                ->whereIn('role', ['admin', 'secretariat'])
+                ->get()
+                ->each(fn (User $recipient) => $recipient->notify(new AccountCreated($createdUser, $createdBy)));
+        }
+
+        return redirect()->route($createdBy->isAdmin() ? 'users.index' : 'dashboard')
             ->with('success', 'Compte créé pour '.$data['full_name'].' — en attente de validation par l\'administrateur.');
     }
 
     /**
      * Validation d'un compte en attente : pending -> active.
      */
-    public function validateAccount(User $user)
+    public function validateAccount(Request $request, User $user)
     {
+        abort_unless($request->user()->isChurchAdministrator(), 403);
+
+        return $this->activateAccount($request->user(), $user);
+    }
+
+    public function validateYouthAccount(Request $request, User $user)
+    {
+        abort_unless($request->user()->canApproveYouthAccounts(), 403);
+        abort_unless($user->status === 'pending' && $user->belongsToPortal('youth'), 403);
+
+        return $this->activateAccount($request->user(), $user);
+    }
+
+    private function activateAccount(User $approver, User $user)
+    {
+        abort_unless($user->status === 'pending', 403, 'Seuls les comptes en attente peuvent être validés.');
+
         $user->update([
             'status' => 'active',
-            'role_assigned_by' => auth()->user()->username,
+            'role_assigned_by' => $approver->username,
             'role_assigned_at' => now(),
         ]);
         $user->notify(new AccountValidated);

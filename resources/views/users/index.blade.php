@@ -4,10 +4,13 @@
 
 @section('content')
 <div class="flex flex-wrap items-center justify-between gap-3">
-    <h1 class="text-2xl font-bold text-slate-900">Utilisateurs</h1>
-    <a href="{{ route('users.create') }}" class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">➕ Créer un compte</a>
+    <h1 class="text-2xl font-bold text-slate-900">{{ $isYouthApprovalPage ? 'Comptes jeunesse en attente' : 'Utilisateurs' }}</h1>
+    @if ($canCreateAccount)
+        <a href="{{ route('users.create') }}" class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">➕ Créer un compte</a>
+    @endif
 </div>
 
+@unless ($isYouthApprovalPage)
 <form method="GET" class="mt-6 grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:grid-cols-4">
     <div>
         <label class="block text-xs font-medium text-slate-500">Statut</label>
@@ -32,6 +35,7 @@
         <a href="{{ route('users.index') }}" class="text-sm text-slate-500 hover:underline">Réinitialiser</a>
     </div>
 </form>
+@endunless
 
 <div class="mt-6 overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
     <table class="w-full text-sm">
@@ -64,14 +68,14 @@
                     <td class="px-4 py-3">
                         <div class="flex min-w-64 flex-col gap-2">
                             @if ($userItem->status === 'pending')
-                                <form method="POST" action="{{ route('users.validate', $userItem) }}">
+                                <form method="POST" action="{{ route($approvalRoute, $userItem) }}">
                                     @csrf
                                     @method('PATCH')
                                     <button class="text-sm font-semibold text-emerald-600 hover:underline">Valider le compte</button>
                                 </form>
                             @endif
 
-                            @if (! $userItem->isPrimaryAdmin() || auth()->id() === $userItem->id)
+                            @if ($canManageRoles && (! $userItem->isPrimaryAdmin() || auth()->id() === $userItem->id))
                                 <form method="POST" action="{{ route('users.role', $userItem) }}" class="flex flex-col gap-2">
                                     @csrf
                                     @method('PATCH')
@@ -88,7 +92,7 @@
                                     </select>
                                     <button class="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500">Enregistrer le rôle</button>
                                 </form>
-                            @else
+                            @elseif ($canManageRoles)
                                 <span class="text-xs text-slate-400">Administrateur principal protégé</span>
                             @endif
                         </div>

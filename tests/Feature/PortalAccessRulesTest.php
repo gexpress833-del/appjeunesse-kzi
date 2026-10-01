@@ -73,6 +73,26 @@ class PortalAccessRulesTest extends TestCase
         $this->assertSame('church', $pastor->primaryPortal());
     }
 
+    public function test_ecodim_responsible_defaults_to_the_ecodim_dashboard(): void
+    {
+        $department = Department::query()->firstOrCreate(['code' => 'ecodim'], ['name' => 'ECODIM']);
+        $responsible = User::factory()->create(['role' => 'user', 'status' => 'active']);
+        $role = Role::query()->firstOrCreate(
+            ['slug' => 'responsable_ecodim'],
+            ['name' => 'Responsable ECODIM', 'status' => 'active'],
+        );
+        MemberRoleAssignment::create([
+            'user_id' => $responsible->id,
+            'role_id' => $role->id,
+            'scope_type' => 'ecodim',
+            'scope_id' => $department->id,
+            'status' => 'active',
+        ]);
+
+        $this->assertSame('ecodim', $responsible->primaryPortal());
+        $this->assertSame('dashboard.ecodim', $responsible->dashboardRouteName());
+    }
+
     public function test_portal_navigation_key_separates_youth_and_church_modules(): void
     {
         $church = Church::create([

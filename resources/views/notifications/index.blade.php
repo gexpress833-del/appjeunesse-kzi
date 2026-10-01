@@ -43,6 +43,7 @@
                 'attendance_recorded', 'attendance_batch_recorded' => ['class' => 'notification-attendance', 'icon' => '✅', 'label' => 'Présences'],
                 'member_added' => ['class' => 'notification-member', 'icon' => '👥', 'label' => 'Nouveau membre'],
                 'role_updated' => ['class' => 'notification-role', 'icon' => '🔑', 'label' => 'Rôle et accès'],
+                'account_created' => ['class' => 'notification-account', 'icon' => '👤', 'label' => 'Nouveau compte'],
                 'social_visit_assigned' => ['class' => 'notification-social', 'icon' => '🤝', 'label' => 'Suivi social'],
                 'account_validated' => ['class' => 'notification-account', 'icon' => '✓', 'label' => 'Compte validé'],
                 'live_published', 'replay_published' => ['class' => 'notification-media', 'icon' => '▶', 'label' => 'Média disponible'],

@@ -31,6 +31,7 @@
     @php($portalDashboardLabel = $u->primaryPortal() === 'church' ? 'Tableau de bord' : 'Portail jeunesse')
     @php($portalBadge = $u->portalLabel())
     @php($portalNavigationKey = $u->portalNavigationKey())
+    @php($hasDedicatedAttendanceLink = ($u->isChurchAdministrator() && $portalNavigationKey === 'church') || $u->isResponsable())
     <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.22),transparent_25%),radial-gradient(circle_at_bottom_right,_rgba(34,211,238,0.18),transparent_35%)]"></div>
     <div id="sidebar-backdrop" class="fixed inset-0 z-30 hidden bg-slate-950/70 backdrop-blur-sm lg:hidden" onclick="window.closeSidebar()"></div>
     <div id="app-toast-stack" class="pointer-events-none fixed right-4 top-4 z-50 flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-3"></div>
@@ -59,16 +60,24 @@
             @foreach (array_merge([
                 ['route' => 'home', 'label' => 'Accueil public', 'icon' => '🌐'],
             ], $u->portalNavigationItems()) as $item)
-                <a href="{{ route($item['route']) }}"
-                   class="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all {{ request()->routeIs($item['route']) ? 'bg-gradient-to-r from-indigo-600/80 to-cyan-500/70 font-semibold text-white shadow-lg shadow-indigo-500/20' : 'text-slate-300 hover:bg-white/5 hover:text-white' }}">
-                    <span>{{ $item['icon'] }}</span> {{ $item['label'] }}
-                </a>
+                @if (! ($hasDedicatedAttendanceLink && $item['route'] === 'attendances.pick'))
+                    <a href="{{ route($item['route']) }}"
+                       class="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all {{ request()->routeIs($item['route']) ? 'bg-gradient-to-r from-indigo-600/80 to-cyan-500/70 font-semibold text-white shadow-lg shadow-indigo-500/20' : 'text-slate-300 hover:bg-white/5 hover:text-white' }}">
+                        <span>{{ $item['icon'] }}</span> {{ $item['label'] }}
+                    </a>
+                @endif
             @endforeach
+
+            @if ($u->canApproveYouthAccounts())
+                <a href="{{ route('youth.users.index') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all {{ request()->routeIs('youth.users.*') ? 'bg-gradient-to-r from-indigo-600/80 to-cyan-500/70 font-semibold text-white shadow-lg shadow-indigo-500/20' : 'text-slate-300 hover:bg-white/5 hover:text-white' }}">
+                    <span aria-hidden="true">👥</span> Comptes jeunesse en attente
+                </a>
+            @endif
 
             <p class="px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Mon activité</p>
             <a href="{{ route('dashboard.bilan') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all {{ request()->routeIs('dashboard.bilan') ? 'bg-gradient-to-r from-indigo-600/80 to-cyan-500/70 font-semibold text-white shadow-lg shadow-indigo-500/20' : 'text-slate-300 hover:bg-white/5 hover:text-white' }}"><span>📈</span> Ma progression</a>
 
-            @if (($u->isChurchAdministrator() && $u->portalNavigationKey() === 'church') || $u->isResponsable())
+            @if ($hasDedicatedAttendanceLink)
                 <p class="px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Gestion</p>
                 @if ($u->isChurchAdministrator() && $u->portalNavigationKey() === 'church')
                     <a href="{{ route('members.create') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-slate-300 transition-all hover:bg-white/5 hover:text-white"><span>➕</span> Nouveau membre</a>

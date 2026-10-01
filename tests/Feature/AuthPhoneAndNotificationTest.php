@@ -2,10 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Models\AppSetting;
 use App\Models\Department;
 use App\Models\Event;
 use App\Models\HomeContent;
 use App\Models\Member;
+use App\Models\MemberRoleAssignment;
+use App\Models\Membership;
+use App\Models\Role;
 use App\Models\User;
 use App\Models\VideoArchive;
 use App\Notifications\AccountValidated;
@@ -40,7 +44,46 @@ class AuthPhoneAndNotificationTest extends TestCase
             'password' => 'password123',
         ]);
 
-        $response->assertRedirect(route('dashboard'));
+        $response->assertRedirect(route('dashboard.youth'));
+        $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_validated_ecodim_responsible_login_redirects_to_ecodim_dashboard(): void
+    {
+        $department = Department::query()->firstOrCreate(['code' => 'ecodim'], ['name' => 'ECODIM']);
+        $admin = User::factory()->create(['role' => 'admin', 'status' => 'active']);
+        Http::fake();
+        config(['services.brevo.api_key' => 'test-key']);
+
+        $this->actingAs($admin)
+            ->post(route('users.store'), [
+                'username' => 'ecodimresponsable',
+                'full_name' => 'Responsable ECODIM',
+                'email' => 'ecodim.responsable@example.com',
+                'phone' => '+243812345680',
+                'password' => 'password123',
+                'role' => 'responsable',
+                'dept' => $department->name,
+            ])
+            ->assertRedirect(route('users.index'));
+
+        $user = User::query()->where('username', 'ecodimresponsable')->firstOrFail();
+        $this->assertSame('pending', $user->status);
+        $this->assertDatabaseHas('member_role_assignments', [
+            'user_id' => $user->id,
+            'scope_type' => 'ecodim',
+            'scope_id' => $department->id,
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($admin)->patch(route('users.validate', $user))->assertRedirect();
+        $this->post(route('logout'))->assertRedirect(route('home'));
+
+        $this->post(route('login.attempt'), [
+            'login' => $user->username,
+            'password' => 'password123',
+        ])->assertRedirect(route('dashboard.ecodim'));
+
         $this->assertAuthenticatedAs($user);
     }
 
@@ -110,6 +153,225 @@ class AuthPhoneAndNotificationTest extends TestCase
 
         Http::assertSent(fn ($request): bool => $request->url() === 'https://api.brevo.com/v3/smtp/email'
             && data_get($request->data(), 'to.0.email') === 'member@example.com');
+    }
+
+    public function test_admin_account_creation_notifies_admin_and_secretariat(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'status' => 'active']);
+        $secretariat = User::factory()->create(['role' => 'secretariat', 'status' => 'active']);
+
+        $this->actingAs($admin)
+            ->post(route('users.store'), [
+                'username' => 'newmember',
+                'full_name' => 'Nouveau membre',
+                'email' => 'newmember@example.com',
+                'phone' => '+243812345678',
+                'password' => 'password123',
+                'role' => 'user',
+            ])
+            ->assertRedirect(route('users.index'));
+
+        $createdUser = User::query()->where('username', 'newmember')->firstOrFail();
+        $this->assertSame('pending', $createdUser->status);
+
+        foreach ([$admin, $secretariat] as $recipient) {
+            $this->assertSame(1, $recipient->notifications()->where('data->account_id', $createdUser->id)->count());
+        }
+
+        $this->assertSame(
+            '/utilisateurs?status=pending',
+            data_get($admin->notifications()->where('data->account_id', $createdUser->id)->first()->data, 'click_action'),
+        );
+        $this->assertSame(
+            '/notifications',
+            data_get($secretariat->notifications()->where('data->account_id', $createdUser->id)->first()->data, 'click_action'),
+        );
+
+        $this->actingAs($secretariat)
+            ->get(route('notifications.index'))
+            ->assertOk()
+            ->assertSee('Nouveau compte à valider')
+            ->assertSee('Nouveau compte');
+    }
+
+    public function test_admin_account_creation_respects_disabled_registration_notifications(): void
+    {
+        AppSetting::current()->update(['notification_settings' => ['new_registration' => false]]);
+        $admin = User::factory()->create(['role' => 'admin', 'status' => 'active']);
+
+        $this->actingAs($admin)
+            ->post(route('users.store'), [
+                'username' => 'quietmember',
+                'full_name' => 'Membre sans alerte',
+                'email' => 'quietmember@example.com',
+                'phone' => '+243812345679',
+                'password' => 'password123',
+                'role' => 'user',
+            ])
+            ->assertRedirect(route('users.index'));
+
+        $this->assertDatabaseCount('notifications', 0);
+        $this->assertDatabaseHas('users', ['username' => 'quietmember', 'status' => 'pending']);
+    }
+
+    public function test_admin_creating_a_youth_responsible_assigns_the_youth_portal_role(): void
+    {
+        $youthDepartment = Department::query()->firstOrCreate(['code' => 'youth'], ['name' => 'Portail jeunesse']);
+        $admin = User::factory()->create(['role' => 'admin', 'status' => 'active']);
+
+        $this->actingAs($admin)
+            ->post(route('users.store'), [
+                'username' => 'youthresponsable',
+                'full_name' => 'Responsable jeunesse',
+                'email' => 'youth.responsable@example.com',
+                'phone' => '+243812345681',
+                'password' => 'password123',
+                'role' => 'responsable',
+                'dept' => $youthDepartment->name,
+            ])
+            ->assertRedirect(route('users.index'));
+
+        $user = User::query()->where('username', 'youthresponsable')->firstOrFail();
+        $this->assertDatabaseHas('memberships', [
+            'user_id' => $user->id,
+            'type' => 'youth',
+            'entity_id' => $youthDepartment->id,
+            'status' => 'active',
+        ]);
+        $this->assertDatabaseHas('member_role_assignments', [
+            'user_id' => $user->id,
+            'scope_type' => 'youth',
+            'scope_id' => $youthDepartment->id,
+            'status' => 'active',
+        ]);
+    }
+
+    public function test_admin_created_regular_accounts_keep_their_selected_portal_membership(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'status' => 'active']);
+        $portalDepartments = collect([
+            Department::query()->firstOrCreate(['code' => 'youth'], ['name' => 'Portail jeunesse']),
+            Department::query()->firstOrCreate(['code' => 'ecodim'], ['name' => 'ECODIM']),
+        ]);
+
+        foreach ($portalDepartments as $index => $department) {
+            $username = 'portaluser'.$index;
+
+            $this->actingAs($admin)
+                ->post(route('users.store'), [
+                    'username' => $username,
+                    'full_name' => 'Membre '.$department->name,
+                    'email' => $username.'@example.com',
+                    'phone' => '+24381234568'.($index + 2),
+                    'password' => 'password123',
+                    'role' => 'user',
+                    'dept' => $department->name,
+                ])
+                ->assertRedirect(route('users.index'));
+
+            $createdUser = User::query()->where('username', $username)->firstOrFail();
+            $this->assertDatabaseHas('memberships', [
+                'user_id' => $createdUser->id,
+                'type' => $department->code,
+                'entity_id' => $department->id,
+                'status' => 'active',
+            ]);
+        }
+    }
+
+    public function test_church_administration_can_view_and_validate_pending_accounts_from_all_portals(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'status' => 'active']);
+        $pastor = User::factory()->create(['role' => 'pasteur_n1', 'status' => 'active']);
+        $secretariat = User::factory()->create(['role' => 'secretariat', 'status' => 'active']);
+        $youthUser = User::factory()->create([
+            'role' => 'user',
+            'status' => 'pending',
+            'full_name' => 'Compte jeunesse en attente',
+            'dept' => 'Portail jeunesse',
+        ]);
+        $ecodimUser = User::factory()->create([
+            'role' => 'user',
+            'status' => 'pending',
+            'full_name' => 'Compte ECODIM en attente',
+            'dept' => 'ECODIM',
+        ]);
+
+        foreach ([$admin, $pastor, $secretariat] as $approver) {
+            $this->actingAs($approver)
+                ->get(route('users.index'))
+                ->assertOk()
+                ->assertSee($youthUser->full_name)
+                ->assertSee($ecodimUser->full_name);
+        }
+
+        $this->actingAs($secretariat)
+            ->patch(route('users.validate', $youthUser))
+            ->assertRedirect();
+        $this->actingAs($pastor)
+            ->patch(route('users.validate', $ecodimUser))
+            ->assertRedirect();
+
+        $this->assertSame('active', $youthUser->fresh()->status);
+        $this->assertSame('active', $ecodimUser->fresh()->status);
+    }
+
+    public function test_youth_responsible_can_only_list_and_validate_youth_accounts(): void
+    {
+        $youthDepartment = Department::query()->firstOrCreate(['code' => 'youth'], ['name' => 'Portail jeunesse']);
+        $ecodimDepartment = Department::query()->firstOrCreate(['code' => 'ecodim'], ['name' => 'ECODIM']);
+        $responsible = User::factory()->create(['role' => 'user', 'status' => 'active']);
+        $youthRole = Role::query()->firstOrCreate(
+            ['slug' => 'responsable_jeunesse'],
+            ['name' => 'Responsable jeunesse', 'status' => 'active'],
+        );
+        MemberRoleAssignment::create([
+            'user_id' => $responsible->id,
+            'role_id' => $youthRole->id,
+            'scope_type' => 'youth',
+            'scope_id' => $youthDepartment->id,
+            'status' => 'active',
+        ]);
+        $youthUser = User::factory()->create([
+            'role' => 'user',
+            'status' => 'pending',
+            'full_name' => 'Compte jeunesse en attente',
+            'dept' => $youthDepartment->name,
+        ]);
+        $ecodimUser = User::factory()->create([
+            'role' => 'user',
+            'status' => 'pending',
+            'full_name' => 'Compte ECODIM privé',
+            'dept' => $ecodimDepartment->name,
+        ]);
+        Membership::create([
+            'user_id' => $youthUser->id,
+            'type' => 'youth',
+            'entity_id' => $youthDepartment->id,
+            'status' => 'active',
+        ]);
+        Membership::create([
+            'user_id' => $ecodimUser->id,
+            'type' => 'ecodim',
+            'entity_id' => $ecodimDepartment->id,
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($responsible)
+            ->get(route('youth.users.index'))
+            ->assertOk()
+            ->assertSee($youthUser->full_name)
+            ->assertDontSee($ecodimUser->full_name);
+
+        $this->actingAs($responsible)
+            ->patch(route('youth.users.validate', $youthUser))
+            ->assertRedirect();
+        $this->actingAs($responsible)
+            ->patch(route('youth.users.validate', $ecodimUser))
+            ->assertForbidden();
+
+        $this->assertSame('active', $youthUser->fresh()->status);
+        $this->assertSame('pending', $ecodimUser->fresh()->status);
     }
 
     public function test_active_regular_users_receive_event_and_broadcast_notifications(): void
@@ -261,6 +523,15 @@ class AuthPhoneAndNotificationTest extends TestCase
             ->assertOk()
             ->assertSee('Centre d’alertes')
             ->assertSee('Tout est calme');
+    }
+
+    public function test_admin_sees_only_one_attendance_link_in_the_sidebar(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'status' => 'active']);
+
+        $response = $this->actingAs($admin)->get(route('notifications.index'));
+
+        $this->assertSame(1, substr_count($response->getContent(), 'href="'.route('attendances.pick').'"'));
     }
 
     public function test_notification_page_renders_dark_card_and_actions_for_unread_notification(): void

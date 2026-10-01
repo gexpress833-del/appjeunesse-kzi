@@ -194,6 +194,8 @@ Route::middleware(['auth', 'active', 'maintenance'])->group(function () {
         Route::get('/evenements/creer', [EventController::class, 'create'])->name('events.create');
         Route::post('/evenements', [EventController::class, 'store'])->name('events.store');
         Route::get('/evenements', [EventController::class, 'index'])->name('events.index');
+        Route::get('/utilisateurs', [UserController::class, 'youthIndex'])->name('users.index');
+        Route::patch('/utilisateurs/{user}/valider', [UserController::class, 'validateYouthAccount'])->name('users.validate');
         Route::get('/presences', [AttendanceController::class, 'pick'])->name('attendances.pick');
         Route::get('/presences/{event}', [AttendanceController::class, 'sheet'])->name('attendances.sheet');
         Route::post('/presences/{event}', [AttendanceController::class, 'store'])->name('attendances.store');
@@ -255,18 +257,19 @@ Route::middleware(['auth', 'active', 'maintenance'])->group(function () {
 
     /*
     |----------------------------------------------------------------------
-    | Comptes utilisateurs — création : secrétariat & admin ; validation :
-    | rôles & statuts : admin uniquement
+    | Comptes utilisateurs — création : secrétariat, pasteur & admin ;
+    | validation globale : admin, secrétariat & pasteur ; jeunesse : responsable jeunesse
+    | attribution des rôles et statuts : admin & pasteur
     |----------------------------------------------------------------------
     */
     Route::middleware(['portal:church', 'role:admin,secretariat,pasteur_n1'])->group(function () {
         Route::get('/utilisateurs/creer', [UserController::class, 'create'])->name('users.create');
         Route::post('/utilisateurs', [UserController::class, 'store'])->name('users.store');
+        Route::get('/utilisateurs', [UserController::class, 'index'])->name('users.index');
+        Route::patch('/utilisateurs/{user}/valider', [UserController::class, 'validateAccount'])->name('users.validate');
     });
 
     Route::middleware(['portal:church', 'role:admin,pasteur_n1'])->group(function () {
-        Route::get('/utilisateurs', [UserController::class, 'index'])->name('users.index');
-        Route::patch('/utilisateurs/{user}/valider', [UserController::class, 'validateAccount'])->name('users.validate');
         Route::patch('/utilisateurs/{user}/role', [UserController::class, 'assignRole'])->name('users.role');
         Route::patch('/utilisateurs/{user}/statut', [UserController::class, 'setStatus'])->name('users.status');
     });

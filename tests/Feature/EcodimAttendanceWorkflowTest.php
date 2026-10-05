@@ -9,7 +9,9 @@ use App\Models\Event;
 use App\Models\Member;
 use App\Models\MemberRoleAssignment;
 use App\Models\Membership;
+use App\Models\Permission;
 use App\Models\Role;
+use App\Models\RolePermission;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -24,8 +26,18 @@ class EcodimAttendanceWorkflowTest extends TestCase
         $globalResponsible = $this->userWithEcodimRole('responsable_ecodim', $ecodimDepartment->id);
         $ecodimObserver = $this->userWithEcodimRole('animateur_ecodim', $ecodimDepartment->id);
 
-        $classResponsible = User::factory()->create(['role' => 'user', 'status' => 'active']);
-        $otherClassResponsible = User::factory()->create(['role' => 'user', 'status' => 'active']);
+        $classResponsibleMember = Member::factory()->create(['name' => 'Responsable Classe A']);
+        $classResponsible = User::factory()->create([
+            'role' => 'user',
+            'status' => 'active',
+            'member_id' => $classResponsibleMember->id,
+        ]);
+        $otherClassResponsibleMember = Member::factory()->create(['name' => 'Responsable Classe B']);
+        $otherClassResponsible = User::factory()->create([
+            'role' => 'user',
+            'status' => 'active',
+            'member_id' => $otherClassResponsibleMember->id,
+        ]);
         $this->addEcodimMembership($classResponsible, $ecodimDepartment);
         $this->addEcodimMembership($otherClassResponsible, $ecodimDepartment);
 
@@ -33,13 +45,13 @@ class EcodimAttendanceWorkflowTest extends TestCase
             'name' => 'Classe des Aigles',
             'level' => 'intermediate',
             'status' => 'active',
-            'responsible_member_id' => $classResponsible->id,
+            'responsible_member_id' => $classResponsibleMember->id,
         ]);
         $otherClass = EcodimClass::create([
             'name' => 'Classe des Lys',
             'level' => 'beginner',
             'status' => 'active',
-            'responsible_member_id' => $otherClassResponsible->id,
+            'responsible_member_id' => $otherClassResponsibleMember->id,
         ]);
 
         $activeMember = $this->createEcodimMember('Enfant actif', $ecodimDepartment);
@@ -124,12 +136,17 @@ class EcodimAttendanceWorkflowTest extends TestCase
     public function test_ecodim_class_responsible_cannot_record_attendance_for_another_class(): void
     {
         $ecodimDepartment = $this->ecodimDepartment();
-        $responsible = User::factory()->create(['role' => 'user', 'status' => 'active']);
+        $responsibleMember = Member::factory()->create(['name' => 'Responsable classe assignée']);
+        $responsible = User::factory()->create([
+            'role' => 'user',
+            'status' => 'active',
+            'member_id' => $responsibleMember->id,
+        ]);
         $this->addEcodimMembership($responsible, $ecodimDepartment);
         $class = EcodimClass::create([
             'name' => 'Classe assignée',
             'status' => 'active',
-            'responsible_member_id' => $responsible->id,
+            'responsible_member_id' => $responsibleMember->id,
         ]);
         $otherClass = EcodimClass::create(['name' => 'Classe non assignée', 'status' => 'active']);
         $member = $this->createEcodimMember('Enfant hors classe', $ecodimDepartment);
@@ -195,10 +212,38 @@ class EcodimAttendanceWorkflowTest extends TestCase
 
     private function userWithEcodimRole(string $roleSlug, int $scopeId): User
     {
-        $user = User::factory()->create(['role' => 'user', 'status' => 'active']);
-        $role = Role::query()->firstOrCreate(['slug' => $roleSlug], ['name' => str($roleSlug)->replace('_', ' ')->title(), 'status' => 'active']);
+        $normalizedSlug = match ($roleSlug) {
+            'responsable_ecodim', 'animateur_ecodim', 'enseignant_ecodim', 'leader_ecodim' => 'ecodim_manager',
+            default => $roleSlug,
+        };
+
+        $member = Member::factory()->create(['name' => str($normalizedSlug)->replace('_', ' ')->title()]);
+        $user = User::factory()->create([
+            'role' => 'user',
+            'status' => 'active',
+            'member_id' => $member->id,
+        ]);
+        $role = Role::query()->firstOrCreate(['slug' => $normalizedSlug], ['name' => str($normalizedSlug)->replace('_', ' ')->title(), 'status' => 'active']);
+
+        Permission::query()->whereIn('slug', [
+            'ecodim.classes.manage',
+            'ecodim.attendance.manage',
+            'ecodim.events.manage',
+            'ecodim.members.view',
+        ])->get()->each(fn (Permission $permission) => RolePermission::query()->firstOrCreate([
+            'role_id' => $role->id,
+            'permission_id' => $permission->id,
+        ]));
+
+        Membership::create([
+            'member_id' => $member->id,
+            'type' => 'ecodim',
+            'entity_id' => $scopeId,
+            'status' => 'active',
+        ]);
 
         MemberRoleAssignment::create([
+            'member_id' => $member->id,
             'user_id' => $user->id,
             'role_id' => $role->id,
             'scope_type' => 'ecodim',
@@ -211,8 +256,20 @@ class EcodimAttendanceWorkflowTest extends TestCase
 
     private function addEcodimMembership(User $user, Department $department): void
     {
+        $memberId = $user->member_id;
+
+        if (blank($memberId)) {
+            $member = Member::factory()->create([
+                'name' => $user->full_name ?: 'Membre ECODIM',
+                'dept' => $department->name,
+                'role' => 'Enfant',
+            ]);
+            $user->update(['member_id' => $member->id]);
+            $memberId = $member->id;
+        }
+
         Membership::create([
-            'user_id' => $user->id,
+            'member_id' => $memberId,
             'type' => 'ecodim',
             'entity_id' => $department->id,
             'status' => 'active',

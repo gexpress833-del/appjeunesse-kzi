@@ -6,7 +6,7 @@ services:
     healthCheckPath: /up/
     envVars:
       - key: APP_NAME
-        value: appjeunesse-kzi
+        value: AETERNA LINKS
       - key: APP_ENV
         value: production
       - key: APP_DEBUG

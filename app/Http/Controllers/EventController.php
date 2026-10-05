@@ -121,11 +121,15 @@ class EventController extends Controller
                 ->where('scope_type', 'ecodim')
                 ->where('scope_id', $ecodimDepartmentId)
                 ->where('status', 'active')
-                ->whereHas('role', fn ($query) => $query->whereIn('slug', ['responsable_ecodim', 'animateur_ecodim', 'enseignant_ecodim', 'leader_ecodim']))
+                ->whereHas('role', fn ($query) => $query->whereIn('slug', ['ecodim_manager', 'responsable_ecodim', 'animateur_ecodim', 'enseignant_ecodim', 'leader_ecodim']))
                 ->pluck('user_id');
             $classResponsibleId = $class->responsible_member_id;
+            $classResponsibleUserIds = User::query()
+                ->where('member_id', $classResponsibleId)
+                ->where('status', 'active')
+                ->pluck('id');
             $eventOwners = User::query()
-                ->whereIn('id', $globalResponsibleIds->push($classResponsibleId)->filter()->unique())
+                ->whereIn('id', $globalResponsibleIds->concat($classResponsibleUserIds)->filter()->unique())
                 ->where('status', 'active')
                 ->get()
                 ->reject(fn (User $owner): bool => $owner->is($user));

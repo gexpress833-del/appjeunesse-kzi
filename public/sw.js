@@ -1,4 +1,4 @@
-const VERSION = 'appjeunesse-v1';
+const VERSION = 'aeterna-links-v2';
 const STATIC_CACHE = `${VERSION}-static`;
 const OFFLINE_URL = '/offline.html';
 

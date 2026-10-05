@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
+    'member_id',
     'user_id',
     'role_id',
     'scope_type',
@@ -29,9 +30,14 @@ class MemberRoleAssignment extends Model
         ];
     }
 
+    public function member(): BelongsTo
+    {
+        return $this->belongsTo(Member::class);
+    }
+
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function role(): BelongsTo

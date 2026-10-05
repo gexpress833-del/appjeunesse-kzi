@@ -66,4 +66,52 @@ class EcodimTransitionArchitectureTest extends TestCase
         $this->assertTrue($rule->exists);
         $this->assertEquals('eligible', $transition->history()->latest()->first()->new_status);
     }
+
+    public function test_transition_rule_evaluates_age_from_member_birth_date_and_keeps_the_same_member_identity_when_transferring_to_youth(): void
+    {
+        $member = Member::create([
+            'name' => 'Aline Okafor',
+            'sex' => 'female',
+            'birth_date' => now()->subYears(13)->subMonths(2)->toDateString(),
+            'email' => 'aline@example.com',
+        ]);
+
+        $class = EcodimClass::create([
+            'name' => 'Classe 5',
+            'level' => 'advanced',
+            'age_min' => 12,
+            'age_max' => 14,
+            'status' => 'active',
+        ]);
+
+        $rule = TransitionRule::create([
+            'name' => 'Transition ECODIM vers jeunesse',
+            'source_space' => 'ecodim',
+            'target_space' => 'youth',
+            'min_age' => 12,
+            'max_age' => 14,
+            'status' => 'active',
+        ]);
+
+        $transition = EcodimTransition::query()->firstOrCreate([
+            'member_id' => $member->id,
+        ], [
+            'current_class_id' => $class->id,
+            'status' => 'normal',
+        ]);
+
+        $transition->syncEligibilityFromRule($rule);
+
+        $this->assertSame($member->id, $transition->member_id);
+        $this->assertTrue($rule->isEligibleFor($member));
+        $this->assertSame('eligible', $transition->status);
+        $this->assertNotNull($transition->eligibility_date);
+        $this->assertSame($member->id, $transition->member->id);
+
+        $transition->transferToYouth();
+
+        $this->assertTrue($member->memberships()->where('type', 'youth')->where('status', 'active')->exists());
+        $this->assertSame('transferred', $transition->fresh()->status);
+        $this->assertSame('transferred', $transition->history()->latest()->first()->new_status);
+    }
 }

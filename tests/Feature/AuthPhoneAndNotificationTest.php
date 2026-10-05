@@ -323,8 +323,7 @@ class AuthPhoneAndNotificationTest extends TestCase
             ->assertRedirect(route('users.index'));
 
         $user = User::query()->where('username', 'youthresponsable')->firstOrFail();
-        $this->assertDatabaseHas('memberships', [
-            'user_id' => $user->id,
+        $this->assertDatabaseMissing('memberships', [
             'type' => 'youth',
             'entity_id' => $youthDepartment->id,
             'status' => 'active',
@@ -361,12 +360,12 @@ class AuthPhoneAndNotificationTest extends TestCase
                 ->assertRedirect(route('users.index'));
 
             $createdUser = User::query()->where('username', $username)->firstOrFail();
-            $this->assertDatabaseHas('memberships', [
-                'user_id' => $createdUser->id,
+            $this->assertDatabaseMissing('memberships', [
                 'type' => $department->code,
                 'entity_id' => $department->id,
                 'status' => 'active',
             ]);
+            $this->assertNull($createdUser->member_id);
         }
     }
 
@@ -423,26 +422,38 @@ class AuthPhoneAndNotificationTest extends TestCase
             'scope_id' => $youthDepartment->id,
             'status' => 'active',
         ]);
+        $youthMember = Member::factory()->create([
+            'name' => 'Compte jeunesse en attente',
+            'dept' => $youthDepartment->name,
+            'role' => 'Membre',
+        ]);
+        $ecodimMember = Member::factory()->create([
+            'name' => 'Compte ECODIM privé',
+            'dept' => $ecodimDepartment->name,
+            'role' => 'Membre',
+        ]);
         $youthUser = User::factory()->create([
             'role' => 'user',
             'status' => 'pending',
             'full_name' => 'Compte jeunesse en attente',
             'dept' => $youthDepartment->name,
+            'member_id' => $youthMember->id,
         ]);
         $ecodimUser = User::factory()->create([
             'role' => 'user',
             'status' => 'pending',
             'full_name' => 'Compte ECODIM privé',
             'dept' => $ecodimDepartment->name,
+            'member_id' => $ecodimMember->id,
         ]);
         Membership::create([
-            'user_id' => $youthUser->id,
+            'member_id' => $youthMember->id,
             'type' => 'youth',
             'entity_id' => $youthDepartment->id,
             'status' => 'active',
         ]);
         Membership::create([
-            'user_id' => $ecodimUser->id,
+            'member_id' => $ecodimMember->id,
             'type' => 'ecodim',
             'entity_id' => $ecodimDepartment->id,
             'status' => 'active',
@@ -532,9 +543,21 @@ class AuthPhoneAndNotificationTest extends TestCase
     public function test_responsable_uses_his_department_without_choosing_a_department(): void
     {
         Department::create(['name' => 'Médias']);
+        $member = Member::factory()->create([
+            'name' => 'Responsable médias',
+            'dept' => 'Médias',
+            'role' => 'Responsable',
+        ]);
         $responsable = User::factory()->create([
             'role' => 'responsable',
             'dept' => 'Médias',
+            'status' => 'active',
+            'member_id' => $member->id,
+        ]);
+        Membership::create([
+            'member_id' => $member->id,
+            'type' => 'church',
+            'entity_id' => 1,
             'status' => 'active',
         ]);
 
@@ -550,9 +573,21 @@ class AuthPhoneAndNotificationTest extends TestCase
         Department::create(['name' => 'Social']);
 
         $admin = User::factory()->create(['role' => 'admin', 'status' => 'active']);
+        $member = Member::create([
+            'name' => 'Responsable social',
+            'dept' => 'Social',
+            'role' => 'Responsable',
+        ]);
         $responsable = User::factory()->create([
             'role' => 'responsable',
             'dept' => 'Social',
+            'status' => 'active',
+            'member_id' => $member->id,
+        ]);
+        Membership::create([
+            'member_id' => $member->id,
+            'type' => 'church',
+            'entity_id' => 1,
             'status' => 'active',
         ]);
         $event = Event::create([
@@ -560,7 +595,7 @@ class AuthPhoneAndNotificationTest extends TestCase
             'date' => now()->addDay(),
             'created_by' => $admin->username,
         ]);
-        $member = Member::create([
+        $memberAttendance = Member::create([
             'name' => 'Membre de test',
             'dept' => 'Social',
             'role' => 'Membre',
@@ -569,7 +604,7 @@ class AuthPhoneAndNotificationTest extends TestCase
         $this->actingAs($responsable)
             ->post(route('attendances.store', $event), [
                 'dept' => 'Social',
-                'statuses' => [$member->id => 'present'],
+                'statuses' => [$memberAttendance->id => 'present'],
             ])
             ->assertRedirect();
 

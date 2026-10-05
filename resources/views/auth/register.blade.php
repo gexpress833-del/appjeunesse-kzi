@@ -6,7 +6,7 @@
 <div class="mx-auto max-w-2xl">
     <div class="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
         <div class="mb-6 flex justify-center">
-            <img src="{{ asset('logoEglise.jpg') }}" class="h-20 w-20 rounded-2xl object-cover ring-2 ring-indigo-400/60" alt="Logo La Parole Éternelle Kolwezi">
+            <img src="{{ asset('logoEglise.jpg') }}" class="h-20 w-20 rounded-2xl object-cover ring-2 ring-indigo-400/60" alt="Logo La Borne Parole Éternelle Kolwezi">
         </div>
         <h1 class="text-2xl font-bold text-slate-900">Créer mon compte</h1>
         <p class="mt-1 text-sm text-slate-500">Votre compte sera <strong>en attente de validation</strong> par le Président responsable de la jeunesse de La Parole Éternelle, Centre-Ville de Kolwezi, avant votre accès à l'espace membre.</p>

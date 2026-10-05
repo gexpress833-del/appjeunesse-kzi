@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Policies\EcodimClassPolicy;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+#[UsePolicy(EcodimClassPolicy::class)]
 #[Fillable([
     'name',
     'level',
@@ -20,9 +23,13 @@ class EcodimClass extends Model
 {
     use HasFactory;
 
+    protected $attributes = [
+        'status' => 'active',
+    ];
+
     public function responsibleMember(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'responsible_member_id');
+        return $this->belongsTo(Member::class, 'responsible_member_id');
     }
 
     public function members(): HasMany

@@ -31,7 +31,7 @@ class AccountValidated extends Notification
     public function toBrevo(object $notifiable): array
     {
         return [
-            'subject' => 'Votre compte appjeunesse-kzi est validé',
+            'subject' => 'Votre compte AETERNA LINKS est validé',
             'html' => view('emails.account-validated', [
                 'user' => $notifiable,
             ])->render(),

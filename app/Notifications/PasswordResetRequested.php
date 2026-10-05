@@ -24,7 +24,7 @@ class PasswordResetRequested extends Notification
     public function toBrevo(object $notifiable): array
     {
         return [
-            'subject' => 'Réinitialisation de votre mot de passe appjeunesse-kzi',
+            'subject' => 'Réinitialisation de votre mot de passe AETERNA LINKS',
             'html' => view('emails.password-reset', [
                 'user' => $notifiable,
                 'resetUrl' => route('password.reset', [

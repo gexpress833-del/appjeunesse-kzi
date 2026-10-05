@@ -1,11 +1,11 @@
 @extends('layouts.app')
 
-@section('title', 'Portail église')
+@section('title', 'Portail Église')
 
 @section('content')
 <div class="flex flex-wrap items-end justify-between gap-3">
     <div>
-        <p class="text-xs font-bold uppercase tracking-[0.18em] text-indigo-600">Portail église</p>
+        <p class="text-xs font-bold uppercase tracking-[0.18em] text-indigo-600">Portail Église</p>
         <h1 class="mt-1 text-2xl font-bold text-slate-900">Bonjour {{ auth()->user()->roleLabel() }} {{ auth()->user()->full_name }} 👋</h1>
     </div>
     <span class="rounded-full bg-indigo-100 px-3 py-1 text-xs font-bold uppercase text-indigo-700">

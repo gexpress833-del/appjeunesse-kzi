@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Department;
+use App\Models\Member;
+use App\Models\Membership;
 use App\Models\User;
 use App\Services\CloudinaryService;
+use App\Services\MemberMatchingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -62,13 +65,55 @@ class AuthController extends Controller
             'password' => ['required', 'confirmed', 'min:8'],
         ]);
 
-        User::create([
-            ...$data,
-            'phone' => $this->normalizePhone($data['phone']),
-            'role' => 'user',
-            'status' => 'pending',
-            'created_by' => 'auto-inscription',
+        $match = app(MemberMatchingService::class)->matchForRegistration([
+            'full_name' => $data['full_name'],
+            'email' => $data['email'],
+            'phone' => $data['phone'],
         ]);
+
+        if ($match['ambiguous'] ?? false) {
+            return back()->withErrors(['full_name' => 'Une personne similaire existe déjà. Merci de contacter l’administration pour validation humaine.'])->withInput();
+        }
+
+        $member = $match['member'] ?? Member::query()->firstOrCreate(
+            ['email' => strtolower(trim($data['email']))],
+            [
+                'name' => trim($data['full_name']),
+                'first_name' => Member::splitFullName($data['full_name'])[0],
+                'last_name' => Member::splitFullName($data['full_name'])[1],
+                'sex' => $data['sex'],
+                'phone' => $this->normalizePhone($data['phone']),
+                'birth_date' => $data['birth_date'] ?? null,
+                'email' => strtolower(trim($data['email'])),
+                'role' => 'user',
+            ],
+        );
+
+        $user = User::query()->firstOrCreate(
+            ['email' => strtolower(trim($data['email']))],
+            [
+                'username' => $data['username'],
+                'full_name' => $data['full_name'],
+                'member_id' => $member->id,
+                'sex' => $data['sex'],
+                'phone' => $this->normalizePhone($data['phone']),
+                'password' => Hash::make($data['password']),
+                'role' => 'user',
+                'status' => 'pending',
+                'created_by' => 'auto-inscription',
+                'birth_date' => $data['birth_date'] ?? null,
+            ],
+        );
+
+        if (filled($user->member_id) && $user->member_id !== $member->id) {
+            $user->member_id = $member->id;
+            $user->save();
+        }
+
+        Membership::query()->firstOrCreate(
+            ['member_id' => $member->id, 'type' => 'church'],
+            ['entity_id' => 1, 'status' => 'pending', 'starts_at' => now()],
+        );
 
         return redirect()->route('login')
             ->with('success', 'Compte créé ! Il est en attente de validation par l\'administrateur.');

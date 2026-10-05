@@ -39,7 +39,7 @@
 </head>
 <body>
     <div class="topbar">
-        <span class="brand">Appjeunesse · La Parole Éternelle Kolwezi</span>
+        <span class="brand">AETERNA LINKS · La Borne Parole Éternelle Kolwezi</span>
         <br><span class="portal-label">{{ $portalLabel }}</span>
         <div class="portal-label">Périmètre des présences : {{ $reportScope }}</div>
     </div>

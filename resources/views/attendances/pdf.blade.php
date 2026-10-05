@@ -74,7 +74,7 @@
                     <img class="logo" src="{{ public_path('logoEglise.jpg') }}" alt="Logo La Parole Éternelle">
                 </td>
                 <td class="brand-cell">
-                    <div class="brand">LA PAROLE ÉTERNELLE KOLWEZI</div>
+                    <div class="brand">LA BORNE PAROLE ÉTERNELLE KOLWEZI</div>
                     <div class="brand-subtitle">Rapport officiel de suivi des présences</div>
                 </td>
                 <td class="document-tag">DOCUMENT OFFICIEL<br>RAPPORT DES PRÉSENCES</td>
@@ -156,7 +156,7 @@
         <table class="footer-table">
             <tr>
                 <td>Document officiel de suivi des présences</td>
-                <td class="footer-right">appjeunesse-kzi · Kolwezi</td>
+                <td class="footer-right">AETERNA LINKS · Kolwezi</td>
             </tr>
         </table>
     </div>

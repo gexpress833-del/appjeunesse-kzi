@@ -94,13 +94,19 @@ class ManagementViewsTest extends TestCase
         $youthDepartment = Department::query()->firstOrCreate(['code' => 'youth'], ['name' => 'Portail jeunesse']);
         $ecodimDepartment = Department::query()->firstOrCreate(['code' => 'ecodim'], ['name' => 'ECODIM']);
         $admin = User::factory()->create(['role' => 'admin', 'status' => 'active']);
+        $member = Member::factory()->create([
+            'name' => 'Responsable jeunesse',
+            'dept' => $youthDepartment->name,
+            'role' => 'Responsable',
+        ]);
         $user = User::factory()->create([
             'role' => 'responsable',
             'status' => 'active',
             'dept' => $youthDepartment->name,
+            'member_id' => $member->id,
         ]);
         Membership::create([
-            'user_id' => $user->id,
+            'member_id' => $member->id,
             'type' => 'youth',
             'entity_id' => $youthDepartment->id,
             'status' => 'active',
@@ -128,6 +134,7 @@ class ManagementViewsTest extends TestCase
         $this->assertSame('ecodim', $user->primaryPortal());
         $this->assertSame('dashboard.ecodim', $user->dashboardRouteName());
         $this->assertSame('Responsable ECODIM', $user->roleLabel());
+        $this->assertSame('ECODIM', $user->member()->value('dept'));
         $this->assertDatabaseHas('member_role_assignments', [
             'user_id' => $user->id,
             'scope_type' => 'ecodim',
@@ -140,7 +147,7 @@ class ManagementViewsTest extends TestCase
             'status' => 'inactive',
         ]);
         $this->assertDatabaseHas('memberships', [
-            'user_id' => $user->id,
+            'member_id' => $member->id,
             'type' => 'youth',
             'status' => 'inactive',
         ]);
@@ -485,10 +492,22 @@ class ManagementViewsTest extends TestCase
     {
         Department::create(['name' => 'Social']);
 
+        $member = Member::factory()->create([
+            'name' => 'Responsable social',
+            'dept' => 'Social',
+            'role' => 'Responsable',
+        ]);
         $responsable = User::factory()->create([
             'role' => 'responsable',
             'status' => 'active',
             'dept' => 'Social',
+            'member_id' => $member->id,
+        ]);
+        Membership::create([
+            'member_id' => $member->id,
+            'type' => 'church',
+            'entity_id' => 1,
+            'status' => 'active',
         ]);
 
         $admin = User::factory()->create([
@@ -540,10 +559,22 @@ class ManagementViewsTest extends TestCase
     {
         Department::create(['name' => 'Social']);
 
+        $member = Member::factory()->create([
+            'name' => 'Responsable social',
+            'dept' => 'Social',
+            'role' => 'Responsable',
+        ]);
         $responsable = User::factory()->create([
             'role' => 'responsable',
             'status' => 'active',
             'dept' => 'Social',
+            'member_id' => $member->id,
+        ]);
+        Membership::create([
+            'member_id' => $member->id,
+            'type' => 'church',
+            'entity_id' => 1,
+            'status' => 'active',
         ]);
         $event = Event::create([
             'name' => 'Événement général',
@@ -755,14 +786,32 @@ class ManagementViewsTest extends TestCase
     {
         $department = Department::create(['name' => 'Social']);
         Department::create(['name' => 'Chorale']);
+        $member = Member::factory()->create([
+            'name' => 'Responsable jeunesse Social',
+            'dept' => 'Social',
+            'role' => 'Responsable',
+        ]);
         $youthLeader = User::factory()->create([
             'role' => 'responsable',
             'status' => 'active',
             'dept' => 'Social',
+            'member_id' => $member->id,
         ]);
         $role = Role::create([
             'name' => 'Responsable jeunesse',
             'slug' => 'responsable_jeunesse',
+            'status' => 'active',
+        ]);
+        Membership::create([
+            'member_id' => $member->id,
+            'type' => 'church',
+            'entity_id' => 1,
+            'status' => 'active',
+        ]);
+        Membership::create([
+            'member_id' => $member->id,
+            'type' => 'youth',
+            'entity_id' => $department->id,
             'status' => 'active',
         ]);
         MemberRoleAssignment::create([
@@ -849,10 +898,22 @@ class ManagementViewsTest extends TestCase
         Department::create(['name' => 'Social']);
         Department::create(['name' => 'Médias/DCC']);
 
+        $member = Member::factory()->create([
+            'name' => 'Responsable social',
+            'dept' => 'Social',
+            'role' => 'Responsable',
+        ]);
         $responsable = User::factory()->create([
             'role' => 'responsable',
             'status' => 'active',
             'dept' => 'Social',
+            'member_id' => $member->id,
+        ]);
+        Membership::create([
+            'member_id' => $member->id,
+            'type' => 'church',
+            'entity_id' => 1,
+            'status' => 'active',
         ]);
 
         $member = Member::create([

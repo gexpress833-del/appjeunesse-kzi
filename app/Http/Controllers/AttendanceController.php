@@ -299,13 +299,18 @@ class AttendanceController extends Controller
                     ->where('scope_id', $ecodimDepartmentId)
                     ->where('status', 'active')
                     ->whereHas('role', fn ($query) => $query->whereIn('slug', [
+                        'ecodim_manager',
                         'responsable_ecodim',
                         'animateur_ecodim',
                         'enseignant_ecodim',
                         'leader_ecodim',
                     ]))
                     ->pluck('user_id');
-                $recipientIds = $globalResponsibleIds->push($classResponsibleId)->filter()->unique();
+                $classResponsibleUserIds = User::query()
+                    ->where('member_id', $classResponsibleId)
+                    ->where('status', 'active')
+                    ->pluck('id');
+                $recipientIds = $globalResponsibleIds->concat($classResponsibleUserIds)->filter()->unique();
                 $recipients = User::query()->whereIn('id', $recipientIds)->where('status', 'active')->get();
             } elseif ($portal === 'youth') {
                 $departmentId = Department::query()->where('name', $data['dept'])->value('id');

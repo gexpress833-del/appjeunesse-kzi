@@ -10,6 +10,7 @@ use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -109,7 +110,7 @@ class User extends Authenticatable implements CanResetPasswordContract
             $sources[] = 'youth';
         }
 
-        if ($this->hasPortalRole('ecodim', ['responsable_ecodim', 'animateur_ecodim', 'enseignant_ecodim'])) {
+        if ($this->hasPortalRole('ecodim', ['ecodim_manager', 'responsable_ecodim', 'animateur_ecodim', 'enseignant_ecodim'])) {
             $sources[] = 'ecodim';
         }
 
@@ -147,8 +148,13 @@ class User extends Authenticatable implements CanResetPasswordContract
     public function portalAccesses(): array
     {
         $accesses = [];
+
+        if (! filled($this->member_id)) {
+            return [];
+        }
+
         $explicitMemberships = Membership::query()
-            ->where('user_id', $this->id)
+            ->where('member_id', $this->member_id)
             ->where('status', 'active')
             ->pluck('type')
             ->map(fn ($type) => strtolower((string) $type))
@@ -161,11 +167,12 @@ class User extends Authenticatable implements CanResetPasswordContract
         $hasExplicitMembershipData = $explicitMemberships !== [];
 
         if (! $hasExplicitMembershipData && $this->isChurchMember()) {
-            return ['church', 'youth', 'ecodim'];
+            return ['church', 'youth'];
         }
 
         foreach (['youth', 'ecodim'] as $portal) {
-            if (in_array($portal, $explicitMemberships, true) || $this->hasPortalRole($portal, ['responsable_jeunesse', 'responsable_ecodim', 'animateur_jeunesse', 'animateur_ecodim', 'enseignant_ecodim', 'leader_youth', 'leader_ecodim'])) {
+            if (in_array($portal, $explicitMemberships, true)
+                || ($portal === 'youth' && $this->hasPortalRole('youth', ['responsable_jeunesse', 'leader_youth', 'animateur_jeunesse']))) {
                 $accesses[] = $portal;
             }
         }
@@ -179,12 +186,10 @@ class User extends Authenticatable implements CanResetPasswordContract
             return 'church';
         }
 
-        if ($this->hasPortalRole('ecodim', [
-            'responsable_ecodim',
-            'animateur_ecodim',
-            'enseignant_ecodim',
-            'leader_ecodim',
-        ]) || $this->belongsToPortal('ecodim')) {
+        if ($this->canAccessPortal('ecodim') && $this->hasPortalRole('ecodim', [
+            'ecodim_manager',
+            'ecodim_class_responsible',
+        ])) {
             return 'ecodim';
         }
 
@@ -203,15 +208,17 @@ class User extends Authenticatable implements CanResetPasswordContract
     {
         $requestedPortal = request()->attributes->get('portal') ?? session('active_portal');
 
-        return is_string($requestedPortal) && in_array($requestedPortal, $this->portalAccesses(), true)
-            ? $requestedPortal
-            : $this->primaryPortal();
+        if (is_string($requestedPortal) && $this->canAccessPortal($requestedPortal)) {
+            return $requestedPortal;
+        }
+
+        return $this->primaryPortal();
     }
 
     public function roleLabel(): string
     {
         if ($this->primaryPortal() === 'ecodim' && (
-            $this->hasPortalRole('ecodim', ['responsable_ecodim', 'animateur_ecodim', 'enseignant_ecodim', 'leader_ecodim'])
+            $this->hasPortalRole('ecodim', ['ecodim_manager', 'responsable_ecodim', 'animateur_ecodim', 'enseignant_ecodim', 'leader_ecodim'])
             || ($this->isResponsable() && $this->belongsToPortal('ecodim'))
         )) {
             return 'Responsable ECODIM';
@@ -304,9 +311,21 @@ class User extends Authenticatable implements CanResetPasswordContract
     {
         $requestedPortal = strtolower($portal);
 
+        if ($requestedPortal === 'ecodim') {
+            return $this->hasActiveEcodimMembership();
+        }
+
         if ($requestedPortal === 'church') {
+            if ($this->isChurchAdministrator()) {
+                return true;
+            }
+
+            if (! filled($this->member_id)) {
+                return false;
+            }
+
             $activeMemberships = Membership::query()
-                ->where('user_id', $this->id)
+                ->where('member_id', $this->member_id)
                 ->where('status', 'active')
                 ->pluck('type')
                 ->map(fn ($type) => strtolower((string) $type))
@@ -316,7 +335,11 @@ class User extends Authenticatable implements CanResetPasswordContract
                 return false;
             }
 
-            return $this->isChurchMember() || $this->isChurchAdministrator();
+            return $this->isChurchMember();
+        }
+
+        if (! filled($this->member_id)) {
+            return $this->isChurchAdministrator() || $this->portalRoleAssignments($requestedPortal)->isNotEmpty();
         }
 
         return in_array($requestedPortal, $this->portalAccesses(), true);
@@ -327,9 +350,15 @@ class User extends Authenticatable implements CanResetPasswordContract
         $portalKey = strtolower($portal);
 
         return MemberRoleAssignment::query()
-            ->where('user_id', $this->id)
+            ->where(function ($query): void {
+                if (filled($this->member_id)) {
+                    $query->where('member_id', $this->member_id);
+                }
+
+                $query->orWhere('user_id', $this->id);
+            })
             ->where('status', 'active')
-            ->where(function ($query) use ($portalKey) {
+            ->where(function ($query) use ($portalKey): void {
                 $query->where('scope_type', $portalKey)
                     ->orWhere('scope_type', ucfirst($portalKey));
             })
@@ -363,10 +392,20 @@ class User extends Authenticatable implements CanResetPasswordContract
     public function belongsToPortal(string $portal): bool
     {
         $portalKey = strtolower($portal);
+
+        if ($portalKey === 'ecodim') {
+            return $this->hasActiveEcodimMembership();
+        }
+
         $departmentName = Department::query()->where('code', $portalKey)->value('name');
 
+        if (! filled($this->member_id)) {
+            return $this->portalRoleAssignments($portalKey)->isNotEmpty()
+                || ($departmentName !== null && $this->dept === $departmentName);
+        }
+
         return Membership::query()
-            ->where('user_id', $this->id)
+            ->where('member_id', $this->member_id)
             ->where('type', $portalKey)
             ->where('status', 'active')
             ->exists()
@@ -408,6 +447,10 @@ class User extends Authenticatable implements CanResetPasswordContract
 
     public function hasPortalPermission(string $portal, string $permission): bool
     {
+        if ($portal === 'ecodim') {
+            return $this->hasEcodimPermission($permission);
+        }
+
         if ($portal === 'church') {
             return $this->isChurchAdministrator();
         }
@@ -438,7 +481,13 @@ class User extends Authenticatable implements CanResetPasswordContract
             }
 
             $departmentIds = MemberRoleAssignment::query()
-                ->where('user_id', $this->id)
+                ->where(function ($query): void {
+                    if (filled($this->member_id)) {
+                        $query->where('member_id', $this->member_id);
+                    }
+
+                    $query->orWhere('user_id', $this->id);
+                })
                 ->where('scope_type', 'department')
                 ->where('status', 'active')
                 ->whereHas('role', fn ($query) => $query->where('slug', 'responsable'))
@@ -452,7 +501,13 @@ class User extends Authenticatable implements CanResetPasswordContract
         }
 
         $scopeIds = MemberRoleAssignment::query()
-            ->where('user_id', $this->id)
+            ->where(function ($query): void {
+                if (filled($this->member_id)) {
+                    $query->where('member_id', $this->member_id);
+                }
+
+                $query->orWhere('user_id', $this->id);
+            })
             ->where('scope_type', 'youth')
             ->where('status', 'active')
             ->whereHas('role', fn ($query) => $query->whereIn('slug', [
@@ -480,40 +535,115 @@ class User extends Authenticatable implements CanResetPasswordContract
     /** @return Collection<int, EcodimClass> */
     public function ecodimAttendanceClasses(): Collection
     {
-        $classes = EcodimClass::query()->where('status', 'active');
-
-        if ($this->isAdmin()) {
-            return $classes->orderBy('name')->get();
+        if (! $this->hasActiveEcodimMembership()) {
+            return new Collection;
         }
 
-        $ecodimDepartmentId = Department::query()->where('code', 'ecodim')->value('id');
-        $hasPortalWideAssignment = $ecodimDepartmentId && MemberRoleAssignment::query()
-            ->where('user_id', $this->id)
-            ->where('scope_type', 'ecodim')
-            ->where('scope_id', $ecodimDepartmentId)
+        return EcodimClass::query()
             ->where('status', 'active')
-            ->whereHas('role', fn ($query) => $query->whereIn('slug', [
-                'responsable_ecodim',
-                'animateur_ecodim',
-                'enseignant_ecodim',
-                'leader_ecodim',
-            ]))
-            ->exists();
-
-        return $classes
-            ->when(! $hasPortalWideAssignment, fn ($query) => $query->where('responsible_member_id', $this->id))
             ->orderBy('name')
-            ->get();
+            ->get()
+            ->filter(fn (EcodimClass $class): bool => $this->hasEcodimClassPermission($class, 'ecodim.attendance.manage'))
+            ->values();
     }
 
     public function canManageAttendance(string $portal, ?string $department): bool
     {
         if ($portal === 'ecodim') {
-            return filled($department) && $this->ecodimAttendanceClasses()->contains('name', $department);
+            $class = filled($department)
+                ? EcodimClass::query()->where('name', $department)->where('status', 'active')->first()
+                : null;
+
+            return $class !== null && $this->hasEcodimClassPermission($class, 'ecodim.attendance.manage');
         }
 
         return filled($department)
             && $this->attendanceDepartments($portal)->contains('name', $department);
+    }
+
+    public function hasActiveEcodimMembership(): bool
+    {
+        if (! filled($this->member_id)) {
+            return false;
+        }
+
+        return Membership::query()
+            ->where('member_id', $this->member_id)
+            ->where('type', 'ecodim')
+            ->where('status', 'active')
+            ->where(fn ($query) => $query->whereNull('starts_at')->orWhere('starts_at', '<=', now()))
+            ->where(fn ($query) => $query->whereNull('ends_at')->orWhere('ends_at', '>=', now()))
+            ->exists();
+    }
+
+    public function hasEcodimPermission(string $permission): bool
+    {
+        if (! $this->hasActiveEcodimMembership()) {
+            return false;
+        }
+
+        $departmentId = Department::query()->where('code', 'ecodim')->value('id');
+
+        if (! $departmentId) {
+            return false;
+        }
+
+        return $this->ecodimPermissionAssignments($permission)
+            ->where(function ($query) use ($departmentId): void {
+                $query->where(fn ($query) => $query
+                    ->where('scope_type', 'ecodim')
+                    ->where('scope_id', $departmentId)
+                    ->whereHas('role', fn ($roleQuery) => $roleQuery->where('slug', 'ecodim_manager')))
+                    ->orWhere(fn ($query) => $query
+                        ->where('scope_type', 'ecodim_class')
+                        ->whereHas('role', fn ($roleQuery) => $roleQuery->where('slug', 'ecodim_class_responsible'))
+                        ->whereExists(fn ($classQuery) => $classQuery
+                            ->selectRaw('1')
+                            ->from('ecodim_classes')
+                            ->whereColumn('ecodim_classes.id', 'member_role_assignments.scope_id')
+                            ->where('ecodim_classes.status', 'active')));
+            })
+            ->exists();
+    }
+
+    public function hasEcodimClassPermission(EcodimClass $class, string $permission): bool
+    {
+        if ($class->status !== 'active' || ! $this->hasActiveEcodimMembership()) {
+            return false;
+        }
+
+        $departmentId = Department::query()->where('code', 'ecodim')->value('id');
+
+        if (! $departmentId) {
+            return false;
+        }
+
+        return $this->ecodimPermissionAssignments($permission)
+            ->where(function ($query) use ($class, $departmentId): void {
+                $query->where(fn ($query) => $query
+                    ->where('scope_type', 'ecodim')
+                    ->where('scope_id', $departmentId)
+                    ->whereHas('role', fn ($roleQuery) => $roleQuery->where('slug', 'ecodim_manager')))
+                    ->orWhere(fn ($query) => $query
+                        ->where('scope_type', 'ecodim_class')
+                        ->where('scope_id', $class->id)
+                        ->whereHas('role', fn ($roleQuery) => $roleQuery->where('slug', 'ecodim_class_responsible')));
+            })
+            ->exists();
+    }
+
+    private function ecodimPermissionAssignments(string $permission): Builder
+    {
+        return MemberRoleAssignment::query()
+            ->where('member_id', $this->member_id)
+            ->where('status', 'active')
+            ->where(fn ($query) => $query->whereNull('starts_at')->orWhere('starts_at', '<=', now()))
+            ->where(fn ($query) => $query->whereNull('ends_at')->orWhere('ends_at', '>=', now()))
+            ->whereHas('role', fn ($query) => $query
+                ->whereIn('slug', ['ecodim_manager', 'ecodim_class_responsible'])
+                ->whereHas('permissions', fn ($permissionQuery) => $permissionQuery
+                    ->where('permissions.slug', $permission)
+                    ->where('permissions.status', 'active')));
     }
 
     /** @return array<string, string> */

@@ -4,6 +4,13 @@
 
 @section('content')
 
+    <section class="mb-8 border-l-4 border-cyan-400 py-2 pl-5 sm:mb-10 sm:pl-7">
+        <p class="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">La Borne Parole Éternelle Kolwezi</p>
+        <h1 class="mt-2 text-3xl font-black text-white sm:text-5xl">AETERNA LINKS</h1>
+        <p class="mt-2 text-sm text-slate-300 sm:text-base">La plateforme numérique de La Borne Parole Éternelle Kolwezi.</p>
+        <p class="mt-2 text-sm font-semibold text-cyan-200">« Une communauté, trois parcours, un même lien. »</p>
+    </section>
+
     {{-- ==================== CARROUSEL VITRINE ==================== --}}
     <section class="carousel-atmosphere relative overflow-hidden rounded-[2rem] border border-white/10 text-white shadow-[0_30px_80px_rgba(37,99,235,0.25)] ring-1 ring-white/10">
         <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.18),transparent_25%),radial-gradient(circle_at_bottom_right,_rgba(56,189,248,0.18),transparent_25%)]"></div>
@@ -67,7 +74,7 @@
 
             @if (empty($slides))
                 <div class="carousel-empty absolute inset-0 flex items-center justify-center px-6 text-center">
-                    <p class="max-w-full text-lg text-sky-100/90">Bienvenue sur la plateforme de la jeunesse !</p>
+                    <p class="max-w-full text-lg text-sky-100/90">Bienvenue sur AETERNA LINKS, la plateforme d’une communauté et de ses trois parcours.</p>
                 </div>
             @endif
         </div>
@@ -86,8 +93,8 @@
     {{-- ==================== PORTAILS ==================== --}}
     <section class="mt-10">
         <div class="mb-6 flex flex-col gap-3 text-center md:text-left">
-            <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-indigo-600">Choisissez votre espace</p>
-            <h2 class="text-3xl font-black text-slate-900">Choisissez votre espace</h2>
+            <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-indigo-600">Une communauté, trois parcours</p>
+            <h2 class="text-3xl font-black text-slate-900">Choisissez votre portail</h2>
         </div>
 
         <div class="portal-card-grid grid gap-6 md:grid-cols-3">

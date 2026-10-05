@@ -1,7 +1,7 @@
 {
-    "name": "appjeunesse-kzi",
-    "short_name": "Jeunesse KZI",
-    "description": "La plateforme de la jeunesse de La Parole Eternelle, Kolwezi.",
+    "name": "AETERNA LINKS",
+    "short_name": "AETERNA",
+    "description": "La plateforme numérique de La Borne Parole Éternelle Kolwezi. Une communauté, trois parcours, un même lien.",
     "lang": "fr",
     "start_url": "/dashboard",
     "scope": "/",

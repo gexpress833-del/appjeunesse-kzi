@@ -9,7 +9,8 @@
     <script>
         window.__APP_ONESIGNAL_CONFIG__ = @json($onesignalConfig);
     </script>
-    <title>@yield('title', 'appjeunesse-kzi') — La Parole Éternelle Kolwezi</title>
+    <meta name="description" content="AETERNA LINKS, la plateforme numérique de La Borne Parole Éternelle Kolwezi. Une communauté, trois parcours, un même lien.">
+    <title>@yield('title', 'AETERNA LINKS') — La Borne Parole Éternelle Kolwezi</title>
     <link rel="icon" type="image/jpeg" href="{{ asset('logoEglise.jpg') }}">
     <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
     <meta name="theme-color" content="#07111f">
@@ -46,8 +47,9 @@
                         <span aria-hidden="true">⌂</span>
                         <span>Accueil</span>
                     </a>
-                    <a href="{{ route('dashboard') }}" class="whitespace-nowrap rounded-xl bg-indigo-500/20 px-3 py-2 font-semibold text-indigo-100 transition hover:bg-indigo-500/35 sm:px-4">Église</a>
-                    <a href="{{ route('dashboard.youth') }}" class="whitespace-nowrap rounded-xl bg-emerald-500/15 px-3 py-2 font-semibold text-emerald-100 transition hover:bg-emerald-500/25 sm:px-4">Jeunesse</a>
+                    <a href="{{ route('dashboard') }}" class="whitespace-nowrap rounded-xl bg-indigo-500/20 px-3 py-2 font-semibold text-indigo-100 transition hover:bg-indigo-500/35 sm:px-4">Portail Église</a>
+                    <a href="{{ route('dashboard.youth') }}" class="whitespace-nowrap rounded-xl bg-emerald-500/15 px-3 py-2 font-semibold text-emerald-100 transition hover:bg-emerald-500/25 sm:px-4">Portail Jeunesse</a>
+                    <a href="{{ route('dashboard.ecodim') }}" class="whitespace-nowrap rounded-xl bg-lime-500/15 px-3 py-2 font-semibold text-lime-100 transition hover:bg-lime-500/25 sm:px-4">Portail ECODIM</a>
                     <a href="{{ route('videos.archive') }}" class="whitespace-nowrap rounded-xl px-2 py-2 text-slate-200 transition hover:bg-white/5 hover:text-white sm:px-3">Archives</a>
                     @auth
                         <a href="{{ route('dashboard') }}" class="whitespace-nowrap rounded-xl bg-indigo-500/20 px-3 py-2 font-semibold text-indigo-100 transition hover:bg-indigo-500/35 sm:px-4">Mon espace</a>
@@ -68,7 +70,7 @@
     </main>
 
     <footer class="relative z-10 mt-12 border-t border-white/10 bg-slate-950/80 py-6 text-center text-sm text-slate-400 backdrop-blur-xl">
-        © {{ date('Y') }} Jeunesse La Parole Éternelle — Kolwezi · appjeunesse-kzi
+        © {{ date('Y') }} {{ $appSettings->application_name }} · {{ $appSettings->church_name }}
     </footer>
 </body>
 </html>

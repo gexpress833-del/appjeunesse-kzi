@@ -6,6 +6,7 @@ use App\Models\Church;
 use App\Models\Department;
 use App\Models\Event;
 use App\Models\HomeContent;
+use App\Models\Member;
 use App\Models\MemberRoleAssignment;
 use App\Models\Membership;
 use App\Models\Role;
@@ -26,31 +27,39 @@ class PortalAccessRulesTest extends TestCase
             'status' => 'active',
         ]);
 
-        $member = User::factory()->create([
+        $department = Department::query()->firstOrCreate(['code' => 'youth'], ['name' => 'Portail jeunesse']);
+
+        $member = Member::factory()->create([
+            'name' => 'Membre portail',
+            'dept' => $department->name,
+        ]);
+
+        $user = User::factory()->create([
             'role' => 'user',
             'status' => 'active',
             'church_id' => $church->id,
+            'member_id' => $member->id,
         ]);
 
         Membership::create([
-            'user_id' => $member->id,
+            'member_id' => $member->id,
             'type' => 'church',
             'entity_id' => $church->id,
             'status' => 'active',
         ]);
 
         Membership::create([
-            'user_id' => $member->id,
+            'member_id' => $member->id,
             'type' => 'youth',
             'entity_id' => $church->id,
             'status' => 'active',
         ]);
 
-        $this->assertTrue($member->isChurchMember());
-        $this->assertTrue($member->canAccessPortal('church'));
-        $this->assertTrue($member->canAccessPortal('youth'));
-        $this->assertSame(['church', 'youth'], $member->portalAccesses());
-        $this->assertSame('youth', $member->primaryPortal());
+        $this->assertTrue($user->isChurchMember());
+        $this->assertTrue($user->canAccessPortal('church'));
+        $this->assertTrue($user->canAccessPortal('youth'));
+        $this->assertSame(['church', 'youth'], $user->portalAccesses());
+        $this->assertSame('youth', $user->primaryPortal());
     }
 
     public function test_pastor_and_admin_users_prioritize_the_church_portal(): void
@@ -98,7 +107,15 @@ class PortalAccessRulesTest extends TestCase
     {
         $department = Department::query()->firstOrCreate(['code' => 'ecodim'], ['name' => 'ECODIM']);
         $youthDepartment = Department::query()->firstOrCreate(['code' => 'youth'], ['name' => 'Portail jeunesse']);
-        $responsible = User::factory()->create(['role' => 'user', 'status' => 'active']);
+        $member = Member::factory()->create([
+            'name' => 'Responsable ECODIM',
+            'dept' => 'ECODIM',
+        ]);
+        $responsible = User::factory()->create([
+            'role' => 'user',
+            'status' => 'active',
+            'member_id' => $member->id,
+        ]);
         $role = Role::query()->firstOrCreate(
             ['slug' => 'responsable_ecodim'],
             ['name' => 'Responsable ECODIM', 'status' => 'active'],
@@ -111,7 +128,7 @@ class PortalAccessRulesTest extends TestCase
             'status' => 'active',
         ]);
         Membership::create([
-            'user_id' => $responsible->id,
+            'member_id' => $member->id,
             'type' => 'youth',
             'entity_id' => $youthDepartment->id,
             'status' => 'active',
@@ -155,13 +172,18 @@ class PortalAccessRulesTest extends TestCase
     public function test_pending_youth_portal_account_defaults_to_the_youth_dashboard(): void
     {
         $department = Department::query()->firstOrCreate(['code' => 'youth'], ['name' => 'Portail jeunesse']);
+        $member = Member::factory()->create([
+            'name' => 'Membre jeunesse',
+            'dept' => $department->name,
+        ]);
         $user = User::factory()->create([
             'role' => 'user',
             'status' => 'pending',
             'dept' => $department->name,
+            'member_id' => $member->id,
         ]);
         Membership::create([
-            'user_id' => $user->id,
+            'member_id' => $member->id,
             'type' => 'youth',
             'entity_id' => $department->id,
             'status' => 'active',
@@ -300,26 +322,34 @@ class PortalAccessRulesTest extends TestCase
             'status' => 'active',
         ]);
 
-        $member = User::factory()->create([
+        $department = Department::query()->firstOrCreate(['code' => 'ecodim'], ['name' => 'ECODIM']);
+
+        $member = Member::factory()->create([
+            'name' => 'Membre ECODIM',
+            'dept' => $department->name,
+        ]);
+
+        $user = User::factory()->create([
             'role' => 'user',
             'status' => 'active',
             'church_id' => $church->id,
+            'member_id' => $member->id,
         ]);
 
         Membership::create([
-            'user_id' => $member->id,
+            'member_id' => $member->id,
             'type' => 'ecodim',
             'entity_id' => $church->id,
             'status' => 'active',
         ]);
 
-        $response = $this->actingAs($member)->get(route('dashboard.ecodim'));
+        $response = $this->actingAs($user)->get(route('dashboard.ecodim'));
 
         $response->assertOk();
         $response->assertViewIs('dashboard.personal');
         $response->assertSee('Portail ECODIM');
-        $this->assertSame('ecodim', $member->currentPortal());
-        $this->assertSame('ecodim', $member->portalNavigationKey());
+        $this->assertSame('ecodim', $user->currentPortal());
+        $this->assertSame('ecodim', $user->portalNavigationKey());
     }
 
     public function test_pastor_can_create_events_in_the_church_portal(): void
@@ -415,31 +445,47 @@ class PortalAccessRulesTest extends TestCase
             'status' => 'active',
         ]);
 
-        $member = User::factory()->create([
+        $churchDepartment = Department::query()->firstOrCreate(['code' => 'church'], ['name' => 'Église']);
+
+        $member = Member::factory()->create([
+            'name' => 'Membre accès',
+            'dept' => $churchDepartment->name,
+        ]);
+
+        $user = User::factory()->create([
             'role' => 'user',
             'status' => 'active',
             'church_id' => $church->id,
+            'member_id' => $member->id,
         ]);
 
         Membership::create([
-            'user_id' => $member->id,
+            'member_id' => $member->id,
             'type' => 'church',
             'entity_id' => $church->id,
             'status' => 'active',
         ]);
 
-        $this->assertTrue($member->canAccessPortal('church'));
-        $this->assertFalse($member->canAccessPortal('youth'));
-        $this->assertFalse($member->canAccessPortal('ecodim'));
+        $this->assertTrue($user->canAccessPortal('church'));
+        $this->assertFalse($user->canAccessPortal('youth'));
+        $this->assertFalse($user->canAccessPortal('ecodim'));
+
+        $youthDepartment = Department::query()->firstOrCreate(['code' => 'youth'], ['name' => 'Portail jeunesse']);
+
+        $youthMember = Member::factory()->create([
+            'name' => 'Jeune accès',
+            'dept' => $youthDepartment->name,
+        ]);
 
         $youthLeader = User::factory()->create([
             'role' => 'user',
             'status' => 'active',
             'church_id' => $church->id,
+            'member_id' => $youthMember->id,
         ]);
 
         Membership::create([
-            'user_id' => $youthLeader->id,
+            'member_id' => $youthMember->id,
             'type' => 'youth',
             'entity_id' => $church->id,
             'status' => 'active',

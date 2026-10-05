@@ -1,0 +1,1454 @@
+PROMPT MAÎTRE CURSOR — AETERNA LINKS
+PHASE 1 : STABILISATION COMPLÈTE DE L’APPLICATION POUR UNE SEULE ÉGLISE
+
+============================================================
+CONTEXTE DU PROJET
+============================================================
+
+Tu interviens sur une application EXISTANTE appelée :
+
+AETERNA LINKS
+
+Application / produit :
+Aeterna Links
+
+Église actuellement concernée :
+La Parole Éternelle Kolwezi
+
+IMPORTANT :
+
+Aeterna Links est actuellement développé et utilisé pour UNE SEULE ÉGLISE.
+
+Cette phase a pour objectif de rendre cette version :
+
+- fonctionnelle ;
+- cohérente ;
+- sécurisée ;
+- stable ;
+- professionnelle ;
+- testée ;
+- prête à être réellement utilisée.
+
+============================================================
+RÈGLE ABSOLUE : PAS DE SAAS POUR LE MOMENT
+============================================================
+
+NE PAS transformer actuellement l’application en SaaS.
+
+NE PAS implémenter pour le moment :
+
+- multi-tenant ;
+- plusieurs Églises dans une même instance ;
+- gestion de plusieurs organisations ;
+- abonnement ;
+- plans tarifaires ;
+- facturation ;
+- onboarding SaaS ;
+- super-admin SaaS ;
+- isolation multi-tenant ;
+- tenant_id ;
+- architecture complexe de tenants ;
+- quotas par Église ;
+- marketplace ;
+- gestion commerciale ;
+- domaines personnalisés pour plusieurs Églises.
+
+NE PAS créer une architecture multi-Églises complète à ce stade.
+
+L’objectif actuel est uniquement :
+
+AETERNA LINKS
+↓
+LA PAROLE ÉTERNELLE KOLWEZI
+↓
+PORTAIL ÉGLISE
+PORTAIL JEUNESSE
+PORTAIL ECODIM
+
+============================================================
+IDENTITÉ DE L’APPLICATION
+============================================================
+
+Le nom du produit est :
+
+Aeterna Links
+
+Ce nom est FIXE.
+
+Il ne doit PAS être modifiable depuis l’administration.
+
+Le nom de l’Église est :
+
+La Parole Éternelle Kolwezi
+
+Ce nom représente l’organisation actuellement utilisée par l’application.
+
+IMPORTANT :
+
+Même si cette phase ne gère qu’une seule Église, ne disperse pas le texte :
+
+"La Parole Éternelle Kolwezi"
+
+dans des dizaines de fichiers.
+
+Centralise la configuration institutionnelle afin de pouvoir la modifier facilement plus tard.
+
+MAIS :
+
+NE transforme PAS cette configuration en système multi-tenant.
+
+Il s’agit uniquement d’une configuration unique pour l’Église actuellement utilisée.
+
+============================================================
+ARCHITECTURE ACTUELLE
+============================================================
+
+Architecture :
+
+Aeterna Links
+└── La Parole Éternelle Kolwezi
+    ├── Portail Église
+    ├── Portail Jeunesse
+    └── Portail ECODIM
+
+Le système possède un seul contexte d’Église.
+
+Toutes les données actuelles appartiennent à cette même Église.
+
+============================================================
+OBJECTIF PRINCIPAL
+============================================================
+
+La priorité absolue est de finaliser le fonctionnement métier avant toute évolution SaaS.
+
+Tu dois donc te concentrer sur :
+
+- membres ;
+- comptes ;
+- appartenances ;
+- familles ;
+- rôles ;
+- permissions ;
+- scopes ;
+- validation ;
+- présences ;
+- événements ;
+- ECODIM ;
+- Jeunesse ;
+- Église ;
+- transition ECODIM → Jeunesse ;
+- notifications ;
+- tâches ;
+- historique ;
+- audit ;
+- rapports PDF ;
+- UX/UI ;
+- sécurité ;
+- tests ;
+- responsive.
+
+============================================================
+1. AUDITER AVANT DE MODIFIER
+============================================================
+
+NE MODIFIE PAS immédiatement le code.
+
+Commence par inspecter :
+
+- structure du projet ;
+- frontend ;
+- backend ;
+- ORM ;
+- base de données ;
+- migrations ;
+- modèles ;
+- contrôleurs ;
+- services ;
+- repositories ;
+- routes ;
+- middleware ;
+- policies ;
+- permissions ;
+- authentification ;
+- événements ;
+- présences ;
+- génération PDF ;
+- notifications ;
+- composants UI ;
+- dashboards ;
+- pages de connexion ;
+- pages d'inscription ;
+- pages de sélection des portails ;
+- tests.
+
+Recherche notamment :
+
+users
+members
+member_profiles
+memberships
+roles
+permissions
+model_has_roles
+events
+attendances
+departments
+ministries
+families
+children
+ecodim
+youth
+notifications
+tasks
+audit_logs
+
+============================================================
+2. RAPPORT D’AUDIT
+============================================================
+
+Avant de modifier le projet, identifie :
+
+EXISTE DÉJÀ
+À CONSERVER
+À ADAPTER
+À CRÉER
+À MIGRER
+À SUPPRIMER UNIQUEMENT SI NÉCESSAIRE
+
+Identifie également :
+
+RISQUES DE RÉGRESSION
+RISQUES DE MIGRATION
+DUPLICATIONS
+INCOHÉRENCES
+FONCTIONNALITÉS INCOMPLÈTES
+
+Ne suppose jamais qu’une fonctionnalité manque avant de l’avoir recherchée.
+
+============================================================
+3. MEMBER ≠ USER
+============================================================
+
+Le système doit distinguer :
+
+MEMBER
+= personne dans la communauté
+
+USER
+= compte permettant de se connecter
+
+Relation cible :
+
+MEMBER 1 ───── 0..1 USER
+
+Un membre doit donc pouvoir exister sans compte de connexion.
+
+C’est obligatoire pour les enfants ECODIM.
+
+============================================================
+4. MEMBER
+============================================================
+
+Le membre contient notamment :
+
+id
+first_name
+last_name
+birth_date
+gender
+photo_url
+status
+created_at
+updated_at
+
+La date de naissance est la source de vérité.
+
+Ne stocke pas l’âge calculé de façon permanente sauf besoin réel.
+
+============================================================
+5. USER
+============================================================
+
+Le compte utilisateur contient notamment :
+
+id
+member_id
+email
+phone
+password_hash
+status
+last_login_at
+created_at
+updated_at
+
+Le USER reste optionnel pour certains membres.
+
+============================================================
+6. ENFANTS ECODIM
+============================================================
+
+Un enfant peut exister ainsi :
+
+MEMBER = actif
+ECODIM = actif
+USER = null
+
+Ne force jamais un enfant à avoir :
+
+- email ;
+- mot de passe ;
+- téléphone personnel ;
+- compte utilisateur.
+
+============================================================
+7. FAMILLES
+============================================================
+
+Utiliser ou adapter :
+
+families
+family_members
+
+Les relations doivent être basées sur member_id.
+
+Exemples :
+
+father
+mother
+guardian
+other
+
+Un parent peut avoir un compte utilisateur alors que l’enfant n’en possède pas.
+
+============================================================
+8. INSCRIPTION
+============================================================
+
+Le processus est :
+
+PERSONNE
+↓
+MEMBER
+↓
+USER SI NÉCESSAIRE
+↓
+VALIDATION
+↓
+MEMBERSHIP
+↓
+ROLE
+↓
+PERMISSIONS
+↓
+ACCÈS
+
+NE PAS demander à l’utilisateur de choisir son portail comme s’il créait une nouvelle identité.
+
+NE PAS laisser l’utilisateur choisir lui-même un rôle administratif.
+
+============================================================
+9. CRÉATION PAR LE SECRÉTARIAT
+============================================================
+
+Le secrétariat doit pouvoir créer :
+
+MEMBER
+sans USER obligatoire.
+
+Pour donner ensuite un accès personnel :
+
+Créer une invitation
+↓
+Lien sécurisé
+↓
+Création du mot de passe
+↓
+Activation
+
+============================================================
+10. MEMBERSHIPS
+============================================================
+
+Les appartenances sont séparées des rôles.
+
+Exemples :
+
+church
+youth
+ecodim
+department
+ministry
+
+Une personne peut avoir plusieurs appartenances.
+
+============================================================
+11. ROLES
+============================================================
+
+Les rôles représentent des responsabilités.
+
+Exemples :
+
+pasteur_principal
+secretariat_general
+responsable_ecodim
+responsable_jeunesse
+enseignant_ecodim
+responsable_departement
+responsable_ministere
+
+Un membre peut avoir plusieurs rôles.
+
+============================================================
+12. ROLE SCOPES
+============================================================
+
+Les rôles doivent être associés à un périmètre lorsqu’il est nécessaire.
+
+Exemple :
+
+Responsable Département
+Scope = Département Musique
+
+Responsable Jeunesse
+Scope = Jeunesse
+
+Responsable ECODIM
+Scope = ECODIM
+
+Utiliser ou adapter :
+
+member_role_assignments
+
+avec :
+
+member_id
+role_id
+scope_type
+scope_id
+starts_at
+ends_at
+status
+assigned_by
+
+============================================================
+13. PERMISSIONS
+============================================================
+
+Séparer :
+
+ROLE
+PERMISSION
+SCOPE
+
+Exemples :
+
+members.view
+members.edit
+members.validate
+
+ecodim.children.view
+ecodim.children.manage
+ecodim.attendance.manage
+ecodim.transition.view
+ecodim.transition.review
+ecodim.transition.approve
+
+youth.members.view
+youth.attendance.manage
+youth.activities.manage
+
+church.departments.manage
+church.announcements.publish
+
+roles.assign
+roles.revoke
+
+============================================================
+14. RÈGLE D’AUTORISATION
+============================================================
+
+Toute action sensible doit être validée côté serveur à partir de :
+
+AUTHENTIFICATION
++
+MEMBER STATUS
++
+MEMBERSHIP
++
+ROLE
++
+SCOPE
++
+PERMISSION
++
+PORTAIL
++
+OBJET CIBLÉ
+
+Ne jamais se fier uniquement au frontend.
+
+============================================================
+15. SÉPARATION ÉGLISE / JEUNESSE
+============================================================
+
+Cette règle existe déjà et doit être CONSERVÉE.
+
+Un responsable Église ne peut pas saisir une présence Jeunesse uniquement parce qu’un département porte le même nom.
+
+Pour saisir une présence Jeunesse, il faut notamment :
+
+- affectation Jeunesse active ;
+- périmètre autorisé ;
+- permission correspondante ;
+- événement Jeunesse.
+
+Le serveur doit refuser :
+
+- URL manipulée ;
+- POST manipulé ;
+- API directe ;
+- changement d’identifiant ;
+- tentative de contournement frontend.
+
+============================================================
+16. DOUBLE RESPONSABILITÉ
+============================================================
+
+Une même personne peut être responsable dans les deux espaces.
+
+Exemple :
+
+Église :
+Responsable Département Musique
+
+Jeunesse :
+Responsable Jeunesse
+
+Les deux droits restent DISTINCTS.
+
+La nomination Jeunesse ne doit pas modifier ou supprimer le département Église.
+
+============================================================
+17. EVENTS.PORTAL
+============================================================
+
+Le champ existe déjà :
+
+events.portal
+
+Valeurs actuelles :
+
+church
+youth
+
+Conserver ce fonctionnement.
+
+Les événements existants utilisent church par défaut.
+
+Ne pas casser les données existantes.
+
+Préparer ECODIM dans le système seulement si cela est déjà nécessaire au fonctionnement actuel.
+
+============================================================
+18. ECODIM
+============================================================
+
+Compléter le portail ECODIM pour gérer :
+
+- enfants ;
+- classes ;
+- enseignants ;
+- responsables ;
+- familles ;
+- groupes ;
+- présences ;
+- événements ;
+- activités ;
+- progression ;
+- transitions ;
+- notifications ;
+- tâches.
+
+============================================================
+19. TRANSITION ECODIM → JEUNESSE
+============================================================
+
+Implémenter le processus :
+
+ECODIM
+↓
+APPROCHE DU SEUIL
+↓
+PRÉ-ALERTE
+↓
+NOTIFICATION
+↓
+ÉLIGIBLE
+↓
+EXAMEN
+↓
+PRÉPARATION
+↓
+VALIDATION
+↓
+TRANSFERT
+↓
+JEUNESSE ACTIVE
+
+============================================================
+20. RÈGLES DE TRANSITION
+============================================================
+
+Ne jamais coder directement :
+
+if age >= 13
+
+La règle doit être centralisée.
+
+Utiliser :
+
+transition_rules
+
+La source de calcul doit être :
+
+birth_date
+
+============================================================
+21. STATUTS DE TRANSITION
+============================================================
+
+Utiliser :
+
+normal
+next_transition
+eligible
+in_progress
+transferred
+postponed
+
+============================================================
+22. NOTIFICATIONS
+============================================================
+
+Lorsqu’un enfant devient prochainement éligible ou éligible, informer :
+
+- Pasteur principal ;
+- Secrétariat général ;
+- Responsable ECODIM ;
+- Responsable Jeunesse.
+
+Le parent/tuteur peut être informé selon les règles définies dans l’application.
+
+============================================================
+23. TASKS
+============================================================
+
+Les responsables doivent recevoir des tâches actionnables.
+
+Exemple :
+
+Examiner la transition de David
+
+Assigned to :
+Responsable Jeunesse
+
+Reference :
+ecodim_transition #123
+
+============================================================
+24. HISTORIQUE
+============================================================
+
+Conserver l’historique des transitions et des changements importants.
+
+Prévoir ou adapter :
+
+transition_history
+
+et :
+
+audit_logs
+
+============================================================
+25. TRANSFERT
+============================================================
+
+Lorsqu’une transition est validée :
+
+NE PAS créer un nouveau MEMBER.
+
+Conserver le même member_id.
+
+Faire évoluer les appartenances :
+
+ECODIM = historique / inactive
+JEUNESSE = active
+
+Conserver tout l’historique ECODIM.
+
+============================================================
+26. COMPTE DU JEUNE
+============================================================
+
+Si le jeune n’a pas encore de USER :
+
+Transition validée
+↓
+Invitation
+↓
+Création USER
+↓
+USER lié au même MEMBER
+↓
+Accès Jeunesse
+
+============================================================
+27. PORTAIL ÉGLISE
+============================================================
+
+Le portail Église doit couvrir :
+
+- membres ;
+- validation ;
+- cultes ;
+- présences ;
+- événements ;
+- annonces ;
+- départements ;
+- ministères ;
+- responsables ;
+- rapports ;
+- supervision.
+
+============================================================
+28. PORTAIL JEUNESSE
+============================================================
+
+Le portail Jeunesse doit couvrir :
+
+- profil ;
+- groupes ;
+- activités ;
+- événements ;
+- présences ;
+- engagement ;
+- responsabilités ;
+- intégration des jeunes provenant de l’ECODIM ;
+- notifications ;
+- tâches.
+
+============================================================
+29. PORTAIL ECODIM
+============================================================
+
+Le portail ECODIM doit couvrir :
+
+- enfants ;
+- classes ;
+- enseignants ;
+- familles ;
+- présences ;
+- activités ;
+- événements ;
+- progression ;
+- transitions ;
+- notifications ;
+- tâches.
+
+============================================================
+30. PASTEUR PRINCIPAL
+============================================================
+
+Le Pasteur principal représente l’autorité de gouvernance institutionnelle.
+
+Ne jamais coder un utilisateur spécifique comme :
+
+user_id = 1
+
+Le rôle doit être attribuable.
+
+============================================================
+31. SECRÉTARIAT GÉNÉRAL
+============================================================
+
+Le secrétariat peut :
+
+- vérifier ;
+- gérer ;
+- traiter les dossiers ;
+- participer aux validations autorisées ;
+- suivre les transitions ;
+- produire les rapports nécessaires.
+
+============================================================
+32. ADMINISTRATEUR TECHNIQUE
+============================================================
+
+Séparer :
+
+ADMINISTRATION TECHNIQUE
+et
+GOUVERNANCE DE L’ÉGLISE.
+
+L’administration technique gère la plateforme techniquement mais ne gagne pas automatiquement tous les droits métier.
+
+============================================================
+33. RAPPORTS PDF
+============================================================
+
+Tous les rapports de présence doivent indiquer clairement :
+
+LA PAROLE ÉTERNELLE KOLWEZI
+RAPPORT DES PRÉSENCES
+
+Puis :
+
+PORTAIL ÉGLISE
+ou
+PORTAIL JEUNESSE
+ou
+PORTAIL ECODIM
+
+Afficher :
+
+- événement ;
+- date ;
+- département / groupe ;
+- responsable ;
+- périmètre du rapport.
+
+Exemple :
+
+Périmètre du rapport :
+Église — Département Musique
+
+ou :
+
+Périmètre du rapport :
+Jeunesse — Département Musique
+
+La source doit être :
+
+events.portal
+
+Ne jamais déduire le portail à partir du nom du département.
+
+============================================================
+34. DESIGN D’AETERNA LINKS
+============================================================
+
+Le design global doit suivre :
+
+PREMIUM SAAS INSTITUTIONNEL
+
+mais attention :
+
+"Premium SaaS institutionnel" ici désigne UNIQUEMENT le STYLE VISUEL.
+
+Cela ne signifie PAS que nous devons construire le produit SaaS maintenant.
+
+Style :
+
+- sobre ;
+- élégant ;
+- moderne ;
+- professionnel ;
+- minimal ;
+- lisible ;
+- institutionnel.
+
+============================================================
+35. IDENTITÉ VISUELLE DES PORTAILS
+============================================================
+
+Église :
+#D4A72C
+Ambre / Or
+
+Jeunesse :
+#8B5CF6
+Violet
+
+ECODIM :
+#22C55E
+Vert
+
+Les couleurs servent d’accents.
+
+Ne pas remplir toute l’interface avec ces couleurs.
+
+============================================================
+36. SIDEBAR
+============================================================
+
+Desktop :
+
+250–270 px
+
+Structure :
+
+IDENTITÉ DU PORTAIL
+
+PRINCIPAL
+
+Tableau de bord
+Membres
+Présences
+Événements
+Annonces
+
+ORGANISATION
+
+Départements
+Ministères
+Responsables
+
+MON ESPACE
+
+Mon profil
+Mon activité
+
+En bas :
+
+Paramètres
+Déconnexion
+
+Afficher dynamiquement selon les permissions.
+
+============================================================
+37. ICONES
+============================================================
+
+Utiliser une seule bibliothèque :
+
+Lucide
+ou
+Tabler
+ou
+Phosphor
+
+Tailles :
+
+Navigation :
+18 px
+
+Boutons :
+16 px
+
+Notifications :
+18–20 px
+
+Statistiques :
+18–22 px
+
+Ne pas utiliser d’emojis dans la navigation principale.
+
+============================================================
+38. TYPOGRAPHIE
+============================================================
+
+Nom portail :
+
+11–12 px
+
+Utilisateur :
+
+16–18 px
+
+Titre :
+
+28–32 px
+
+Sous-titre :
+
+14–15 px
+
+Navigation :
+
+14 px
+
+Texte secondaire :
+
+13 px
+
+Statistiques :
+
+24–28 px
+
+Éviter les titres excessivement grands.
+
+============================================================
+39. SIDEBAR ACTIVE
+============================================================
+
+Éviter les grosses capsules.
+
+Utiliser :
+
+- fond léger ;
+- texte semibold ;
+- icône accentuée ;
+- indicateur vertical 2–3 px.
+
+============================================================
+40. DASHBOARD
+============================================================
+
+Le dashboard doit être aéré et structuré.
+
+En haut :
+
+Bonjour, [Nom]
+
+Voici l’activité de votre espace aujourd’hui.
+
+Puis des statistiques compactes :
+
+Membres
+Présences
+Événements
+Validations
+
+Puis :
+
+Activité récente
+
+À traiter
+
+Ne pas surcharger l’écran.
+
+============================================================
+41. NOTIFICATIONS
+============================================================
+
+Un seul centre de notifications.
+
+Éviter plusieurs cloches concurrentes.
+
+============================================================
+42. RESPONSIVE
+============================================================
+
+Desktop :
+sidebar 250–270 px
+
+Mobile :
+sidebar fermée par défaut
+
+Drawer :
+280–300 px maximum
+
+Tester :
+
+- mobile ;
+- tablette ;
+- laptop ;
+- desktop.
+
+Aucun élément ne doit se chevaucher ou sortir de l’écran.
+
+============================================================
+43. PAGE DE SÉLECTION DES PORTAILS
+============================================================
+
+Titre :
+
+Choisissez votre espace
+
+Sous-titre :
+
+Une seule communauté, trois espaces adaptés à votre parcours.
+
+PORTAIL ÉGLISE
+
+Cultes, membres, événements et administration.
+
+Membres · Cultes · Événements
+
+PORTAIL JEUNESSE
+
+Activités, groupes, présences et engagement.
+
+Profil · Activités · Présences
+
+PORTAIL ECODIM
+
+Enfants, classes, présences et parcours.
+
+Enfants · Classes · Transition
+
+Utiliser les trois couleurs :
+
+Église = Or
+Jeunesse = Violet
+ECODIM = Vert
+
+============================================================
+44. IDENTITÉ DE L’ÉGLISE DANS L’INTERFACE
+============================================================
+
+Afficher :
+
+Aeterna Links
+
+La Parole Éternelle Kolwezi
+
+Portail Église
+
+ou :
+
+Aeterna Links
+
+La Parole Éternelle Kolwezi
+
+Portail Jeunesse
+
+ou :
+
+Aeterna Links
+
+La Parole Éternelle Kolwezi
+
+Portail ECODIM
+
+Aeterna Links reste toujours fixe.
+
+Le nom de l’Église vient de la configuration actuelle.
+
+============================================================
+45. CONFIGURATION DE L’ÉGLISE
+============================================================
+
+Centraliser les informations institutionnelles actuellement utilisées.
+
+Exemples :
+
+church_name
+church_short_name
+church_logo
+church_address
+church_city
+church_phone
+church_email
+church_timezone
+
+IMPORTANT :
+
+Cette configuration concerne UNE SEULE ÉGLISE dans cette phase.
+
+NE PAS créer :
+
+tenant_id
+organization_id multi-tenant
+tenant middleware
+subscription engine
+SaaS billing
+multi-church dashboard
+
+Le but est uniquement d’éviter de hardcoder les informations institutionnelles dans tous les composants.
+
+============================================================
+46. MULTI-ÉGLISES : EXCLUSION TEMPORAIRE
+============================================================
+
+Cette fonctionnalité sera traitée dans une PHASE FUTURE.
+
+Pour le moment :
+
+UNE SEULE ÉGLISE
+=
+La Parole Éternelle Kolwezi
+
+Le code doit rester suffisamment propre pour qu’une future évolution soit possible.
+
+Mais :
+
+NE PAS développer cette évolution maintenant.
+
+Ne pas complexifier le projet avec une architecture dont nous n’avons pas encore besoin.
+
+============================================================
+47. TESTS
+============================================================
+
+Tester au minimum :
+
+MEMBER
+- membre sans user ;
+- membre avec user.
+
+USER
+- user lié correctement à member.
+
+ECODIM
+- enfant sans user ;
+- enfant dans une classe ;
+- parent lié à l’enfant.
+
+MEMBERSHIPS
+- plusieurs appartenances.
+
+ROLES
+- plusieurs rôles ;
+- scope correct ;
+- rôle expiré.
+
+PORTAILS
+- accès Église ;
+- accès Jeunesse ;
+- accès ECODIM ;
+- refus accès croisé.
+
+PRESENCES
+- événement church ;
+- événement youth ;
+- refus hors périmètre.
+
+TRANSITIONS
+- next_transition ;
+- eligible ;
+- postponed ;
+- in_progress ;
+- transferred.
+
+NOTIFICATIONS
+- destinataires corrects.
+
+PDF
+- portail affiché ;
+- périmètre affiché.
+
+============================================================
+48. ÉTAT EXISTANT À PRÉSERVER
+============================================================
+
+Les fonctionnalités suivantes sont déjà validées :
+
+- séparation Église / Jeunesse ;
+- affectation Jeunesse active obligatoire ;
+- contrôle du département autorisé ;
+- protections côté serveur ;
+- refus des accès croisés ;
+- double responsabilité possible ;
+- events.portal ;
+- filtrage des listes ;
+- filtrage des feuilles de présence ;
+- filtrage des rapports ;
+- filtrage des dashboards.
+
+Tests existants :
+
+9 tests ciblés de présence passent.
+
+16 tests de portail passent.
+
+Pint PHP passe.
+
+Syntaxe PHP passe.
+
+Contrôle du diff passe.
+
+Migration :
+
+events.portal
+
+déjà appliquée localement.
+
+Migration :
+
+add_member_id_to_users_table
+
+encore en attente.
+
+============================================================
+49. MIGRATION MEMBER_ID
+============================================================
+
+Avant d’exécuter :
+
+add_member_id_to_users_table
+
+inspecter :
+
+users
+members
+member_profiles
+
+Déterminer :
+
+- quels users correspondent à quels members ;
+- quels users n’ont pas de member ;
+- quels members n’ont pas de user ;
+- doublons ;
+- relations existantes.
+
+Ne pas exécuter aveuglément.
+
+Préserver toutes les données.
+
+============================================================
+50. STRATÉGIE DE DÉVELOPPEMENT
+============================================================
+
+Toujours :
+
+ANALYSER
+→ RÉUTILISER
+→ ADAPTER
+→ MIGRER
+→ TESTER
+
+Éviter :
+
+SUPPRIMER
+→ RECONSTRUIRE
+→ CASSER L’EXISTANT
+
+============================================================
+51. ORDRE DE TRAVAIL
+============================================================
+
+PHASE 1
+Audit complet.
+
+PHASE 2
+Member / User.
+
+PHASE 3
+Memberships / Families.
+
+PHASE 4
+Roles / Permissions / Scopes.
+
+PHASE 5
+Inscription / Validation / Invitation.
+
+PHASE 6
+ECODIM.
+
+PHASE 7
+Transition ECODIM → Jeunesse.
+
+PHASE 8
+Notifications / Tasks / Audit.
+
+PHASE 9
+Jeunesse.
+
+PHASE 10
+Église.
+
+PHASE 11
+Rapports PDF.
+
+PHASE 12
+Design system.
+
+PHASE 13
+UI/UX.
+
+PHASE 14
+Responsive.
+
+PHASE 15
+Tests complets.
+
+PHASE 16
+Stabilisation finale.
+
+============================================================
+52. OBJECTIF FINAL DE CETTE PHASE
+============================================================
+
+À la fin de cette mission, Aeterna Links doit être une plateforme parfaitement fonctionnelle pour :
+
+LA PAROLE ÉTERNELLE KOLWEZI
+
+avec :
+
+PORTAIL ÉGLISE
+PORTAIL JEUNESSE
+PORTAIL ECODIM
+
+et un référentiel central permettant de gérer :
+
+MEMBRES
+COMPTES
+APPARTENANCES
+FAMILLES
+RÔLES
+PERMISSIONS
+PRÉSENCES
+ÉVÉNEMENTS
+TRANSITIONS
+NOTIFICATIONS
+TÂCHES
+AUDIT
+RAPPORTS
+
+============================================================
+53. RÈGLE FINALE
+============================================================
+
+Pour cette phase :
+
+AETERNA LINKS
+= UN PRODUIT
++
+UNE ÉGLISE
++
+TROIS PORTAILS
+
+Ne développe PAS encore :
+
+AETERNA LINKS
+=
+PLUSIEURS ÉGLISES
+=
+SAAS
+
+Cette deuxième architecture sera construite ultérieurement, lorsque la version actuelle sera stable, testée et prête.
+
+Ta priorité actuelle est donc :
+
+FAIRE FONCTIONNER PARFAITEMENT LE CŒUR DE L’APPLICATION
+→ SÉCURISER
+→ TESTER
+→ FINALISER
+→ MODERNISER
+→ STABILISER
+
+PAS DE SAAS POUR LE MOMENT.
+
+============================================================
+INSTRUCTION FINALE À CURSOR
+============================================================
+
+Commence maintenant par auditer intégralement le projet existant.
+
+Ne modifie aucun fichier important avant d’avoir compris l’architecture actuelle.
+
+Après l’audit :
+
+1. identifie ce qui existe ;
+2. identifie ce qui manque ;
+3. réutilise l’existant ;
+4. implémente les corrections par étapes ;
+5. teste chaque étape ;
+6. protège les données existantes ;
+7. vérifie les permissions ;
+8. vérifie les trois portails ;
+9. vérifie le workflow ECODIM → Jeunesse ;
+10. vérifie les PDF ;
+11. vérifie l’UI/UX ;
+12. vérifie le responsive ;
+13. effectue une vérification finale de non-régression.
+
+NE RECONSTRUIS PAS L’APPLICATION.
+
+NE TRANSFORME PAS L’APPLICATION EN SAAS.
+
+FINALISE D’ABORD LA VERSION MONO-ÉGLISE.
+
+Aeterna Links doit d’abord devenir une excellente plateforme pour La Parole Éternelle Kolwezi.

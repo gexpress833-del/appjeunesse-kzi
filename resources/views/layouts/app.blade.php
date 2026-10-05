@@ -10,7 +10,7 @@
     <script>
         window.__APP_ONESIGNAL_CONFIG__ = @json($onesignalConfig);
     </script>
-    <title>@yield('title', 'Espace membre') — appjeunesse-kzi</title>
+    <title>@yield('title', 'Espace membre') — AETERNA LINKS</title>
     <link rel="icon" type="image/jpeg" href="{{ asset('logoEglise.jpg') }}">
     <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
     <meta name="theme-color" content="#07111f">
@@ -28,7 +28,7 @@
     @php($appSettings = \App\Models\AppSetting::current())
     @php($u = auth()->user())
     @php($portalDashboardRoute = $u->dashboardRouteName())
-    @php($portalDashboardLabel = $u->primaryPortal() === 'church' ? 'Tableau de bord' : 'Portail jeunesse')
+    @php($portalDashboardLabel = $u->primaryPortal() === 'church' ? 'Tableau de bord' : $u->portalLabel())
     @php($portalBadge = $u->portalLabel())
     @php($portalNavigationKey = $u->portalNavigationKey())
     @php($hasDedicatedAttendanceLink = ($u->isChurchAdministrator() && $portalNavigationKey === 'church') || $u->isResponsable())
@@ -160,7 +160,7 @@
         <header class="app-mobile-topbar sticky top-0 z-20 flex items-center gap-3 border-b border-white/10 bg-slate-950/95 px-4 py-3 shadow-[0_8px_24px_rgba(2,6,23,0.28)] backdrop-blur-xl lg:hidden">
             <button onclick="window.toggleSidebar()" class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white" aria-label="Ouvrir le menu">☰</button>
             <img src="{{ asset('logoEglise.jpg') }}" class="h-8 w-8 rounded-xl object-cover object-center ring-1 ring-cyan-400/60" alt="Logo La Parole Éternelle Kolwezi">
-            <span class="min-w-0 flex-1 truncate font-bold text-white">appjeunesse-kzi</span>
+            <span class="min-w-0 flex-1 truncate font-bold text-white">{{ $appSettings->application_name }}</span>
             <button type="button" data-app-install hidden class="app-install-button px-2.5 py-2" aria-label="Installer l’application"><span aria-hidden="true">＋</span><span class="hidden sm:inline">Installer</span></button>
             <button type="button" data-notifications-enable class="rounded-xl border border-cyan-400/30 bg-cyan-500/10 px-3 py-2 text-cyan-100" aria-label="Activer les notifications">🔔</button>
             <a href="{{ route('notifications.index') }}" class="relative rounded-xl border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-amber-100" aria-label="Notifications">

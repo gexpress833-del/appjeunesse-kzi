@@ -35,8 +35,8 @@ class AppSetting extends Model
     public static function current(): self
     {
         return static::query()->firstOrCreate([], [
-            'church_name' => 'La Parole Éternelle Kolwezi',
-            'application_name' => 'appjeunesse-kzi',
+            'church_name' => 'La Borne Parole Éternelle Kolwezi',
+            'application_name' => 'AETERNA LINKS',
             'timezone' => 'Africa/Lubumbashi',
             'attendance_statuses' => ['present', 'absent', 'late', 'excused'],
             'attendance_editable_hours' => 48,

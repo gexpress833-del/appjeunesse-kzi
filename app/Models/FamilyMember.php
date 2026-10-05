@@ -27,4 +27,14 @@ class FamilyMember extends Model
     {
         return $this->belongsTo(Member::class);
     }
+
+    public function isGuardian(): bool
+    {
+        return in_array(strtolower((string) $this->relationship_type), ['guardian', 'parent', 'mother', 'father', 'tutor', 'tutrice', 'responsible', 'legal_guardian'], true);
+    }
+
+    public function isChild(): bool
+    {
+        return strtolower((string) $this->relationship_type) === 'child';
+    }
 }

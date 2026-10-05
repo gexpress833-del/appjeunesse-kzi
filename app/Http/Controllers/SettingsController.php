@@ -188,6 +188,7 @@ class SettingsController extends Controller
                 ->update(['status' => 'inactive', 'ends_at' => now()]);
 
             MemberRoleAssignment::create([
+                'member_id' => $leader->member_id,
                 'user_id' => $leader->id,
                 'role_id' => $role->id,
                 'scope_type' => $department->code ?: 'department',

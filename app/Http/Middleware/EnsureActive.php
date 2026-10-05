@@ -10,7 +10,7 @@ class EnsureActive
 {
     /**
      * Seuls les comptes validés (status = active) accèdent à l'application.
-     * Les comptes 'pending' / 'inactive' sont déconnectés vers l'écran d'attente.
+     * Les comptes 'pending', 'inactive', 'suspended' et 'archived' sont déconnectés vers l'écran d'attente.
      */
     public function handle(Request $request, Closure $next): Response
     {

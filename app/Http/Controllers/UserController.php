@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AppSetting;
 use App\Models\Department;
+use App\Models\Member;
 use App\Models\MemberRoleAssignment;
 use App\Models\Membership;
 use App\Models\Role;
@@ -11,6 +12,7 @@ use App\Models\User;
 use App\Notifications\AccountCreated;
 use App\Notifications\AccountValidated;
 use App\Notifications\RoleUpdated;
+use App\Services\MemberMatchingService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -38,18 +40,24 @@ class UserController extends Controller
         $users = User::query()
             ->when($portal === 'youth', function ($query): void {
                 $youthDepartmentName = Department::query()->where('code', 'youth')->value('name');
-                $youthMembershipUserIds = Membership::query()
+                $youthMembershipMemberIds = Membership::query()
                     ->where('type', 'youth')
                     ->where('status', 'active')
-                    ->select('user_id');
+                    ->select('member_id');
+                $youthRoleMemberIds = MemberRoleAssignment::query()
+                    ->whereIn('scope_type', ['youth', 'Youth'])
+                    ->where('status', 'active')
+                    ->pluck('member_id');
+
                 $youthRoleUserIds = MemberRoleAssignment::query()
                     ->whereIn('scope_type', ['youth', 'Youth'])
                     ->where('status', 'active')
-                    ->select('user_id');
+                    ->pluck('user_id');
 
                 $query->where('status', 'pending')
-                    ->where(function ($query) use ($youthDepartmentName, $youthMembershipUserIds, $youthRoleUserIds): void {
-                        $query->whereIn('id', $youthMembershipUserIds)
+                    ->where(function ($query) use ($youthDepartmentName, $youthMembershipMemberIds, $youthRoleMemberIds, $youthRoleUserIds): void {
+                        $query->whereIn('member_id', $youthMembershipMemberIds)
+                            ->orWhereIn('member_id', $youthRoleMemberIds)
                             ->orWhereIn('id', $youthRoleUserIds);
 
                         if ($youthDepartmentName !== null) {
@@ -93,17 +101,43 @@ class UserController extends Controller
 
         $createdBy = $request->user();
         $createdUser = DB::transaction(function () use ($data, $createdBy): User {
-            $createdUser = User::create($data);
+            $match = app(MemberMatchingService::class)->matchForRegistration([
+                'full_name' => $data['full_name'],
+                'email' => $data['email'],
+                'phone' => $data['phone'],
+            ]);
+
+            $member = $match['member'] ?? Member::query()->firstOrCreate(
+                ['email' => strtolower(trim($data['email']))],
+                [
+                    'name' => trim($data['full_name']),
+                    'first_name' => Member::splitFullName($data['full_name'])[0],
+                    'last_name' => Member::splitFullName($data['full_name'])[1],
+                    'phone' => $data['phone'],
+                    'email' => strtolower(trim($data['email'])),
+                    'role' => 'user',
+                ],
+            );
+
+            $userData = array_merge($data, [
+                'member_id' => $member->id,
+                'phone' => $data['phone'],
+                'password' => bcrypt($data['password']),
+                'status' => 'pending',
+                'created_by' => $createdBy->username,
+            ]);
+
+            $createdUser = User::create($userData);
             $portalDepartment = filled($createdUser->dept)
                 ? Department::query()->where('name', $createdUser->dept)->whereIn('code', ['youth', 'ecodim'])->first()
                 : null;
 
-            if ($portalDepartment) {
+            if ($portalDepartment && filled($createdUser->member_id)) {
                 Membership::query()->create([
-                    'user_id' => $createdUser->id,
+                    'member_id' => $createdUser->member_id,
                     'type' => $portalDepartment->code,
                     'entity_id' => $portalDepartment->id,
-                    'status' => 'active',
+                    'status' => 'pending',
                 ]);
             }
 
@@ -115,6 +149,7 @@ class UserController extends Controller
                 );
 
                 MemberRoleAssignment::query()->create([
+                    'member_id' => $createdUser->member_id,
                     'user_id' => $createdUser->id,
                     'role_id' => $role->id,
                     'scope_type' => $portalDepartment->code,
@@ -168,6 +203,14 @@ class UserController extends Controller
             'role_assigned_by' => $approver->username,
             'role_assigned_at' => now(),
         ]);
+
+        if (filled($user->member_id)) {
+            Membership::query()->updateOrCreate(
+                ['member_id' => $user->member_id, 'type' => 'church'],
+                ['status' => 'active', 'starts_at' => now(), 'ends_at' => null],
+            );
+        }
+
         $user->notify(new AccountValidated);
 
         return back()->with('success', 'Compte de '.$user->full_name.' validé.');
@@ -204,31 +247,41 @@ class UserController extends Controller
                 'role_assigned_at' => now(),
             ]);
 
+            if (filled($user->member_id) && filled($departmentName)) {
+                $user->member()->update(['dept' => $departmentName]);
+            }
+
             $portalDepartment = filled($departmentName)
                 ? Department::query()->where('name', $departmentName)->whereIn('code', ['youth', 'ecodim'])->first()
                 : null;
 
             MemberRoleAssignment::query()
-                ->where('user_id', $user->id)
+                ->where(function ($query) use ($user): void {
+                    if (filled($user->member_id)) {
+                        $query->where('member_id', $user->member_id);
+                    }
+
+                    $query->orWhere('user_id', $user->id);
+                })
                 ->where('status', 'active')
                 ->whereHas('role', fn ($query) => $query->whereIn('slug', ['responsable_jeunesse', 'responsable_ecodim']))
                 ->when($portalDepartment, fn ($query) => $query->where('scope_type', '!=', $portalDepartment->code))
                 ->update(['status' => 'inactive', 'ends_at' => now()]);
 
             Membership::query()
-                ->where('user_id', $user->id)
+                ->where('member_id', $user->member_id)
                 ->whereIn('type', ['youth', 'ecodim'])
                 ->when($portalDepartment, fn ($query) => $query->where('type', '!=', $portalDepartment->code))
                 ->where('status', 'active')
                 ->update(['status' => 'inactive', 'ends_at' => now()]);
 
-            if ($data['role'] !== 'responsable' || ! $portalDepartment) {
+            if ($data['role'] !== 'responsable' || ! $portalDepartment || ! filled($user->member_id)) {
                 return;
             }
 
             Membership::query()->updateOrCreate(
                 [
-                    'user_id' => $user->id,
+                    'member_id' => $user->member_id,
                     'type' => $portalDepartment->code,
                     'entity_id' => $portalDepartment->id,
                 ],
@@ -242,6 +295,7 @@ class UserController extends Controller
             );
 
             MemberRoleAssignment::query()->create([
+                'member_id' => $user->member_id,
                 'user_id' => $user->id,
                 'role_id' => $portalRole->id,
                 'scope_type' => $portalDepartment->code,
@@ -265,7 +319,7 @@ class UserController extends Controller
         $this->ensurePrimaryAdminIsProtected($user);
 
         $data = $request->validate([
-            'status' => ['required', 'in:pending,active,inactive'],
+            'status' => ['required', 'in:pending,active,inactive,suspended,archived'],
         ]);
 
         if ($user->isPrimaryAdmin() && $user->is(auth()->user()) && $data['status'] !== 'active') {

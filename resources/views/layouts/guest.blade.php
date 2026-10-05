@@ -24,6 +24,12 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="guest-page min-h-screen bg-slate-950 font-sans text-slate-100 antialiased {{ request()->routeIs('home') ? 'home-page' : '' }}">
+    <div id="global-app-loader" class="global-app-loader" role="status" aria-live="polite" aria-label="Chargement en cours" hidden>
+        <div class="global-app-loader__card">
+            <span class="loading-spinner" aria-hidden="true"></span>
+            <span class="global-app-loader__label">Chargement...</span>
+        </div>
+    </div>
     @php($appSettings = \App\Models\AppSetting::current())
     <div class="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.18),transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(168,85,247,0.18),transparent_28%)]"></div>
     <div id="app-toast-stack" class="pointer-events-none fixed right-4 top-4 z-50 flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-3"></div>

@@ -24,6 +24,12 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="app-page min-h-screen bg-slate-950 font-sans text-slate-100 antialiased">
+<div id="global-app-loader" class="global-app-loader" role="status" aria-live="polite" aria-label="Chargement en cours" hidden>
+    <div class="global-app-loader__card">
+        <span class="loading-spinner" aria-hidden="true"></span>
+        <span class="global-app-loader__label">Chargement...</span>
+    </div>
+</div>
 <div class="relative flex min-h-screen overflow-x-clip">
     @php($appSettings = \App\Models\AppSetting::current())
     @php($u = auth()->user())

@@ -313,6 +313,44 @@ const isNavigableLink = (link, event) => {
 
 const clickTargetsSelector = 'a, button, input[type="submit"], input[type="button"], [role="button"], summary, label[for], .clickable';
 
+const getGlobalLoader = () => document.getElementById('global-app-loader');
+
+const showGlobalLoader = () => {
+	const loader = getGlobalLoader();
+
+	if (!loader) {
+		return;
+	}
+
+	loader.hidden = false;
+	loader.classList.add('is-visible');
+};
+
+const hideGlobalLoader = () => {
+	const loader = getGlobalLoader();
+
+	if (!loader) {
+		return;
+	}
+
+	loader.classList.remove('is-visible');
+	loader.hidden = true;
+};
+
+const shouldSkipGlobalLoading = (element) => {
+	if (!element) {
+		return true;
+	}
+
+	if (element.dataset.noLoading !== undefined || element.closest('[data-no-loading]')) {
+		return true;
+	}
+
+	return element.closest('[data-app-install]') !== null
+		|| element.closest('[data-notifications-enable]') !== null
+		|| element.closest('[aria-label="Fermer le menu"]') !== null;
+};
+
 const applyPressedState = (element) => {
 	if (!element || element.dataset.noFeedback !== undefined || element.closest('[data-no-feedback]')) {
 		return;
@@ -339,6 +377,11 @@ document.addEventListener('click', (event) => {
 		return;
 	}
 
+	if (shouldSkipGlobalLoading(link)) {
+		return;
+	}
+
+	showGlobalLoader();
 	link.dataset.loading = 'true';
 	link.setAttribute('aria-busy', 'true');
 	link.classList.add('action-loading');
@@ -354,6 +397,12 @@ document.addEventListener('click', (event) => {
 	if (!actionTarget || actionTarget.dataset.noFeedback !== undefined || actionTarget.closest('[data-no-feedback]')) {
 		return;
 	}
+
+	if (shouldSkipGlobalLoading(actionTarget)) {
+		return;
+	}
+
+	showGlobalLoader();
 
 	if (actionTarget.matches('button') && actionTarget.type === 'button') {
 		applyPressedState(actionTarget);
@@ -395,13 +444,18 @@ document.querySelectorAll('form').forEach((form) => {
 
 		const submitter = event.submitter || form.querySelector('button[type="submit"], button:not([type])');
 
-		if (!submitter || submitter.dataset.noLoading !== undefined) {
+		if (!submitter || submitter.dataset.noLoading !== undefined || shouldSkipGlobalLoading(submitter)) {
 			return;
 		}
 
+		showGlobalLoader();
 		form.dataset.loading = 'true';
 		submitter.disabled = true;
 		submitter.setAttribute('aria-busy', 'true');
 		submitter.innerHTML = '<span class="loading-spinner" aria-hidden="true"></span><span>Chargement...</span>';
 	});
 });
+
+window.addEventListener('pageshow', hideGlobalLoader);
+window.addEventListener('load', hideGlobalLoader);
+window.addEventListener('beforeunload', hideGlobalLoader);

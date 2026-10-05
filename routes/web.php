@@ -76,17 +76,13 @@ Route::get('/en-attente', [AuthController::class, 'pending'])->middleware('auth'
 Route::middleware(['auth', 'active', 'maintenance'])->group(function () {
 
     // Tableau de bord personnel / global
-    Route::middleware('portal:church')->group(function () {
-        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-        Route::get('/dashboard/bilan', [DashboardController::class, 'bilan'])->name('dashboard.bilan');
-    });
+    Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('portal.info:church')->name('dashboard');
+    Route::get('/dashboard/bilan', [DashboardController::class, 'bilan'])->middleware('portal:church')->name('dashboard.bilan');
 
-    Route::middleware('portal:youth')->group(function () {
-        Route::get('/portail-jeunesse', [DashboardController::class, 'index'])->name('dashboard.youth');
-    });
+    Route::get('/portail-jeunesse', [DashboardController::class, 'index'])->middleware('portal.info:youth')->name('dashboard.youth');
+    Route::get('/portail-jeunesse/annonces', [DashboardController::class, 'announcements'])->middleware('portal.info:youth')->name('portal.announcements.youth');
 
     Route::middleware('portal:ecodim')->group(function () {
-        Route::get('/portail-ecodim', [DashboardController::class, 'index'])->name('dashboard.ecodim');
         Route::get('/portail-ecodim/evenements', [EventController::class, 'index'])->name('ecodim.events.index');
         Route::get('/portail-ecodim/evenements/creer', [EventController::class, 'create'])->name('ecodim.events.create');
         Route::post('/portail-ecodim/evenements', [EventController::class, 'store'])->name('ecodim.events.store');
@@ -94,6 +90,9 @@ Route::middleware(['auth', 'active', 'maintenance'])->group(function () {
         Route::get('/portail-ecodim/presences/{event}', [AttendanceController::class, 'sheet'])->name('ecodim.attendances.sheet');
         Route::post('/portail-ecodim/presences/{event}', [AttendanceController::class, 'store'])->name('ecodim.attendances.store');
     });
+    Route::get('/portail-ecodim', [DashboardController::class, 'index'])->middleware('portal.info:ecodim')->name('dashboard.ecodim');
+    Route::get('/portail-ecodim/annonces', [DashboardController::class, 'announcements'])->middleware('portal.info:ecodim')->name('portal.announcements.ecodim');
+    Route::get('/dashboard/annonces', [DashboardController::class, 'announcements'])->middleware('portal.info:church')->name('portal.announcements.church');
 
     Route::middleware('auth')->group(function () {
         Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');

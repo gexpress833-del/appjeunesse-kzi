@@ -4,6 +4,7 @@ use App\Http\Middleware\CheckContentManagementAccess;
 use App\Http\Middleware\CheckMaintenance;
 use App\Http\Middleware\CheckMediaManagementAccess;
 use App\Http\Middleware\CheckPortalAccess;
+use App\Http\Middleware\CheckPortalInformationAccess;
 use App\Http\Middleware\CheckRole;
 use App\Http\Middleware\EnsureActive;
 use Illuminate\Auth\AuthenticationException;
@@ -27,6 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => CheckRole::class,
             'portal' => CheckPortalAccess::class,
+            'portal.info' => CheckPortalInformationAccess::class,
             'content.manage' => CheckContentManagementAccess::class,
             'media.manage' => CheckMediaManagementAccess::class,
             'active' => EnsureActive::class,

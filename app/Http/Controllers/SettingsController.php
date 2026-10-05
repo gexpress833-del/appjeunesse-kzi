@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AppSetting;
 use App\Models\Department;
 use App\Models\MemberRoleAssignment;
+use App\Models\Membership;
 use App\Models\Role;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -172,7 +173,7 @@ class SettingsController extends Controller
 
             $roleSlug = match ($department->code) {
                 'youth' => 'responsable_jeunesse',
-                'ecodim' => 'responsable_ecodim',
+                'ecodim' => 'ecodim_manager',
                 default => 'responsable',
             };
 
@@ -197,6 +198,18 @@ class SettingsController extends Controller
                 'starts_at' => now(),
                 'assigned_by' => $request->user()->id,
             ]);
+
+            if (filled($leader->member_id) && in_array($department->code, ['youth', 'ecodim'], true)) {
+                Membership::query()->updateOrCreate(
+                    ['member_id' => $leader->member_id, 'type' => $department->code],
+                    [
+                        'entity_id' => $department->id,
+                        'status' => 'active',
+                        'starts_at' => now(),
+                        'ends_at' => null,
+                    ],
+                );
+            }
         });
 
         return back()->with('success', $leader ? 'Responsable de département nommé par le pasteur.' : 'Responsable de département retiré.');
@@ -213,7 +226,11 @@ class SettingsController extends Controller
 
     private function authorizeDepartmentManagement(Request $request): void
     {
-        abort_unless($request->user()?->isChurchAdministrator(), 403, 'Seuls le pasteur, l’administrateur et le secrétariat peuvent gérer les départements.');
+        abort_unless(
+            $request->user()?->isChurchAdministrator() || $request->user()?->canGovernPortal('church'),
+            403,
+            'Seuls le pasteur, l’administrateur principal et le secrétariat peuvent gérer les départements.'
+        );
     }
 
     /** @return array<string, bool> */

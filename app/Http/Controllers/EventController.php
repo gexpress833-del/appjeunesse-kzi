@@ -64,12 +64,18 @@ class EventController extends Controller
             abort_unless($department && $user->canManageAttendance('youth', $department->name), 403, 'Une affectation active de responsable jeunesse est requise.');
             $departmentName = $department->name;
         } elseif ($portal === 'ecodim') {
+            abort_unless($user->hasEcodimPermission('ecodim.events.manage'), 403, 'Une permission métier de gestion des activités ECODIM est requise.');
             $ecodimClasses = $user->ecodimAttendanceClasses();
             abort_if($ecodimClasses->isEmpty(), 403, 'Une affectation active à une classe ECODIM est requise.');
             $departmentName = $ecodimClasses->count() === 1 ? $ecodimClasses->first()->name : null;
         } else {
-            abort_if($user->isResponsable() && blank($user->dept), 403, 'Votre compte responsable doit être rattaché à un département.');
-            $departmentName = $user->isResponsable() ? $user->dept : null;
+            if ($user->isResponsable()) {
+                $department = $user->attendanceDepartments('church')->firstWhere('name', $user->dept);
+                abort_unless($department && $user->canManageAttendance('church', $department->name), 403, 'Une affectation active à ce département est requise.');
+                $departmentName = $department->name;
+            } else {
+                $departmentName = null;
+            }
         }
 
         return view('events.form', [
@@ -97,6 +103,7 @@ class EventController extends Controller
             abort_unless($department && $user->canManageAttendance('youth', $department->name), 403, 'Une affectation active de responsable jeunesse est requise.');
             $data['dept'] = $department->name;
         } elseif ($portal === 'ecodim') {
+            abort_unless($user->hasEcodimPermission('ecodim.events.manage'), 403, 'Une permission métier de gestion des activités ECODIM est requise.');
             $ecodimClasses = $user->ecodimAttendanceClasses();
             $class = $ecodimClasses->firstWhere('name', $data['dept'])
                 ?? ($ecodimClasses->count() === 1 ? $ecodimClasses->first() : null);
@@ -104,7 +111,7 @@ class EventController extends Controller
             abort_unless($class, 403, 'Vous ne pouvez créer un événement que pour une classe ECODIM qui vous est affectée.');
             $data['dept'] = $class->name;
         } elseif ($user->isResponsable()) {
-            abort_if(blank($user->dept), 403, 'Votre compte responsable doit être rattaché à un département.');
+            abort_unless($user->canManageAttendance('church', $user->dept), 403, 'Une affectation active à ce département est requise.');
             $data['dept'] = $user->dept;
         }
 
@@ -276,8 +283,8 @@ class EventController extends Controller
             return;
         }
 
-        if ($user->isResponsable() && $event->dept !== $user->dept) {
-            abort(403, 'Vous ne pouvez gérer que les événements de votre département.');
+        if ($user->isResponsable()) {
+            abort_unless($user->canManageAttendance('church', $event->dept), 403, 'Une affectation active à ce département est requise.');
         }
     }
 }

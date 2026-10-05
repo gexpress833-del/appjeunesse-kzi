@@ -490,7 +490,7 @@ class ManagementViewsTest extends TestCase
 
     public function test_responsable_can_create_department_event_and_receives_member_notification(): void
     {
-        Department::create(['name' => 'Social']);
+        $department = Department::create(['name' => 'Social']);
 
         $member = Member::factory()->create([
             'name' => 'Responsable social',
@@ -507,6 +507,18 @@ class ManagementViewsTest extends TestCase
             'member_id' => $member->id,
             'type' => 'church',
             'entity_id' => 1,
+            'status' => 'active',
+        ]);
+        $role = Role::query()->firstOrCreate(
+            ['slug' => 'responsable'],
+            ['name' => 'Responsable', 'status' => 'active'],
+        );
+        MemberRoleAssignment::create([
+            'member_id' => $member->id,
+            'user_id' => $responsable->id,
+            'role_id' => $role->id,
+            'scope_type' => 'department',
+            'scope_id' => $department->id,
             'status' => 'active',
         ]);
 
@@ -557,7 +569,7 @@ class ManagementViewsTest extends TestCase
 
     public function test_responsable_can_record_department_attendance_for_global_event(): void
     {
-        Department::create(['name' => 'Social']);
+        $department = Department::create(['name' => 'Social']);
 
         $member = Member::factory()->create([
             'name' => 'Responsable social',
@@ -574,6 +586,18 @@ class ManagementViewsTest extends TestCase
             'member_id' => $member->id,
             'type' => 'church',
             'entity_id' => 1,
+            'status' => 'active',
+        ]);
+        $role = Role::query()->firstOrCreate(
+            ['slug' => 'responsable'],
+            ['name' => 'Responsable', 'status' => 'active'],
+        );
+        MemberRoleAssignment::create([
+            'member_id' => $member->id,
+            'user_id' => $responsable->id,
+            'role_id' => $role->id,
+            'scope_type' => 'department',
+            'scope_id' => $department->id,
             'status' => 'active',
         ]);
         $event = Event::create([
@@ -680,11 +704,18 @@ class ManagementViewsTest extends TestCase
     {
         $socialDepartment = Department::create(['name' => 'Social']);
         Department::create(['name' => 'Chorale']);
+        $youthLeaderMember = Member::factory()->create(['name' => 'Responsable jeunesse Social']);
 
         $youthLeader = User::factory()->create([
             'role' => 'user',
             'status' => 'active',
             'dept' => 'Social',
+            'member_id' => $youthLeaderMember->id,
+        ]);
+        Membership::create([
+            'member_id' => $youthLeaderMember->id,
+            'type' => 'youth',
+            'status' => 'active',
         ]);
         $role = Role::create([
             'name' => 'Responsable jeunesse',

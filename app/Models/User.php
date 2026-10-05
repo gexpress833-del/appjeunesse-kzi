@@ -98,7 +98,7 @@ class User extends Authenticatable implements CanResetPasswordContract
     {
         $sources = [];
 
-        if ($this->isAdmin()) {
+        if ($this->canGovernPortal('church')) {
             return ['church', 'youth', 'ecodim'];
         }
 
@@ -106,11 +106,16 @@ class User extends Authenticatable implements CanResetPasswordContract
             $sources[] = 'church';
         }
 
-        if ($this->hasPortalRole('youth', ['responsable_jeunesse', 'leader_youth', 'animateur_jeunesse'])) {
+        if ($this->canAccessPortal('youth') && $this->portalRoleAssignments('youth')
+            ->contains(fn (MemberRoleAssignment $assignment): bool => in_array(
+                strtolower((string) ($assignment->role?->slug ?? '')),
+                ['responsable_jeunesse', 'leader_youth', 'animateur_jeunesse'],
+                true,
+            ))) {
             $sources[] = 'youth';
         }
 
-        if ($this->hasPortalRole('ecodim', ['ecodim_manager', 'responsable_ecodim', 'animateur_ecodim', 'enseignant_ecodim'])) {
+        if ($this->hasEcodimPermission('ecodim.events.manage')) {
             $sources[] = 'ecodim';
         }
 
@@ -126,7 +131,7 @@ class User extends Authenticatable implements CanResetPasswordContract
     {
         $sources = $this->manageableContentSources();
 
-        if ($this->isAdmin()) {
+        if ($this->canGovernPortal($this->currentPortal())) {
             return $sources;
         }
 
@@ -145,6 +150,50 @@ class User extends Authenticatable implements CanResetPasswordContract
         return $this->status === 'active';
     }
 
+    public function canViewPortalInformation(string $portal): bool
+    {
+        return $this->status === 'active'
+            && in_array(strtolower(trim($portal)), ['church', 'youth', 'ecodim'], true);
+    }
+
+    public function canGovernPortal(string $portal): bool
+    {
+        return $this->isPrimaryAdmin()
+            && $this->status === 'active'
+            && in_array(strtolower(trim($portal)), ['church', 'youth', 'ecodim'], true);
+    }
+
+    public function canUsePortal(string $portal, string $permission, EcodimClass|int|string|null $scope = null): bool
+    {
+        $portalKey = strtolower(trim($portal));
+
+        if (! $this->canViewPortalInformation($portalKey)) {
+            return false;
+        }
+
+        if ($portalKey === 'ecodim') {
+            if ($scope instanceof EcodimClass) {
+                return $this->hasEcodimClassPermission($scope, $permission);
+            }
+
+            if (is_int($scope)) {
+                $class = EcodimClass::query()->find($scope);
+
+                return $class !== null && $this->hasEcodimClassPermission($class, $permission);
+            }
+
+            if (is_string($scope)) {
+                $class = EcodimClass::query()->where('name', $scope)->first();
+
+                return $class !== null && $this->hasEcodimClassPermission($class, $permission);
+            }
+
+            return $this->hasEcodimPermission($permission);
+        }
+
+        return $this->hasPortalPermission($portalKey, $permission);
+    }
+
     public function portalAccesses(): array
     {
         $accesses = [];
@@ -156,6 +205,8 @@ class User extends Authenticatable implements CanResetPasswordContract
         $explicitMemberships = Membership::query()
             ->where('member_id', $this->member_id)
             ->where('status', 'active')
+            ->where(fn ($query) => $query->whereNull('starts_at')->orWhere('starts_at', '<=', now()))
+            ->where(fn ($query) => $query->whereNull('ends_at')->orWhere('ends_at', '>=', now()))
             ->pluck('type')
             ->map(fn ($type) => strtolower((string) $type))
             ->all();
@@ -167,12 +218,11 @@ class User extends Authenticatable implements CanResetPasswordContract
         $hasExplicitMembershipData = $explicitMemberships !== [];
 
         if (! $hasExplicitMembershipData && $this->isChurchMember()) {
-            return ['church', 'youth'];
+            return ['church'];
         }
 
         foreach (['youth', 'ecodim'] as $portal) {
-            if (in_array($portal, $explicitMemberships, true)
-                || ($portal === 'youth' && $this->hasPortalRole('youth', ['responsable_jeunesse', 'leader_youth', 'animateur_jeunesse']))) {
+            if (in_array($portal, $explicitMemberships, true)) {
                 $accesses[] = $portal;
             }
         }
@@ -182,22 +232,27 @@ class User extends Authenticatable implements CanResetPasswordContract
 
     public function primaryPortal(): string
     {
-        if ($this->isChurchAdministrator()) {
+        if ($this->isChurchAdministrator() || $this->canGovernPortal('church')) {
             return 'church';
         }
 
         if ($this->canAccessPortal('ecodim') && $this->hasPortalRole('ecodim', [
             'ecodim_manager',
             'ecodim_class_responsible',
+            'responsable_ecodim',
+            'animateur_ecodim',
+            'enseignant_ecodim',
+            'leader_ecodim',
         ])) {
             return 'ecodim';
         }
 
-        if ($this->hasPortalRole('youth', [
-            'responsable_jeunesse',
-            'animateur_jeunesse',
-            'leader_youth',
-        ]) || $this->belongsToPortal('youth')) {
+        if ($this->belongsToPortal('youth')
+            || ($this->canAccessPortal('youth') && $this->hasPortalRole('youth', [
+                'responsable_jeunesse',
+                'animateur_jeunesse',
+                'leader_youth',
+            ]))) {
             return 'youth';
         }
 
@@ -208,7 +263,9 @@ class User extends Authenticatable implements CanResetPasswordContract
     {
         $requestedPortal = request()->attributes->get('portal') ?? session('active_portal');
 
-        if (is_string($requestedPortal) && $this->canAccessPortal($requestedPortal)) {
+        if (is_string($requestedPortal) && ($this->canAccessPortal($requestedPortal)
+                || $this->canViewPortalInformation($requestedPortal)
+                || $this->canGovernPortal($requestedPortal))) {
             return $requestedPortal;
         }
 
@@ -266,7 +323,16 @@ class User extends Authenticatable implements CanResetPasswordContract
 
     public function portalNavigationItems(): array
     {
-        if ($this->portalNavigationKey() === 'church') {
+        $portal = $this->portalNavigationKey();
+
+        if (! $this->canGovernPortal($portal) && ! $this->hasOperationalPortalAccess($portal)) {
+            return [
+                ['route' => $this->portalDashboardRouteName($portal), 'label' => 'Accueil', 'icon' => '🏠'],
+                ['route' => $this->portalAnnouncementsRouteName($portal), 'label' => 'Annonces', 'icon' => '📣'],
+            ];
+        }
+
+        if ($portal === 'church') {
             return [
                 ['route' => 'dashboard', 'label' => 'Tableau de bord', 'icon' => '🏠'],
                 ['route' => 'members.index', 'label' => 'Annuaire', 'icon' => '👥'],
@@ -277,7 +343,7 @@ class User extends Authenticatable implements CanResetPasswordContract
             ];
         }
 
-        if ($this->portalNavigationKey() === 'ecodim') {
+        if ($portal === 'ecodim') {
             return [
                 ['route' => 'dashboard.ecodim', 'label' => 'Portail ECODIM', 'icon' => '🏠'],
                 ['route' => 'profile.edit', 'label' => 'Mon profil', 'icon' => '👤'],
@@ -307,6 +373,63 @@ class User extends Authenticatable implements CanResetPasswordContract
         return $items;
     }
 
+    /** @return array<int, array{portal: string, label: string, route: string, access: string}> */
+    public function informationalPortalDestinations(): array
+    {
+        if (! $this->canViewPortalInformation('church')) {
+            return [];
+        }
+
+        return collect([
+            'church' => 'Église',
+            'youth' => 'Jeunesse',
+            'ecodim' => 'ECODIM',
+        ])->map(fn (string $label, string $portal): array => [
+            'portal' => $portal,
+            'label' => $label,
+            'route' => $this->portalDashboardRouteName($portal),
+            'access' => $this->portalAccessLevel($portal),
+        ])->values()->all();
+    }
+
+    public function portalDashboardRouteName(string $portal): string
+    {
+        return match (strtolower(trim($portal))) {
+            'church' => 'dashboard',
+            'youth' => 'dashboard.youth',
+            'ecodim' => 'dashboard.ecodim',
+            default => 'dashboard',
+        };
+    }
+
+    public function portalAnnouncementsRouteName(string $portal): string
+    {
+        return match (strtolower(trim($portal))) {
+            'church' => 'portal.announcements.church',
+            'youth' => 'portal.announcements.youth',
+            'ecodim' => 'portal.announcements.ecodim',
+            default => 'portal.announcements.church',
+        };
+    }
+
+    private function portalAccessLevel(string $portal): string
+    {
+        if ($this->canGovernPortal($portal)) {
+            return 'Gouvernance';
+        }
+
+        $hasOperationalAccess = match ($portal) {
+            'church' => $this->isChurchAdministrator(),
+            'youth' => $this->hasOperationalPortalAccess('youth'),
+            'ecodim' => $this->hasEcodimPermission('ecodim.members.view')
+                || $this->hasEcodimPermission('ecodim.classes.manage')
+                || $this->hasEcodimPermission('ecodim.attendance.manage'),
+            default => false,
+        };
+
+        return $hasOperationalAccess ? 'Gestion' : 'Consultation';
+    }
+
     public function canAccessPortal(string $portal): bool
     {
         $requestedPortal = strtolower($portal);
@@ -327,6 +450,8 @@ class User extends Authenticatable implements CanResetPasswordContract
             $activeMemberships = Membership::query()
                 ->where('member_id', $this->member_id)
                 ->where('status', 'active')
+                ->where(fn ($query) => $query->whereNull('starts_at')->orWhere('starts_at', '<=', now()))
+                ->where(fn ($query) => $query->whereNull('ends_at')->orWhere('ends_at', '>=', now()))
                 ->pluck('type')
                 ->map(fn ($type) => strtolower((string) $type))
                 ->all();
@@ -338,11 +463,19 @@ class User extends Authenticatable implements CanResetPasswordContract
             return $this->isChurchMember();
         }
 
-        if (! filled($this->member_id)) {
-            return $this->isChurchAdministrator() || $this->portalRoleAssignments($requestedPortal)->isNotEmpty();
+        if ($requestedPortal === 'youth') {
+            return filled($this->member_id)
+                && Membership::query()
+                    ->where('member_id', $this->member_id)
+                    ->where('type', 'youth')
+                    ->where('status', 'active')
+                    ->where(fn ($query) => $query->whereNull('starts_at')->orWhere('starts_at', '<=', now()))
+                    ->where(fn ($query) => $query->whereNull('ends_at')->orWhere('ends_at', '>=', now()))
+                    ->exists();
         }
 
-        return in_array($requestedPortal, $this->portalAccesses(), true);
+        return in_array($requestedPortal, ['church', 'ecodim'], true)
+            && in_array($requestedPortal, $this->portalAccesses(), true);
     }
 
     public function portalRoleAssignments(string $portal): Collection
@@ -358,12 +491,31 @@ class User extends Authenticatable implements CanResetPasswordContract
                 $query->orWhere('user_id', $this->id);
             })
             ->where('status', 'active')
+            ->where(fn ($query) => $query->whereNull('starts_at')->orWhere('starts_at', '<=', now()))
+            ->where(fn ($query) => $query->whereNull('ends_at')->orWhere('ends_at', '>=', now()))
             ->where(function ($query) use ($portalKey): void {
                 $query->where('scope_type', $portalKey)
                     ->orWhere('scope_type', ucfirst($portalKey));
             })
             ->with('role')
             ->get();
+    }
+
+    public function hasOperationalPortalAccess(string $portal): bool
+    {
+        return match (strtolower(trim($portal))) {
+            'church' => $this->isChurchAdministrator(),
+            'youth' => $this->canAccessPortal('youth') && $this->portalRoleAssignments('youth')
+                ->contains(fn (MemberRoleAssignment $assignment): bool => in_array(
+                    strtolower((string) ($assignment->role?->slug ?? '')),
+                    ['responsable_jeunesse', 'leader_youth', 'animateur_jeunesse'],
+                    true,
+                )),
+            'ecodim' => $this->hasEcodimPermission('ecodim.members.view')
+                || $this->hasEcodimPermission('ecodim.classes.manage')
+                || $this->hasEcodimPermission('ecodim.attendance.manage'),
+            default => false,
+        };
     }
 
     public function hasPortalRole(string $portal, array|string $roles): bool
@@ -397,25 +549,24 @@ class User extends Authenticatable implements CanResetPasswordContract
             return $this->hasActiveEcodimMembership();
         }
 
-        $departmentName = Department::query()->where('code', $portalKey)->value('name');
-
         if (! filled($this->member_id)) {
-            return $this->portalRoleAssignments($portalKey)->isNotEmpty()
-                || ($departmentName !== null && $this->dept === $departmentName);
+            return $this->portalRoleAssignments($portalKey)->isNotEmpty();
         }
 
         return Membership::query()
             ->where('member_id', $this->member_id)
             ->where('type', $portalKey)
             ->where('status', 'active')
+            ->where(fn ($query) => $query->whereNull('starts_at')->orWhere('starts_at', '<=', now()))
+            ->where(fn ($query) => $query->whereNull('ends_at')->orWhere('ends_at', '>=', now()))
             ->exists()
-            || $this->portalRoleAssignments($portalKey)->isNotEmpty()
-            || ($departmentName !== null && $this->dept === $departmentName);
+            || $this->portalRoleAssignments($portalKey)->isNotEmpty();
     }
 
     public function canApproveYouthAccounts(): bool
     {
-        return $this->hasPortalRole('youth', 'responsable_jeunesse');
+        return $this->canGovernPortal('youth')
+            || $this->hasPortalRole('youth', 'responsable_jeunesse');
     }
 
     public function portalPermissionsFor(string $portal): array
@@ -476,10 +627,6 @@ class User extends Authenticatable implements CanResetPasswordContract
     public function attendanceDepartments(string $portal): Collection
     {
         if ($portal === 'church') {
-            if ($this->isResponsable() && filled($this->dept)) {
-                return Department::query()->where('name', $this->dept)->get();
-            }
-
             $departmentIds = MemberRoleAssignment::query()
                 ->where(function ($query): void {
                     if (filled($this->member_id)) {
@@ -490,6 +637,8 @@ class User extends Authenticatable implements CanResetPasswordContract
                 })
                 ->where('scope_type', 'department')
                 ->where('status', 'active')
+                ->where(fn ($query) => $query->whereNull('starts_at')->orWhere('starts_at', '<=', now()))
+                ->where(fn ($query) => $query->whereNull('ends_at')->orWhere('ends_at', '>=', now()))
                 ->whereHas('role', fn ($query) => $query->where('slug', 'responsable'))
                 ->pluck('scope_id');
 
@@ -498,6 +647,13 @@ class User extends Authenticatable implements CanResetPasswordContract
 
         if ($portal !== 'youth') {
             return new Collection;
+        }
+
+        if ($this->canGovernPortal('youth')) {
+            return Department::query()
+                ->where(fn ($query) => $query->whereNull('code')->orWhere('code', 'youth'))
+                ->orderBy('name')
+                ->get();
         }
 
         $scopeIds = MemberRoleAssignment::query()
@@ -535,6 +691,10 @@ class User extends Authenticatable implements CanResetPasswordContract
     /** @return Collection<int, EcodimClass> */
     public function ecodimAttendanceClasses(): Collection
     {
+        if ($this->canGovernPortal('ecodim')) {
+            return EcodimClass::query()->where('status', 'active')->orderBy('name')->get();
+        }
+
         if (! $this->hasActiveEcodimMembership()) {
             return new Collection;
         }
@@ -555,6 +715,10 @@ class User extends Authenticatable implements CanResetPasswordContract
                 : null;
 
             return $class !== null && $this->hasEcodimClassPermission($class, 'ecodim.attendance.manage');
+        }
+
+        if ($portal === 'youth' && $this->canGovernPortal('youth')) {
+            return true;
         }
 
         return filled($department)

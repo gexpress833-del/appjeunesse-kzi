@@ -264,7 +264,7 @@ class UserController extends Controller
                     $query->orWhere('user_id', $user->id);
                 })
                 ->where('status', 'active')
-                ->whereHas('role', fn ($query) => $query->whereIn('slug', ['responsable_jeunesse', 'responsable_ecodim']))
+                ->whereHas('role', fn ($query) => $query->whereIn('slug', ['responsable_jeunesse', 'responsable_ecodim', 'ecodim_manager']))
                 ->when($portalDepartment, fn ($query) => $query->where('scope_type', '!=', $portalDepartment->code))
                 ->update(['status' => 'inactive', 'ends_at' => now()]);
 
@@ -288,7 +288,7 @@ class UserController extends Controller
                 ['status' => 'active', 'starts_at' => now(), 'ends_at' => null],
             );
 
-            $roleSlug = $portalDepartment->code === 'youth' ? 'responsable_jeunesse' : 'responsable_ecodim';
+            $roleSlug = $portalDepartment->code === 'youth' ? 'responsable_jeunesse' : 'ecodim_manager';
             $portalRole = Role::query()->firstOrCreate(
                 ['slug' => $roleSlug],
                 ['name' => $portalDepartment->code === 'youth' ? 'Responsable jeunesse' : 'Responsable ECODIM', 'status' => 'active'],

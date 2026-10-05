@@ -28,6 +28,10 @@ class CheckRole
             ->all();
 
         if ($allowedRoles === [] || ! in_array($user->role, $allowedRoles, true)) {
+            if ($user->canGovernPortal($user->currentPortal()) && in_array('admin', $allowedRoles, true)) {
+                return $next($request);
+            }
+
             abort(403, 'Accès non autorisé pour votre rôle.');
         }
 

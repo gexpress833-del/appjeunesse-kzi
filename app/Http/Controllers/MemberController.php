@@ -27,6 +27,9 @@ class MemberController extends Controller
 
         $members = Member::query()
             ->with(['department', 'user'])
+            ->when(! $user->canGovernPortal('ecodim') && ! $user->canUsePortal('ecodim', 'ecodim.members.view'), fn ($query) => $query
+                ->whereDoesntHave('memberships', fn ($membershipQuery) => $membershipQuery
+                    ->where('type', 'ecodim')))
             // Un responsable ne voit que son département dans l'annuaire
             ->when($user->isResponsable(), fn ($q) => $q->where('dept', $user->dept))
             ->when($request->filled('dept'), fn ($q) => $q->where('dept', $request->dept))
@@ -48,6 +51,14 @@ class MemberController extends Controller
     public function show(Request $request, Member $member)
     {
         $user = $request->user();
+
+        abort_if(
+            $member->memberships()->where('type', 'ecodim')->exists()
+                && ! $user->canGovernPortal('ecodim')
+                && ! $user->canUsePortal('ecodim', 'ecodim.members.view'),
+            403,
+            'Une autorisation métier ECODIM est requise pour consulter ce dossier.'
+        );
 
         abort_if($user->isResponsable() && $member->dept !== $user->dept, 403, 'Vous ne pouvez consulter que les membres de votre département.');
 
@@ -213,7 +224,7 @@ class MemberController extends Controller
 
     protected function authorizeManage(Member $member, User $user): void
     {
-        $allowed = $user->isAdmin() || $user->isSecretariat();
+        $allowed = $user->isAdmin() || $user->isSecretariat() || $user->canGovernPortal('church');
 
         abort_unless($allowed, 403, 'Secrétariat ou administration uniquement.');
     }

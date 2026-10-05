@@ -24,6 +24,20 @@ class GlobalAppLoadingTest extends TestCase
             ->assertSee('Chargement');
     }
 
+    public function test_mobile_menu_toggle_is_a_client_side_button_without_global_loading(): void
+    {
+        $user = User::factory()->create([
+            'role' => 'admin',
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('<button type="button" data-no-loading onclick="window.toggleSidebar()"', false)
+            ->assertDontSee('<a href="#" aria-label="Ouvrir le menu"', false);
+    }
+
     public function test_error_page_explains_the_issue_and_next_steps(): void
     {
         $this->get('/non-existent-route')->assertNotFound()

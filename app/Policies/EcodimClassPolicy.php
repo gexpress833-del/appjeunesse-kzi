@@ -9,26 +9,28 @@ class EcodimClassPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasEcodimPermission('ecodim.members.view');
+        return $user->canGovernPortal('ecodim') || $user->canUsePortal('ecodim', 'ecodim.members.view');
     }
 
     public function viewAttendance(User $user, EcodimClass $class): bool
     {
-        return $user->hasEcodimClassPermission($class, 'ecodim.attendance.manage');
+        return $user->canGovernPortal('ecodim')
+            || $user->canUsePortal('ecodim', 'ecodim.attendance.manage', $class);
     }
 
     public function manageAttendance(User $user, EcodimClass $class): bool
     {
-        return $user->hasEcodimClassPermission($class, 'ecodim.attendance.manage');
+        return $user->canUsePortal('ecodim', 'ecodim.attendance.manage', $class);
     }
 
     public function manage(User $user, EcodimClass $class): bool
     {
-        return $user->hasEcodimClassPermission($class, 'ecodim.classes.manage');
+        return $user->canGovernPortal('ecodim')
+            || $user->canUsePortal('ecodim', 'ecodim.classes.manage', $class);
     }
 
     public function create(User $user): bool
     {
-        return $user->hasEcodimPermission('ecodim.classes.manage');
+        return $user->canGovernPortal('ecodim') || $user->canUsePortal('ecodim', 'ecodim.classes.manage');
     }
 }

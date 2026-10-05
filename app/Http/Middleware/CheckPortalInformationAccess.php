@@ -6,11 +6,8 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class CheckPortalAccess
+class CheckPortalInformationAccess
 {
-    /**
-     * Garantit qu'un utilisateur a bien accès au portail demandé.
-     */
     public function handle(Request $request, Closure $next, string $portal): Response
     {
         $user = $request->user();
@@ -21,9 +18,8 @@ class CheckPortalAccess
 
         $requestedPortal = strtolower(trim($portal));
 
-        if (! in_array($requestedPortal, ['church', 'youth', 'ecodim'], true)
-            || (! $user->canAccessPortal($requestedPortal) && ! $user->canGovernPortal($requestedPortal))) {
-            abort(403, 'Ce compte n’a pas accès à ce portail.');
+        if (! $user->canViewPortalInformation($requestedPortal)) {
+            abort(403, 'Ce compte ne peut pas consulter ce portail.');
         }
 
         $request->attributes->set('portal', $requestedPortal);

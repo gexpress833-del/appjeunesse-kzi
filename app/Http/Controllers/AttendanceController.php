@@ -85,7 +85,8 @@ class AttendanceController extends Controller
             return view('attendances.pastor', compact('departmentStats', 'events', 'filters', 'selectedEvent'));
         }
 
-        $canViewAllDepartments = $portal === 'church' && ($user->isAdmin() || $user->isSecretariat());
+        $canViewAllDepartments = $portal === 'church'
+            && ($user->isAdmin() || $user->isSecretariat() || $user->canGovernPortal('church'));
         $departments = match ($portal) {
             'ecodim' => $user->ecodimAttendanceClasses(),
             default => $canViewAllDepartments
@@ -127,7 +128,7 @@ class AttendanceController extends Controller
         abort_unless($event->portal === $portal, 403, 'Cet événement appartient à un autre portail.');
 
         $canViewAllDepartments = $portal === 'church'
-            && ($user->isAdmin() || $user->isSecretariat() || $user->isPastorPrincipal());
+            && ($user->isAdmin() || $user->isSecretariat() || $user->isPastorPrincipal() || $user->canGovernPortal('church'));
         $departments = match ($portal) {
             'ecodim' => $user->ecodimAttendanceClasses(),
             default => $canViewAllDepartments

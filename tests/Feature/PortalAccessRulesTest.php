@@ -78,7 +78,8 @@ class PortalAccessRulesTest extends TestCase
         ]);
 
         $this->assertTrue($pastor->canAccessPortal('church'));
-        $this->assertTrue($pastor->canAccessPortal('youth'));
+        $this->assertFalse($pastor->canAccessPortal('youth'));
+        $this->assertTrue($pastor->canViewPortalInformation('youth'));
         $this->assertSame('church', $pastor->primaryPortal());
     }
 
@@ -98,7 +99,8 @@ class PortalAccessRulesTest extends TestCase
             'status' => 'active',
         ]);
 
-        $this->assertTrue($admin->canAccessPortal('ecodim'));
+        $this->assertFalse($admin->canAccessPortal('ecodim'));
+        $this->assertFalse($admin->canGovernPortal('ecodim'));
         $this->assertSame('church', $admin->primaryPortal());
         $this->assertSame('dashboard', $admin->dashboardRouteName());
     }
@@ -133,6 +135,12 @@ class PortalAccessRulesTest extends TestCase
             'entity_id' => $youthDepartment->id,
             'status' => 'active',
         ]);
+        Membership::create([
+            'member_id' => $member->id,
+            'type' => 'ecodim',
+            'entity_id' => $department->id,
+            'status' => 'active',
+        ]);
 
         $this->assertTrue($responsible->canAccessPortal('youth'));
         $this->assertSame('ecodim', $responsible->primaryPortal());
@@ -143,7 +151,8 @@ class PortalAccessRulesTest extends TestCase
     {
         $youthDepartment = Department::query()->firstOrCreate(['code' => 'youth'], ['name' => 'Portail jeunesse']);
         $ecodimDepartment = Department::query()->firstOrCreate(['code' => 'ecodim'], ['name' => 'ECODIM']);
-        $user = User::factory()->create(['role' => 'responsable', 'status' => 'active']);
+        $member = Member::factory()->create(['name' => 'Responsable multiespace']);
+        $user = User::factory()->create(['role' => 'responsable', 'status' => 'active', 'member_id' => $member->id]);
         $youthRole = Role::query()->firstOrCreate(
             ['slug' => 'responsable_jeunesse'],
             ['name' => 'Responsable jeunesse', 'status' => 'active'],
@@ -162,6 +171,9 @@ class PortalAccessRulesTest extends TestCase
                 'status' => 'active',
             ]);
         }
+
+        Membership::create(['member_id' => $member->id, 'type' => 'youth', 'entity_id' => $youthDepartment->id, 'status' => 'active']);
+        Membership::create(['member_id' => $member->id, 'type' => 'ecodim', 'entity_id' => $ecodimDepartment->id, 'status' => 'active']);
 
         $user->update(['dept' => $ecodimDepartment->name]);
 
@@ -239,10 +251,10 @@ class PortalAccessRulesTest extends TestCase
             'church_id' => $church->id,
         ]);
 
-        $this->assertContains('members.index', collect($youthUser->portalNavigationItems())->pluck('route')->all());
+        $this->assertSame(['dashboard.youth', 'portal.announcements.youth'], collect($youthUser->portalNavigationItems())->pluck('route')->all());
         $this->assertContains('settings.index', collect($churchLeader->portalNavigationItems())->pluck('route')->all());
         $this->assertContains('gallery.index', collect($churchLeader->portalNavigationItems())->pluck('route')->all());
-        $this->assertContains('Portail jeunesse', collect($youthUser->portalNavigationItems())->pluck('label')->all());
+        $this->assertSame('Jeunesse', collect($youthUser->informationalPortalDestinations())->firstWhere('portal', 'youth')['label']);
     }
 
     public function test_pastor_can_view_the_gallery_from_the_church_portal(): void
@@ -283,9 +295,9 @@ class PortalAccessRulesTest extends TestCase
         $response = $this->actingAs($pastor)->get('/portail-jeunesse');
 
         $response->assertOk();
-        $response->assertViewIs('dashboard.personal');
+        $response->assertViewIs('dashboard.informational');
         $response->assertSee('Portail jeunesse');
-        $response->assertSee('Pasteur principal');
+        $response->assertSee('Informations institutionnelles');
         $response->assertDontSee('Secrétaire');
     }
 
@@ -346,7 +358,7 @@ class PortalAccessRulesTest extends TestCase
         $response = $this->actingAs($user)->get(route('dashboard.ecodim'));
 
         $response->assertOk();
-        $response->assertViewIs('dashboard.personal');
+        $response->assertViewIs('dashboard.informational');
         $response->assertSee('Portail ECODIM');
         $this->assertSame('ecodim', $user->currentPortal());
         $this->assertSame('ecodim', $user->portalNavigationKey());
@@ -406,7 +418,17 @@ class PortalAccessRulesTest extends TestCase
         ]);
 
         $pastor = User::factory()->create(['role' => 'pasteur_n1', 'church_id' => $church->id]);
-        $youthLeader = User::factory()->create(['role' => 'user', 'church_id' => $church->id]);
+        $youthLeaderMember = Member::factory()->create(['name' => 'Responsable jeunesse']);
+        $youthLeader = User::factory()->create([
+            'role' => 'user',
+            'church_id' => $church->id,
+            'member_id' => $youthLeaderMember->id,
+        ]);
+        Membership::create([
+            'member_id' => $youthLeaderMember->id,
+            'type' => 'youth',
+            'status' => 'active',
+        ]);
         $youthRole = Role::create(['name' => 'Responsable jeunesse', 'slug' => 'responsable_jeunesse']);
         MemberRoleAssignment::create([
             'user_id' => $youthLeader->id,
@@ -538,7 +560,12 @@ class PortalAccessRulesTest extends TestCase
         ]);
         $pastor = User::factory()->create(['role' => 'pasteur_n1', 'church_id' => $church->id]);
         $secretariat = User::factory()->create(['role' => 'secretariat', 'church_id' => $church->id]);
-        $leader = User::factory()->create(['role' => 'user', 'church_id' => $church->id]);
+        $leaderMember = Member::factory()->create(['name' => 'Responsable jeunesse']);
+        $leader = User::factory()->create([
+            'role' => 'user',
+            'church_id' => $church->id,
+            'member_id' => $leaderMember->id,
+        ]);
         $department = Department::where('code', 'youth')->firstOrFail();
 
         $this->actingAs($pastor)
@@ -550,6 +577,11 @@ class PortalAccessRulesTest extends TestCase
 
         $this->assertSame($leader->id, $department->leader_user_id);
         $this->assertNull($leader->dept);
+        $this->assertDatabaseHas('memberships', [
+            'member_id' => $leaderMember->id,
+            'type' => 'youth',
+            'status' => 'active',
+        ]);
         $this->assertTrue($leader->canManageContentSource('youth'));
         $this->assertFalse($pastor->canManageContentSource('youth'));
 
@@ -567,13 +599,33 @@ class PortalAccessRulesTest extends TestCase
             'status' => 'active',
         ]);
         $pastor = User::factory()->create(['role' => 'pasteur_n1', 'church_id' => $church->id]);
+        $churchDepartment = Department::create(['name' => 'Social']);
+        $leaderMember = Member::factory()->create(['name' => 'Responsable Social', 'dept' => 'Social']);
         $leader = User::factory()->create([
             'role' => 'responsable',
             'dept' => 'Social',
             'church_id' => $church->id,
+            'member_id' => $leaderMember->id,
         ]);
-        $churchDepartment = Department::create(['name' => 'Social']);
         $youthDepartment = Department::where('code', 'youth')->firstOrFail();
+        $churchRole = Role::query()->firstOrCreate(
+            ['slug' => 'responsable'],
+            ['name' => 'Responsable', 'status' => 'active'],
+        );
+        Membership::create([
+            'member_id' => $leaderMember->id,
+            'type' => 'church',
+            'entity_id' => $church->id,
+            'status' => 'active',
+        ]);
+        MemberRoleAssignment::create([
+            'member_id' => $leaderMember->id,
+            'user_id' => $leader->id,
+            'role_id' => $churchRole->id,
+            'scope_type' => 'department',
+            'scope_id' => $churchDepartment->id,
+            'status' => 'active',
+        ]);
 
         $this->actingAs($pastor)
             ->put(route('settings.departments.leader', $youthDepartment), ['leader_user_id' => $leader->id])

@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Attendance;
 use App\Models\Department;
+use App\Models\EcodimClass;
+use App\Models\EcodimTransition;
 use App\Models\Event;
 use App\Models\HomeContent;
 use App\Models\Member;
@@ -23,9 +25,26 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
+        $portal = $user->currentPortal();
 
-        if ($user->portalNavigationKey() === 'church' && $user->isChurchAdministrator()) {
+        if ($user->canGovernPortal($portal)) {
+            return $this->governance($portal);
+        }
+
+        if ($portal === 'church' && $user->isChurchAdministrator()) {
             return $this->global();
+        }
+
+        if (! $user->hasOperationalPortalAccess($portal)) {
+            return view('dashboard.informational', [
+                'portal' => $portal,
+                'announcements' => HomeContent::query()
+                    ->where('source', $portal)
+                    ->whereIn('type', ['verset', 'temoignage', 'event_banner'])
+                    ->active()
+                    ->ordered()
+                    ->get(),
+            ]);
         }
 
         return $this->personal($user);
@@ -74,6 +93,48 @@ class DashboardController extends Controller
         ]);
     }
 
+    public function announcements(Request $request)
+    {
+        $portal = (string) $request->attributes->get('portal');
+
+        return view('dashboard.announcements', [
+            'portal' => $portal,
+            'announcements' => HomeContent::query()
+                ->where('source', $portal)
+                ->whereIn('type', ['verset', 'temoignage', 'event_banner'])
+                ->active()
+                ->ordered()
+                ->get(),
+        ]);
+    }
+
+    protected function governance(string $portal)
+    {
+        $summary = match ($portal) {
+            'ecodim' => [
+                'classes' => EcodimClass::query()->where('status', 'active')->count(),
+                'children' => Member::query()->whereHas('memberships', fn ($query) => $query
+                    ->where('type', 'ecodim')->where('status', 'active'))->count(),
+                'transitions' => EcodimTransition::query()->count(),
+            ],
+            'youth' => [
+                'members' => Member::query()->whereHas('memberships', fn ($query) => $query
+                    ->where('type', 'youth')->where('status', 'active'))->count(),
+                'events' => Event::query()->where('portal', 'youth')->count(),
+            ],
+            default => [
+                'members' => Member::query()->count(),
+                'users' => User::query()->where('status', 'active')->count(),
+                'departments' => Department::query()->count(),
+            ],
+        };
+
+        return view('dashboard.portal-governance', [
+            'portal' => $portal,
+            'summary' => $summary,
+        ]);
+    }
+
     protected function global()
     {
         $lastEvents = Event::query()->where('portal', 'church')->past()->take(5)->withCount('members')->get();
@@ -114,7 +175,8 @@ class DashboardController extends Controller
                     ->where('portal', $portal)
                     ->when($user->isResponsable(), fn ($query) => $query->where('dept', $user->dept))
                     ->upcoming()->take(3)->get(),
-                'announcements' => HomeContent::whereIn('type', ['verset', 'temoignage', 'event_banner'])
+                'announcements' => HomeContent::where('source', $portal)
+                    ->whereIn('type', ['verset', 'temoignage', 'event_banner'])
                     ->active()->ordered()->take(4)->get(),
                 'departmentMembersCount' => $departmentMembersCount,
             ]);
@@ -145,7 +207,8 @@ class DashboardController extends Controller
                 ->where('portal', $portal)
                 ->when($user->isResponsable(), fn ($query) => $query->where('dept', $user->dept))
                 ->upcoming()->take(3)->get(),
-            'announcements' => HomeContent::whereIn('type', ['verset', 'temoignage', 'event_banner'])
+            'announcements' => HomeContent::where('source', $portal)
+                ->whereIn('type', ['verset', 'temoignage', 'event_banner'])
                 ->active()->ordered()->take(4)->get(),
             'departmentMembersCount' => $departmentMembersCount,
         ]);

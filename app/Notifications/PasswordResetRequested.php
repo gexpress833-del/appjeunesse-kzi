@@ -23,8 +23,10 @@ class PasswordResetRequested extends Notification
      */
     public function toBrevo(object $notifiable): array
     {
+        $senderName = config('services.brevo.sender_name', config('app.name', 'AETERNA LINKS'));
+
         return [
-            'subject' => 'Réinitialisation de votre mot de passe AETERNA LINKS',
+            'subject' => sprintf('Réinitialisation de votre mot de passe %s', $senderName),
             'html' => view('emails.password-reset', [
                 'user' => $notifiable,
                 'resetUrl' => route('password.reset', [

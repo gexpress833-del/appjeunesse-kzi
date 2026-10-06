@@ -38,7 +38,9 @@
     @php($portalBadge = $u->portalLabel())
     @php($portalNavigationKey = $u->portalNavigationKey())
     @php($hasChurchGovernance = $u->isChurchAdministrator() || $u->canGovernPortal('church'))
-    @php($isPortalInformationOnly = ! $u->hasOperationalPortalAccess($portalNavigationKey) && ! $u->canGovernPortal($portalNavigationKey))
+    @php($isPortalInformationOnly = ! $u->hasOperationalPortalAccess($portalNavigationKey)
+        && ! $u->canGovernPortal($portalNavigationKey)
+        && ! ($portalNavigationKey === 'church' && $u->status === 'active'))
     @php($hasDedicatedAttendanceLink = ($hasChurchGovernance && $portalNavigationKey === 'church') || $u->isResponsable())
     <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.22),transparent_25%),radial-gradient(circle_at_bottom_right,_rgba(34,211,238,0.18),transparent_35%)]"></div>
     <div id="sidebar-backdrop" class="fixed inset-0 z-30 hidden bg-slate-950/70 backdrop-blur-sm lg:hidden" onclick="window.closeSidebar()"></div>

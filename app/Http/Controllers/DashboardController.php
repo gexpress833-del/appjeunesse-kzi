@@ -36,6 +36,10 @@ class DashboardController extends Controller
         }
 
         if (! $user->hasOperationalPortalAccess($portal)) {
+            if ($portal === 'church' && $user->status === 'active') {
+                return $this->personal($user);
+            }
+
             return view('dashboard.informational', [
                 'portal' => $portal,
                 'announcements' => HomeContent::query()

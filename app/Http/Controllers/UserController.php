@@ -101,26 +101,33 @@ class UserController extends Controller
 
         $createdBy = $request->user();
         $createdUser = DB::transaction(function () use ($data, $createdBy): User {
-            $match = app(MemberMatchingService::class)->matchForRegistration([
-                'full_name' => $data['full_name'],
-                'email' => $data['email'],
-                'phone' => $data['phone'],
-            ]);
+            $member = null;
+            $portalDepartment = filled(data_get($data, 'dept'))
+                ? Department::query()->where('name', data_get($data, 'dept'))->whereIn('code', ['youth', 'ecodim'])->first()
+                : null;
 
-            $member = $match['member'] ?? Member::query()->firstOrCreate(
-                ['email' => strtolower(trim($data['email']))],
-                [
-                    'name' => trim($data['full_name']),
-                    'first_name' => Member::splitFullName($data['full_name'])[0],
-                    'last_name' => Member::splitFullName($data['full_name'])[1],
+            if ($data['role'] !== 'user') {
+                $match = app(MemberMatchingService::class)->matchForRegistration([
+                    'full_name' => $data['full_name'],
+                    'email' => $data['email'],
                     'phone' => $data['phone'],
-                    'email' => strtolower(trim($data['email'])),
-                    'role' => 'user',
-                ],
-            );
+                ]);
+
+                $member = $match['member'] ?? Member::query()->firstOrCreate(
+                    ['email' => strtolower(trim($data['email']))],
+                    [
+                        'name' => trim($data['full_name']),
+                        'first_name' => Member::splitFullName($data['full_name'])[0],
+                        'last_name' => Member::splitFullName($data['full_name'])[1],
+                        'phone' => $data['phone'],
+                        'email' => strtolower(trim($data['email'])),
+                        'role' => 'user',
+                    ],
+                );
+            }
 
             $userData = array_merge($data, [
-                'member_id' => $member->id,
+                'member_id' => $member?->id,
                 'phone' => $data['phone'],
                 'password' => bcrypt($data['password']),
                 'status' => 'pending',
@@ -128,11 +135,8 @@ class UserController extends Controller
             ]);
 
             $createdUser = User::create($userData);
-            $portalDepartment = filled($createdUser->dept)
-                ? Department::query()->where('name', $createdUser->dept)->whereIn('code', ['youth', 'ecodim'])->first()
-                : null;
 
-            if ($portalDepartment && filled($createdUser->member_id)) {
+            if ($portalDepartment && $createdUser->role !== 'user' && filled($createdUser->member_id)) {
                 Membership::query()->create([
                     'member_id' => $createdUser->member_id,
                     'type' => $portalDepartment->code,
@@ -141,7 +145,7 @@ class UserController extends Controller
                 ]);
             }
 
-            if ($createdUser->role === 'responsable' && $portalDepartment) {
+            if ($createdUser->role === 'responsable' && $portalDepartment && filled($createdUser->member_id)) {
                 $roleSlug = $portalDepartment->code === 'youth' ? 'responsable_jeunesse' : 'responsable_ecodim';
                 $role = Role::query()->firstOrCreate(
                     ['slug' => $roleSlug],

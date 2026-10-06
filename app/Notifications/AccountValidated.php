@@ -30,8 +30,10 @@ class AccountValidated extends Notification
      */
     public function toBrevo(object $notifiable): array
     {
+        $senderName = config('services.brevo.sender_name', config('app.name', 'AETERNA LINKS'));
+
         return [
-            'subject' => 'Votre compte AETERNA LINKS est validé',
+            'subject' => sprintf('Votre compte %s est validé', $senderName),
             'html' => view('emails.account-validated', [
                 'user' => $notifiable,
             ])->render(),

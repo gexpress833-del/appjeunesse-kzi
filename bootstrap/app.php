@@ -74,6 +74,30 @@ return Application::configure(basePath: dirname(__DIR__))
                 return response()->json(['message' => $message], $status === 0 ? 500 : $status);
             }
 
+            if ($status === 403) {
+                $portal = match (true) {
+                    str_contains((string) ($request->path() ?? ''), 'portail-ecodim') || str_contains((string) ($request->route()?->getName() ?? ''), 'ecodim') => 'ecodim',
+                    str_contains((string) ($request->path() ?? ''), 'portail-jeunesse') || str_contains((string) ($request->route()?->getName() ?? ''), 'youth') => 'youth',
+                    default => 'church',
+                };
+
+                $contextMessage = match ($portal) {
+                    'ecodim' => 'Cette section est réservée aux responsables autorisés d’ECODIM.',
+                    'youth' => 'Cette section est réservée aux responsables autorisés de la Jeunesse.',
+                    default => 'Cette section est réservée aux utilisateurs disposant des autorisations requises.',
+                };
+
+                $returnUrl = $request->user()?->dashboardRouteName()
+                    ? route($request->user()->dashboardRouteName())
+                    : route('home');
+
+                return response()->view('errors.403', [
+                    'portal' => $portal,
+                    'contextMessage' => $contextMessage,
+                    'returnUrl' => $returnUrl,
+                ], 403);
+            }
+
             return response()->view('errors.app', [
                 'message' => $message,
             ], $status === 0 ? 500 : $status);

@@ -167,6 +167,34 @@ class PortalInformationGovernanceTest extends TestCase
         $this->actingAs($churchAdmin)->get(route('ecodim.attendances.pick'))->assertForbidden();
     }
 
+    public function test_users_without_youth_permission_see_clear_unauthorized_page(): void
+    {
+        $user = User::factory()->create([
+            'role' => 'user',
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('youth.attendances.pick'))
+            ->assertForbidden()
+            ->assertSee('Accès non autorisé')
+            ->assertSee('Cette section est réservée aux responsables autorisés de la Jeunesse.');
+    }
+
+    public function test_users_without_church_permission_see_clear_unauthorized_page(): void
+    {
+        $user = User::factory()->create([
+            'role' => 'user',
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('attendances.pick'))
+            ->assertForbidden()
+            ->assertSee('Accès non autorisé')
+            ->assertSee('Cette section est réservée aux utilisateurs disposant des autorisations requises.');
+    }
+
     public function test_active_primary_admin_governs_all_portals_without_ecodim_membership_or_role(): void
     {
         $primaryAdmin = User::factory()->create([

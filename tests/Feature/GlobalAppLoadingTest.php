@@ -38,6 +38,23 @@ class GlobalAppLoadingTest extends TestCase
             ->assertDontSee('<a href="#" aria-label="Ouvrir le menu"', false);
     }
 
+    public function test_forbidden_access_shows_clear_unauthorized_page(): void
+    {
+        $user = User::factory()->create([
+            'role' => 'user',
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('ecodim.attendances.pick'))
+            ->assertForbidden()
+            ->assertSee('Accès non autorisé')
+            ->assertSee('Vous n’avez pas les autorisations nécessaires pour accéder à cette page.')
+            ->assertSee('Cette section est réservée aux responsables autorisés d’ECODIM.')
+            ->assertSee('Retour au portail')
+            ->assertDontSee('Nous rencontrons une difficulté');
+    }
+
     public function test_error_page_explains_the_issue_and_next_steps(): void
     {
         $this->get('/non-existent-route')->assertNotFound()

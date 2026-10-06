@@ -314,6 +314,7 @@ const isNavigableLink = (link, event) => {
 const clickTargetsSelector = 'a, button, input[type="submit"], input[type="button"], [role="button"], summary, label[for], .clickable';
 
 const getGlobalLoader = () => document.getElementById('global-app-loader');
+let globalLoaderFallbackTimer = null;
 
 const showGlobalLoader = () => {
 	const loader = getGlobalLoader();
@@ -322,12 +323,24 @@ const showGlobalLoader = () => {
 		return;
 	}
 
+	if (globalLoaderFallbackTimer) {
+		window.clearTimeout(globalLoaderFallbackTimer);
+	}
+
 	loader.hidden = false;
 	loader.classList.add('is-visible');
+	globalLoaderFallbackTimer = window.setTimeout(() => {
+		hideGlobalLoader();
+	}, 2500);
 };
 
 const hideGlobalLoader = () => {
 	const loader = getGlobalLoader();
+
+	if (globalLoaderFallbackTimer) {
+		window.clearTimeout(globalLoaderFallbackTimer);
+		globalLoaderFallbackTimer = null;
+	}
 
 	if (!loader) {
 		return;
@@ -378,6 +391,16 @@ document.addEventListener('click', (event) => {
 	}
 
 	if (shouldSkipGlobalLoading(link)) {
+		return;
+	}
+
+	const targetUrl = new URL(link.href, window.location.href);
+	const isSamePageNavigation = targetUrl.origin === window.location.origin
+		&& targetUrl.pathname === window.location.pathname
+		&& targetUrl.search === window.location.search;
+
+	if (isSamePageNavigation) {
+		hideGlobalLoader();
 		return;
 	}
 
